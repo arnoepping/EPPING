@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import type { Floor } from '../../content/floors.ts';
 import { FLOOR_X, HALL_Z } from '../layout.ts';
 import { pulse } from '../beat.ts';
+import type { FrameCtx } from '../stage.ts';
 import { makeLabel } from '../label.ts';
 
 export function buildFloorBase(floor: Floor, index: number) {
@@ -32,5 +33,7 @@ export function buildFloorBase(floor: Floor, index: number) {
     beamMat.opacity = 0.04 + 0.06 * p;
     return p;
   };
-  return { group, hit, pulseOf };
+  /** Show the floor only once the camera is in the hall; returns false when hidden so update can bail. */
+  const gate = (ctx: FrameCtx) => (group.visible = ctx.progress > 0.6);
+  return { group, hit, pulseOf, gate };
 }

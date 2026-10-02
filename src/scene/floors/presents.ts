@@ -8,7 +8,7 @@ import { eventLabel } from '../../lib/links.ts';
 const PINK = new THREE.Color('#FF2BD6'), CYAN = new THREE.Color('#00E5FF'), OFF = new THREE.Color('#13131C');
 
 export function buildPresents(floor: Floor, index: number): Part {
-  const { group, hit, pulseOf } = buildFloorBase(floor, index);
+  const { group, hit, pulseOf, gate } = buildFloorBase(floor, index);
 
   // Light-up grid on the back wall: 12×6 tiles.
   const COLS = 12, ROWS = 6, tiles = new THREE.InstancedMesh(new THREE.PlaneGeometry(0.85, 0.85), new THREE.MeshBasicMaterial({ toneMapped: false }), COLS * ROWS);
@@ -32,6 +32,7 @@ export function buildPresents(floor: Floor, index: number): Part {
   return {
     object: group, hit, slug: floor.slug,
     update(ctx: FrameCtx) {
+      if (!gate(ctx)) return;
       const p = pulseOf(ctx.t);
       const beat = Math.floor((ctx.t * floor.bpm) / 60);
       if (beat !== lastBeat) {

@@ -4,7 +4,7 @@ import type { Part, FrameCtx } from '../stage.ts';
 import { buildFloorBase } from './base.ts';
 
 export function buildRaveWedding(floor: Floor, index: number): Part {
-  const { group, hit, pulseOf } = buildFloorBase(floor, index);
+  const { group, hit, pulseOf, gate } = buildFloorBase(floor, index);
 
   // Mirrorball: flat-shaded facets lit by two orbiting colored lights.
   const ball = new THREE.Mesh(new THREE.IcosahedronGeometry(1.4, 2), new THREE.MeshPhongMaterial({ color: 0x9a9aa8, specular: 0xffffff, shininess: 120, flatShading: true }));
@@ -39,6 +39,7 @@ export function buildRaveWedding(floor: Floor, index: number): Part {
   return {
     object: group, hit, slug: floor.slug,
     update(ctx: FrameCtx) {
+      if (!gate(ctx)) return;
       const p = pulseOf(ctx.t);
       ball.rotation.y = ctx.t * 0.6;
       l1.position.set(Math.cos(ctx.t) * 4, 9, Math.sin(ctx.t) * 4);
@@ -46,7 +47,8 @@ export function buildRaveWedding(floor: Floor, index: number): Part {
       lasers.rotation.y = ctx.t * 0.8;
       lasers.children.forEach((b, i) => { b.rotation.x = 0.35 + 0.25 * Math.sin(ctx.t * 1.3 + i); });
       laserMat.opacity = 0.25 + 0.6 * p;
-      for (let i = 0; i < N; i++) {
+      const n = ctx.low ? N / 2 : N;
+      for (let i = 0; i < n; i++) {
         let y = pos[i * 3 + 1] - ctx.dt * (0.6 + (i % 7) * 0.08);
         if (y < -0.4) y = 10;
         pos[i * 3 + 1] = y;

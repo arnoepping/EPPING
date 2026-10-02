@@ -13,7 +13,7 @@ import type { RigState } from './rig.ts';
 declare global { interface Window { __xp: { setProgress(p: number): void; state(): RigState; sample(): boolean } } }
 
 export async function start(root: HTMLElement): Promise<void> {
-  await Promise.race([document.fonts.load('800 72px Unbounded'), new Promise((r) => setTimeout(r, 1500))]);
+  await Promise.race([Promise.all([document.fonts.load('800 72px Unbounded'), document.fonts.load('500 30px "JetBrains Mono"')]), new Promise((r) => setTimeout(r, 1500))]);
   const canvas = root.querySelector<HTMLCanvasElement>('.xp-canvas')!;
   const stage = createStage(canvas);
   const builders = [buildRaveWedding, buildPrivateEvents, buildPresents];

@@ -25,14 +25,14 @@ function smokeTexture(): THREE.Texture {
 }
 
 export function buildPrivateEvents(floor: Floor, index: number): Part {
-  const { group, hit, pulseOf } = buildFloorBase(floor, index);
+  const { group, hit, pulseOf, gate } = buildFloorBase(floor, index);
 
   const uniforms = { uTime: { value: 0 }, uPulse: { value: 0 } };
   const wall = new THREE.Mesh(new THREE.PlaneGeometry(11, 4.2), new THREE.ShaderMaterial({ uniforms, vertexShader: WALL_VERT, fragmentShader: WALL_FRAG }));
   wall.position.set(0, 3, -4.5);
   group.add(wall);
 
-  const strobeMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false });
+  const strobeMat = new THREE.MeshBasicMaterial({ color: 0x9ff6ff, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false });
   for (const x of [-4.5, -1.5, 1.5, 4.5]) {
     const s = new THREE.Mesh(new THREE.PlaneGeometry(0.9, 0.35), strobeMat);
     s.position.set(x, 8.6, -3); group.add(s);
@@ -49,9 +49,10 @@ export function buildPrivateEvents(floor: Floor, index: number): Part {
   return {
     object: group, hit, slug: floor.slug,
     update(ctx: FrameCtx) {
+      if (!gate(ctx)) return;
       const p = pulseOf(ctx.t);
       uniforms.uTime.value = ctx.t; uniforms.uPulse.value = p;
-      strobeMat.opacity = p > 0.9 && Math.floor(ctx.t * 4) % 2 === 0 ? 1 : 0; // flash on alternating beats
+      strobeMat.opacity = p > 0.9 && Math.floor((ctx.t * floor.bpm) / 60) % 2 === 0 ? 1 : 0; // flash on alternating beats
       smoke.forEach((sp, i) => {
         if (ctx.low && i % 2) { sp.visible = false; return; }
         sp.visible = true;
