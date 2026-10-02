@@ -6,6 +6,8 @@ export interface Part { object: THREE.Object3D; update(ctx: FrameCtx): void; hit
 export interface Stage {
   scene: THREE.Scene; camera: THREE.PerspectiveCamera; renderer: THREE.WebGLRenderer; low: boolean;
   start(frame: (t: number, dt: number) => void): void;
+  /** Re-read the canvas size (e.g. right after it becomes visible). */
+  resize(): void;
   sample(): boolean;
 }
 
@@ -37,7 +39,7 @@ export function createStage(canvas: HTMLCanvasElement, onLost?: () => void): Sta
   });
 
   const stage: Stage = {
-    scene, camera, renderer, low: false,
+    scene, camera, renderer, low: false, resize,
     start(frame) {
       const clock = new THREE.Clock();
       let slow = 0;

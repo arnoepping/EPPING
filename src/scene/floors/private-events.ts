@@ -35,7 +35,7 @@ export function buildPrivateEvents(floor: Floor, index: number): Part {
   const strobeMat = new THREE.MeshBasicMaterial({ color: 0x9ff6ff, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false });
   for (const x of [-4.5, -1.5, 1.5, 4.5]) {
     const s = new THREE.Mesh(new THREE.PlaneGeometry(0.9, 0.35), strobeMat);
-    s.position.set(x, 8.6, -3); group.add(s);
+    s.position.set(x, 7.1, -3); group.add(s); // between LED wall (top 5.1) and label (bottom ~8.1)
   }
 
   const tex = smokeTexture();

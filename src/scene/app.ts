@@ -20,8 +20,10 @@ export async function start(root: HTMLElement): Promise<void> {
   const canvas = root.querySelector<HTMLCanvasElement>('.xp-canvas')!;
   const html = document.documentElement;
   // Context lost → drop back to the static page.
-  const stage = createStage(canvas, () => { html.classList.remove('xp-3d', 'xp-ready'); mountOnView(root); });
+  let dead = false; // WebGL context lost: the static page has taken over
+  const stage = createStage(canvas, () => { dead = true; html.classList.remove('xp-3d', 'xp-ready'); mountOnView(root); });
   html.classList.add('xp-3d'); // only now: a slow chunk download leaves the static page usable
+  stage.resize(); // canvas is visible now: correct fov/aspect before the deep-link snap
   const builders = [buildRaveWedding, buildPrivateEvents, buildPresents];
   const floorParts = FLOORS.map((f, i) => builders[i](f, i));
   const parts: Part[] = [buildTunnel(), buildHall(), ...floorParts];
@@ -56,10 +58,14 @@ export async function start(root: HTMLElement): Promise<void> {
     measure();
   };
   const go = (next: RigState, push: boolean) => {
-    const was = s.active;
+    if (dead) return;
+    const was = s.active, wasMode = s.mode;
     s = next;
     if (push && was !== s.active) history.pushState(null, '', pathForSlug(s.active === null ? null : SLUGS[s.active]));
     sync();
+    // Focus follows the UI: the opened sheet's back button, or the hall bar when leaving a floor.
+    if (s.active !== null && was !== s.active) root.querySelector<HTMLElement>(`#panel-${SLUGS[s.active]} .panel-back`)?.focus({ preventScroll: true });
+    else if (s.mode === 'hall' && wasMode === 'floor') root.querySelector<HTMLElement>('.hall-enter')?.focus({ preventScroll: true });
   };
 
   // ---- router ----
@@ -70,21 +76,32 @@ export async function start(root: HTMLElement): Promise<void> {
 
   // ---- input (ignored when it starts inside an open panel) ----
   const inPanel = (e: Event) => !!(e.target as Element | null)?.closest?.('.panel');
+  // Hall: one trackpad swipe = many wheel events. Accumulate deltaX; step once, then hold until 150ms idle.
+  let wheelX = 0, wheelLocked = false, wheelIdle = 0;
   addEventListener('wheel', (e) => {
     if (inPanel(e)) return;
-    if (s.mode === 'tunnel') go(scrollBy(s, e.deltaY, innerHeight), false);
-    else if (s.mode === 'hall' && Math.abs(e.deltaX) > 30) go(step(s, e.deltaX > 0 ? 1 : -1), false);
+    if (s.mode === 'tunnel') return go(scrollBy(s, e.deltaY, innerHeight), false);
+    if (s.mode !== 'hall') return;
+    clearTimeout(wheelIdle);
+    wheelIdle = window.setTimeout(() => { wheelX = 0; wheelLocked = false; }, 150);
+    if (wheelLocked) return;
+    wheelX += e.deltaX;
+    if (Math.abs(wheelX) > 30) { go(step(s, wheelX > 0 ? 1 : -1), false); wheelLocked = true; }
   }, { passive: true });
 
   let t0: { x: number; y: number; time: number } | null = null;
-  canvas.addEventListener('pointerdown', (e) => { t0 = { x: e.clientX, y: e.clientY, time: performance.now() }; });
+  canvas.addEventListener('pointerdown', (e) => {
+    if (!e.isPrimary) return; // a second finger must not restart the gesture
+    canvas.setPointerCapture(e.pointerId); // drags ending off-canvas still deliver pointerup
+    t0 = { x: e.clientX, y: e.clientY, time: performance.now() };
+  });
   canvas.addEventListener('pointermove', (e) => {
-    if (!t0 || s.mode !== 'tunnel') return;
+    if (!t0 || !e.isPrimary || s.mode !== 'tunnel') return;
     go(scrollBy(s, (t0.y - e.clientY) * 1.5, innerHeight), false);
     t0 = { ...t0, x: e.clientX, y: e.clientY };
   });
   canvas.addEventListener('pointerup', (e) => {
-    if (!t0) return;
+    if (!t0 || !e.isPrimary) return;
     const dx = e.clientX - t0.x, dy = e.clientY - t0.y, quick = performance.now() - t0.time < 400;
     t0 = null;
     if (s.mode !== 'hall') return;
@@ -92,7 +109,7 @@ export async function start(root: HTMLElement): Promise<void> {
     if (dir) return go(step(s, dir), false);
     if (quick && Math.hypot(dx, dy) < 10) tapAt(e.clientX, e.clientY);
   });
-  canvas.addEventListener('pointercancel', () => { t0 = null; });
+  canvas.addEventListener('pointercancel', (e) => { if (e.isPrimary) t0 = null; });
 
   const ray = new THREE.Raycaster(), ndc = new THREE.Vector2();
   function tapAt(x: number, y: number) {
@@ -102,11 +119,16 @@ export async function start(root: HTMLElement): Promise<void> {
     if (hit) go(enter(s, floorParts.findIndex((p) => p.hit === hit.object)), true);
   }
 
+  // Keys belong to focused controls (buttons, links, fields, the player) and to browser shortcuts.
+  const ownKeys = (e: KeyboardEvent) =>
+    e.metaKey || e.ctrlKey || e.altKey || !!(e.target as Element | null)?.closest?.('button, a, input, textarea, select, iframe, [contenteditable]');
   addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape' && ownKeys(e)) return;
     if (e.key === 'ArrowLeft') go(step(s, -1), false);
     else if (e.key === 'ArrowRight') go(step(s, 1), false);
-    else if (e.key === 'Enter' && s.mode === 'hall') go(enter(s), true);
-    else if (e.key === 'Escape' && s.mode === 'floor') go(leave(s), true);
+    // preventDefault: focus moves to a button during go(); without it the same key would activate that button.
+    else if (e.key === 'Enter' && s.mode === 'hall') { e.preventDefault(); go(enter(s), true); }
+    else if (e.key === 'Escape' && s.mode === 'floor') { e.preventDefault(); go(leave(s), true); }
     else if ((e.key === 'ArrowDown' || e.key === ' ') && s.mode === 'tunnel') go(scrollBy(s, innerHeight / 2, innerHeight), false);
   });
 
