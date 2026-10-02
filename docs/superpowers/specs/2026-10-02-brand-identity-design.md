@@ -1,7 +1,7 @@
 # Brand identity: logo, tokens, brand page
 
 Date: 2026-10-02
-Status: approved in brainstorm; spec pending review
+Status: approved 2026-10-02
 
 ## Goal
 
