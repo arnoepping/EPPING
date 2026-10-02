@@ -16,6 +16,6 @@ const fav = existsSync('dist/favicon.svg') ? readFileSync('dist/favicon.svg', 'u
 if (!fav.includes('#FF2BD6') || !fav.includes('#00E5FF')) fail('favicon.svg lacks brand colors');
 
 const brand = existsSync('dist/brand/index.html') ? readFileSync('dist/brand/index.html', 'utf8') : '';
-if (!brand.includes('EPPING') || !brand.includes('noindex')) fail('dist/brand/index.html missing, or lacks EPPING/noindex');
+if (!brand.includes('EPPING') || !brand.includes('name="robots" content="noindex"')) fail('dist/brand/index.html missing, or lacks EPPING/noindex');
 
 console.log('OK: build output valid');
