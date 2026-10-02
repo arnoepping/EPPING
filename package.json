@@ -10,7 +10,8 @@
     "build": "astro build",
     "preview": "astro preview",
     "astro": "astro",
-    "test": "node scripts/check-build.mjs",
+    "test": "node scripts/check-build.mjs && node --test \"src/**/*.test.ts\"",
+    "shots": "node scripts/screenshot.mjs",
     "logo": "node scripts/build-logo.mjs"
   },
   "dependencies": {
