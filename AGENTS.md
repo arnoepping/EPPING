@@ -22,7 +22,7 @@ Website for Epping: DJ and party organizer. (`CLAUDE.md` is a symlink to this fi
 - Dev server: `astro dev --background` (manage it with `astro dev stop`, `astro dev status` and `astro dev logs`). Docs: https://docs.astro.build
 
 ## Status (2026-10-02)
-- Brand + festival site are pushed and deployed, but https://arnoepping.github.io/EPPING/ looks broken: CSS/JS load from absolute `/_astro/...`, which 404s under the `/EPPING/` subpath. Works locally and will work at the domain root. Fix: do the domain cutover (preferred), or as a stopgap set `base` in `astro.config.mjs` from an env var in CI.
+- Brand + festival site are pushed and deployed, but https://arnoepping.github.io/EPPING/ looks broken: CSS/JS load from absolute `/_astro/...`, which 404s under the `/EPPING/` subpath. Works locally and will work at the domain root. Fix: domain cutover. Step-by-step instructions are in `docs/DOMAIN-CUTOVER.md`.
 - **Next: domain cutover.** Remaining steps are Task 3 step 3+5 and Task 4 in `docs/superpowers/plans/2026-10-02-deploy-pipeline.md`.
   - Domain is registered at Squarespace Domains; its DNS is in the Squarespace panel.
   - Never touch MX, SPF or `google._domainkey`: email runs on Google Workspace.
