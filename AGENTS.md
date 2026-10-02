@@ -29,8 +29,8 @@ Website for Epping: DJ and party organizer. (`CLAUDE.md` is a symlink to this fi
   - DNS snapshot from before the switch: `.superpowers/sdd/2026-10-02-deploy-pipeline/dns-before.txt` (git-ignored, local only).
   - Set the domain with `gh api -X PUT repos/arnoepping/EPPING/pages -f cname=eppingmusic.com`
   - Cancel the Squarespace website subscription only after the new site is live.
-- **Brand:** spec approved (`docs/superpowers/specs/2026-10-02-brand-identity-design.md`): logo A (Unbounded 800, RGB split), black/pink/cyan palette. Plan not written yet.
-- **Website:** spec approved (`docs/superpowers/specs/2026-10-02-festival-site-design.md`): three.js tunnel → festival hall with 3 floors (Rave Wedding, Private Events, Epping Presents). Plan not written yet.
+- **Brand:** spec approved (`docs/superpowers/specs/2026-10-02-brand-identity-design.md`): logo A (Unbounded 800, RGB split), black/pink/cyan palette. Plan: `docs/superpowers/plans/2026-10-02-brand-identity.md` (not started).
+- **Website:** spec approved (`docs/superpowers/specs/2026-10-02-festival-site-design.md`): three.js tunnel → festival hall with 3 floors (Rave Wedding, Private Events, Epping Presents). Plan: `docs/superpowers/plans/2026-10-02-festival-site.md` (not started; run after the brand plan).
   - Visual check: Playwright is installed (headless WebGL works via `--use-angle=swiftshader --enable-unsafe-swiftshader`); shots go to `.superpowers/shots/`.
   - Content still needed from user: 3 SoundCloud URLs, WhatsApp number, booking email, next Presents event, Instagram handle.
 - **Later:**
