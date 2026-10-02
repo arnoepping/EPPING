@@ -9,6 +9,7 @@ Website for Epping: DJ and party organizer. (`CLAUDE.md` is a symlink to this fi
 ## Preferences
 - Replies: English, extremely concise; fragments are fine.
 - Use the Superpowers workflow: brainstorm → spec → plan → execute.
+- Update this file yourself at checkpoints (spec approved, task done, merge/push, key decision, wrap-up): refresh Status, drop stale items, commit. Don't ask first.
 - Push to `main` only when the user says so (a push deploys the site).
 - Auto-mode blocks Claude from public-facing GitHub changes (visibility, Pages settings). Give the user a `! <command>` to run instead.
 
