@@ -8,3 +8,8 @@ test('pulse peaks on the beat and decays', () => {
   assert.ok(pulse(0.5, 120) > 0.999); // next beat at 120 BPM
   assert.ok(pulse(0.49, 120) < 0.01);
 });
+
+test('pulse at negative time stays in [0, 1]', () => {
+  const v = pulse(-0.001, 120);
+  assert.ok(v >= 0 && v <= 1, `pulse(-0.001, 120) = ${v} should be in [0, 1]`);
+});

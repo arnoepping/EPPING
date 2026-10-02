@@ -49,3 +49,22 @@ test('camera targets', () => {
   assert.equal(f.look[0], FLOOR_X[2]);
   assert.ok(f.pos[2] > f.look[2]); // camera in front of the floor
 });
+
+test('initialState clamps and rounds out-of-range indices', () => {
+  assert.equal(initialState(9).focus, 2);
+  assert.equal(initialState(9).active, 2);
+  assert.equal(initialState(-1).active, 0);
+  assert.equal(initialState(1.7).active, 2);
+});
+
+test('enter clamps and rounds out-of-range indices', () => {
+  assert.equal(enter(skip(initialState(null)), 5).active, 2);
+  assert.equal(enter(skip(initialState(null)), -1).active, 0);
+  assert.equal(enter(skip(initialState(null)), 1.3).active, 1);
+});
+
+test('scrollBy ignores zero or negative viewportH', () => {
+  const s = initialState(null);
+  assert.equal(scrollBy(s, 900, 0), s);
+  assert.equal(scrollBy(s, 900, -100), s);
+});

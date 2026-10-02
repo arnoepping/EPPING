@@ -8,20 +8,25 @@ const LAST = FLOOR_X.length - 1;
 const clamp = (v: number, a: number, b: number) => Math.min(b, Math.max(a, v));
 
 export function initialState(activeIndex: number | null): RigState {
-  return activeIndex === null
-    ? { mode: 'tunnel', progress: 0, focus: 1, active: null }
-    : { mode: 'floor', progress: 1, focus: activeIndex, active: activeIndex };
+  if (activeIndex === null) {
+    return { mode: 'tunnel', progress: 0, focus: 1, active: null };
+  }
+  const clamped = clamp(Math.round(activeIndex), 0, LAST);
+  return { mode: 'floor', progress: 1, focus: clamped, active: clamped };
 }
 
 /** Tunnel length = 3 viewport heights of scrolling. */
 export function scrollBy(s: RigState, deltaPx: number, viewportH: number): RigState {
-  if (s.mode !== 'tunnel') return s;
+  if (s.mode !== 'tunnel' || viewportH <= 0) return s;
   const progress = clamp(s.progress + deltaPx / (3 * viewportH), 0, 1);
   return { ...s, progress, mode: progress >= 1 ? 'hall' : 'tunnel' };
 }
 export const skip = (s: RigState): RigState => (s.mode === 'tunnel' ? { ...s, mode: 'hall', progress: 1 } : s);
 export const step = (s: RigState, dir: -1 | 1): RigState => (s.mode === 'hall' ? { ...s, focus: clamp(s.focus + dir, 0, LAST) } : s);
-export const enter = (s: RigState, i: number = s.focus): RigState => ({ mode: 'floor', progress: 1, focus: i, active: i });
+export const enter = (s: RigState, i: number = s.focus): RigState => {
+  const clamped = clamp(Math.round(i), 0, LAST);
+  return { mode: 'floor', progress: 1, focus: clamped, active: clamped };
+};
 export const leave = (s: RigState): RigState => (s.mode === 'floor' ? { ...s, mode: 'hall', active: null } : s);
 
 /** Swipe left (negative dx) = next floor. */
