@@ -8,4 +8,11 @@ if (!existsSync('dist/404.html')) fail('dist/404.html missing');
 if (!existsSync('dist/CNAME')) fail('dist/CNAME missing');
 if (readFileSync('dist/CNAME', 'utf8').trim() !== 'eppingmusic.com') fail('CNAME content wrong');
 
+for (const f of ['epping-logo.svg', 'epping-white.svg', 'epping-pink.svg']) {
+  const p = `dist/brand/${f}`;
+  if (!existsSync(p) || !readFileSync(p, 'utf8').includes('<path')) fail(`${p} missing or has no <path`);
+}
+const fav = existsSync('dist/favicon.svg') ? readFileSync('dist/favicon.svg', 'utf8') : '';
+if (!fav.includes('#FF2BD6') || !fav.includes('#00E5FF')) fail('favicon.svg lacks brand colors');
+
 console.log('OK: build output valid');
