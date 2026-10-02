@@ -8,7 +8,7 @@ const { initial } = Astro.props;
 // Fallback order: the active floor's panel comes first on its own route.
 const ordered = initial ? [...FLOORS.filter((f) => f.slug === initial), ...FLOORS.filter((f) => f.slug !== initial)] : FLOORS;
 ---
-<div class="xp" data-initial={initial ?? ''} data-mode={initial ? 'floor' : 'tunnel'}>
+<main class="xp" data-initial={initial ?? ''} data-mode={initial ? 'floor' : 'tunnel'}>
   <canvas class="xp-canvas" aria-hidden="true"></canvas>
   <div class="xp-scan" aria-hidden="true"></div>
 
@@ -17,8 +17,8 @@ const ordered = initial ? [...FLOORS.filter((f) => f.slug === initial), ...FLOOR
     <Wordmark tag="h1" />
     <p class="tagline">Rave weddings. Private parties. Our own nights.</p>
     <p class="hint label">Scroll ↓ to enter</p>
-    <a class="skip label" href="#hall">Skip →</a>
   </header>
+  <a class="skip label" href="#hall">Skip →</a>
 
   <nav class="hall-ui" aria-label="Floors">
     <button class="hall-prev" type="button" aria-label="Previous floor">‹</button>
@@ -38,7 +38,7 @@ const ordered = initial ? [...FLOORS.filter((f) => f.slug === initial), ...FLOOR
   </section>
 
   {ordered.map((f) => <Panel floor={f} index={FLOORS.indexOf(f)} open={f.slug === initial} />)}
-</div>
+</main>
 
 <script>
   import { boot } from '../scene/boot.ts';
@@ -64,21 +64,23 @@ const ordered = initial ? [...FLOORS.filter((f) => f.slug === initial), ...FLOOR
   :global(.xp-3d) .hall{display:none}
   :global(.xp-3d) .hero{position:fixed;inset:0;align-content:center;justify-items:start;pointer-events:none;
     opacity:calc(1 - var(--p) * 3);transform:scale(calc(1 + var(--p) * 2));transform-origin:30% 50%;transition:opacity .2s}
-  :global(.xp-3d) .hero .hint,:global(.xp-3d) .hero .skip{display:inline-block}
-  :global(.xp-3d) .skip{pointer-events:auto;position:fixed;top:max(16px,env(safe-area-inset-top));right:16px;color:var(--cyan);text-decoration:none}
-  :global(.xp-3d) .xp:not([data-mode="tunnel"]) .hero{display:none}
+  :global(.xp-3d) .hero .hint{display:inline-block}
+  :global(.xp-3d) .xp[data-mode="tunnel"] .skip{display:inline-block;position:fixed;top:max(16px,env(safe-area-inset-top));right:16px;color:var(--cyan);text-decoration:none}
+  /* keep the h1 in the a11y tree outside tunnel mode; just hide it visually */
+  :global(.xp-3d) .xp:not([data-mode="tunnel"]) .hero{opacity:0;visibility:visible}
   :global(.xp-3d) .xp[data-mode="hall"] .hall-ui{display:flex}
   .hall-ui{position:fixed;left:0;right:0;bottom:max(20px,env(safe-area-inset-bottom));justify-content:center;align-items:stretch;gap:8px;padding-inline:16px}
-  .hall-ui button{background:color-mix(in srgb,var(--bg) 70%,transparent);border:1px solid var(--line);color:var(--text);cursor:pointer;backdrop-filter:blur(8px)}
+  .hall-ui button{background:color-mix(in srgb,var(--bg) 70%,transparent);border:1px solid var(--line);color:var(--text);cursor:pointer;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
   .hall-prev,.hall-next{width:52px;font:500 24px/1 var(--mono)}
   .hall-enter{flex:0 1 280px;display:grid;gap:6px;padding:14px 18px}
   .hall-name{font:800 18px/1.1 var(--display)}
 
   /* panels become sheets */
-  :global(.xp-3d) .xp :global(.panel){position:fixed;left:0;right:0;bottom:0;max-height:62vh;overflow-y:auto;overscroll-behavior:contain;
-    padding-block:24px 40px;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(12px);
-    border-top:1px solid var(--floor);transform:translateY(105%);transition:transform .45s cubic-bezier(.2,.8,.2,1);visibility:hidden}
-  :global(.xp-3d) .xp :global(.panel[data-open]){transform:none;visibility:visible}
+  :global(.xp-3d) .xp :global(.panel){position:fixed;left:0;right:0;bottom:0;max-height:58vh;max-height:58dvh;overflow-y:auto;overscroll-behavior:contain;
+    padding-block:24px 40px;background:color-mix(in srgb,var(--bg) 88%,transparent);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);
+    border-top:1px solid var(--floor);transform:translateY(105%);visibility:hidden;
+    transition:transform .45s cubic-bezier(.2,.8,.2,1),visibility 0s linear .45s}
+  :global(.xp-3d) .xp :global(.panel[data-open]){transform:none;visibility:visible;transition:transform .45s cubic-bezier(.2,.8,.2,1),visibility 0s}
   :global(.xp-3d) .xp :global(.panel-back){display:grid;place-items:center}
   @media (min-width:900px){
     :global(.xp-3d) .xp :global(.panel){left:auto;top:0;width:min(480px,40vw);max-height:none;border-top:0;border-left:1px solid var(--floor);transform:translateX(105%)}

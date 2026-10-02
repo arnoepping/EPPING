@@ -8,9 +8,12 @@ const SLUGS = ['rave-wedding', 'private-events', 'presents'];
 const ONLY = process.argv[2]; // optional: "phone" | "desktop" | "fallback" | "smoke"
 mkdirSync(OUT, { recursive: true });
 
-const server = spawn('npx', ['astro', 'preview', '--port', String(PORT)], { stdio: 'ignore' });
+// detached: own process group, so the whole npx → astro tree can be killed in `finally`.
+const server = spawn('npx', ['astro', 'preview', '--port', String(PORT)], { stdio: 'ignore', detached: true });
 const errors = [];
 const fail = (m) => { errors.push(m); };
+// Placeholder SoundCloud tracks 404 inside their iframes: not our errors.
+const isSoundCloud = (s) => /soundcloud\.com|sndcdn\.com/.test(s ?? '');
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 
 async function up() {
@@ -20,8 +23,11 @@ async function up() {
 async function newPage(browser, name, opts) {
   const ctx = await browser.newContext(opts);
   const page = await ctx.newPage();
-  page.on('console', (m) => m.type() === 'error' && fail(`${name}: console: ${m.text()}`));
-  page.on('pageerror', (e) => fail(`${name}: pageerror: ${e.message}`));
+  page.on('console', (m) => {
+    if (m.type() !== 'error' || isSoundCloud(m.location()?.url) || isSoundCloud(m.text())) return;
+    fail(`${name}: console: ${m.text()}`);
+  });
+  page.on('pageerror', (e) => { if (!isSoundCloud(e.stack) && !isSoundCloud(e.message)) fail(`${name}: pageerror: ${e.message}`); });
   return { ctx, page };
 }
 async function shot(page, name, label) {
@@ -34,9 +40,10 @@ async function ready(page) { await page.waitForSelector('html.xp-ready', { timeo
 
 const VIEWS = { phone: devices['iPhone 14'], desktop: { viewport: { width: 1440, height: 900 } } };
 
+let browser;
 try {
   await up();
-  const browser = await chromium.launch({ args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
+  browser = await chromium.launch({ args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
 
   for (const [name, opts] of Object.entries(VIEWS)) {
     if (ONLY && ONLY !== name) continue;
@@ -89,9 +96,9 @@ try {
     await ctx.close();
   }
 
-  await browser.close();
 } finally {
-  server.kill();
+  try { await browser?.close(); } catch {}
+  try { process.kill(-server.pid); } catch {}
 }
 if (errors.length) { console.error(errors.map((e) => `FAIL: ${e}`).join('\n')); process.exit(1); }
 console.log(`OK: shots in ${OUT}`);

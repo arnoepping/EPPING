@@ -19,3 +19,11 @@ export function setOpen(root: HTMLElement, slug: string | null): void {
     if (open) mountPlayer(p);
   }
 }
+
+/** Static fallback: players appear as panels scroll into view. */
+export function mountOnView(root: HTMLElement): void {
+  const io = new IntersectionObserver((es) => es.forEach((e) => {
+    if (e.isIntersecting) { mountPlayer(e.target as HTMLElement); io.unobserve(e.target); }
+  }), { rootMargin: '200px' });
+  root.querySelectorAll('.panel').forEach((p) => io.observe(p));
+}

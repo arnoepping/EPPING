@@ -9,7 +9,8 @@ export interface Stage {
   sample(): boolean;
 }
 
-export function createStage(canvas: HTMLCanvasElement): Stage {
+/** `onLost` runs when the WebGL context is lost; the loop is already stopped. */
+export function createStage(canvas: HTMLCanvasElement, onLost?: () => void): Stage {
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
   renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
   renderer.setClearColor(0x0a0a10);
@@ -19,6 +20,7 @@ export function createStage(canvas: HTMLCanvasElement): Stage {
 
   const resize = () => {
     const w = canvas.clientWidth, h = canvas.clientHeight;
+    if (!w || !h) return; // hidden canvas (e.g. before xp-3d): wait for the observer
     renderer.setSize(w, h, false);
     camera.aspect = w / h;
     camera.fov = w < h ? 80 : 62; // wider on portrait phones
@@ -26,6 +28,13 @@ export function createStage(canvas: HTMLCanvasElement): Stage {
   };
   new ResizeObserver(resize).observe(canvas);
   resize();
+
+  let lost = false;
+  canvas.addEventListener('webglcontextlost', () => {
+    lost = true;
+    renderer.setAnimationLoop(null);
+    onLost?.();
+  });
 
   const stage: Stage = {
     scene, camera, renderer, low: false,
@@ -40,7 +49,7 @@ export function createStage(canvas: HTMLCanvasElement): Stage {
         frame(clock.elapsedTime, dt);
         renderer.render(scene, camera);
       };
-      const run = () => renderer.setAnimationLoop(document.hidden ? null : loop);
+      const run = () => renderer.setAnimationLoop(document.hidden || lost ? null : loop);
       document.addEventListener('visibilitychange', () => { clock.getDelta(); run(); });
       run();
     },
@@ -50,8 +59,9 @@ export function createStage(canvas: HTMLCanvasElement): Stage {
       const gl = renderer.getContext();
       const w = gl.drawingBufferWidth, h = gl.drawingBufferHeight, px = new Uint8Array(4);
       const seen = new Set<string>();
-      for (const [fx, fy] of [[.5, .5], [.25, .3], [.75, .7], [.5, .15], [.5, .85], [.1, .5], [.9, .5]]) {
-        gl.readPixels(Math.floor(w * fx), Math.floor(h * fy), 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, px);
+      // 12×12 grid: a handful of fixed points can all land in dark gaps between neon lines.
+      for (let i = 1; i < 12; i++) for (let j = 1; j < 12; j++) {
+        gl.readPixels(Math.floor((w * i) / 12), Math.floor((h * j) / 12), 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, px);
         seen.add(px.join(','));
       }
       return seen.size > 1;

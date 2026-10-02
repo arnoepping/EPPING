@@ -68,3 +68,20 @@ test('scrollBy ignores zero or negative viewportH', () => {
   assert.equal(scrollBy(s, 900, 0), s);
   assert.equal(scrollBy(s, 900, -100), s);
 });
+
+test('floor camera frames the floor in the area the sheet leaves free', () => {
+  const s = { mode: 'floor' as const, progress: 1, focus: 1, active: 1 };
+  const base = { aspect: 1.6, tanV: 0.6, right: 0, bottom: 0 };
+  const side = cameraTarget(s, { ...base, right: 1 / 3 });
+  assert.ok(side.look[0] > side.pos[0]); // look right → floor appears left of the sheet
+  const phone = cameraTarget(s, { ...base, aspect: 0.46, tanV: 0.84, bottom: 0.56 });
+  const free = cameraTarget(s, { ...base, aspect: 0.46, tanV: 0.84 });
+  assert.ok(phone.look[1] < free.look[1]); // look lower → floor appears higher, above the sheet
+  assert.equal(phone.pos[0], FLOOR_X[1]);
+});
+test('hall camera fits all three floors in landscape', () => {
+  const s = { mode: 'hall' as const, progress: 1, focus: 1, active: null };
+  const t = cameraTarget(s, { aspect: 1.6, tanV: 0.6, right: 0, bottom: 0.1 });
+  const halfW = 0.6 * 1.6 * (t.pos[2] - t.look[2]);
+  assert.ok(halfW > FLOOR_X[2] + 6.4);
+});
