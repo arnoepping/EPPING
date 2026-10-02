@@ -30,8 +30,10 @@ Website for Epping: DJ and party organizer. (`CLAUDE.md` is a symlink to this fi
   - Set the domain with `gh api -X PUT repos/arnoepping/EPPING/pages -f cname=eppingmusic.com`
   - Cancel the Squarespace website subscription only after the new site is live.
 - **Brand:** spec approved (`docs/superpowers/specs/2026-10-02-brand-identity-design.md`): logo A (Unbounded 800, RGB split), black/pink/cyan palette. Built (commits 3373c00..8d50901, not pushed): logo SVGs in `public/brand/`, favicon, `tokens.css`/`ui.css`, `Base.astro`, `Wordmark.astro`, `/brand/` page. Regenerate logos with `npm run logo`.
-- **Website:** spec approved (`docs/superpowers/specs/2026-10-02-festival-site-design.md`): three.js tunnel → festival hall with 3 floors (Rave Wedding, Private Events, Epping Presents). Plan: `docs/superpowers/plans/2026-10-02-festival-site.md`, being built task by task on main (ledger: `.superpowers/sdd/2026-10-02-festival-site/progress.md`).
-  - Visual check: Playwright is installed (headless WebGL works via `--use-angle=swiftshader --enable-unsafe-swiftshader`); shots go to `.superpowers/shots/`.
-  - Content still needed from user: 3 SoundCloud URLs, WhatsApp number, booking email, next Presents event, Instagram handle.
+- **Website:** built on main, NOT pushed (spec `docs/superpowers/specs/2026-10-02-festival-site-design.md`, plan `docs/superpowers/plans/2026-10-02-festival-site.md`). Three.js tunnel → hall with 3 floors (Rave Wedding, Private Events, Epping Presents); static fallback for no-JS/reduced motion.
+  - Next: user tests on a real phone (`npm run build && npx astro preview --host`), then push.
+  - `npm run shots` = Playwright screenshots + smoke checks into `.superpowers/shots/` (headless WebGL via swiftshader).
+  - Placeholders in `src/content/floors.ts`: 3 SoundCloud URLs, WhatsApp number, booking email, next Presents event, Instagram handle.
+  - Known: in-app URLs drop the `/EPPING/` prefix, so reloading a floor page 404s until the custom domain is live.
 - **Later:**
   - possibly add DMARC, and possibly move the domain to Cloudflare
