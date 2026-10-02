@@ -1,3 +1,7 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
 # EPPING — eppingmusic.com
 
 Website for Epping: DJ and party organizer. (`CLAUDE.md` is a symlink to this file.)
@@ -9,7 +13,9 @@ Website for Epping: DJ and party organizer. (`CLAUDE.md` is a symlink to this fi
 - Auto-mode blocks Claude from public-facing GitHub changes (visibility, Pages settings). Give the user a `! <command>` to run instead.
 
 ## Stack / pipeline
-- Astro static site. `npm run build`, then `npm test` checks `dist/` (`scripts/check-build.mjs`).
+- Astro static site. `npm run build`, then `npm test` checks `dist/` (`scripts/check-build.mjs`). That's the only test: it needs a fresh build, and CI runs it before uploading, so a failing check blocks the deploy.
+- `public/CNAME` is ignored by Actions-based Pages deploys (the domain is a repo setting); the file stays only as a guard checked by `npm test`.
+- Until the custom domain is live, the site is served under `/EPPING/`, so absolute paths like `/favicon.svg` break there. This is expected and needs no `base` config.
 - `.github/workflows/deploy.yml`: push to `main` triggers build, test, then deploy to GitHub Pages.
 - `gh` CLI is installed and logged in as `arnoepping` with workflow scope. Repo `arnoepping/EPPING` is public.
 - Dev server: `astro dev --background` (manage it with `astro dev stop`, `astro dev status` and `astro dev logs`). Docs: https://docs.astro.build
