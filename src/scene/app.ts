@@ -2,22 +2,24 @@ import * as THREE from 'three';
 import { createStage } from './stage.ts';
 import type { Part } from './stage.ts';
 import { buildTunnel } from './tunnel.ts';
-import { HALL_Z, FLOOR_X } from './layout.ts';
+import { buildHall } from './hall.ts';
+import { buildRaveWedding } from './floors/rave-wedding.ts';
+import { buildPrivateEvents } from './floors/private-events.ts';
+import { buildPresents } from './floors/presents.ts';
+import { FLOORS } from '../content/floors.ts';
 import { initialState, scrollBy, cameraTarget } from './rig.ts';
 import type { RigState } from './rig.ts';
 
 declare global { interface Window { __xp: { setProgress(p: number): void; state(): RigState; sample(): boolean } } }
 
-export function start(root: HTMLElement): void {
+export async function start(root: HTMLElement): Promise<void> {
+  await Promise.race([document.fonts.load('800 72px Unbounded'), new Promise((r) => setTimeout(r, 1500))]);
   const canvas = root.querySelector<HTMLCanvasElement>('.xp-canvas')!;
   const stage = createStage(canvas);
-  const parts: Part[] = [buildTunnel()];
+  const builders = [buildRaveWedding, buildPrivateEvents, buildPresents];
+  const floorParts = FLOORS.map((f, i) => builders[i](f, i));
+  const parts: Part[] = [buildTunnel(), buildHall(), ...floorParts];
   parts.forEach((p) => stage.scene.add(p.object));
-  // TEMPORARY (Task 6 replaces with the real hall): one neon disc per floor so hall/floor views are not blank.
-  for (const x of FLOOR_X) {
-    const r = new THREE.Mesh(new THREE.CircleGeometry(5, 48), new THREE.MeshBasicMaterial({ color: '#FF2BD6', toneMapped: false }));
-    r.position.set(x, 2, HALL_Z); stage.scene.add(r);
-  }
 
   let s: RigState = initialState(null);
   const pos = new THREE.Vector3(), look = new THREE.Vector3(), lookNow = new THREE.Vector3(0, 0, -10);
