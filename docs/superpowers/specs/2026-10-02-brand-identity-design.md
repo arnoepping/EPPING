@@ -26,7 +26,7 @@ Text is outlined to paths, so there's no font dependency. Transparent background
 
 `public/favicon.svg` is replaced by an RGB-split "E" on a `#0A0A10` rounded square. `public/favicon.ico` is regenerated from it, or deleted if no tool is available; the `<link>` already points at the SVG.
 
-Generation: `scripts/build-logo.mjs` (run manually, outputs committed) uses `opentype.js` (devDependency) and the Unbounded TTF committed at `assets/fonts/Unbounded.ttf` with its OFL license (`assets/fonts/OFL.txt`). The offset is 3% of the cap height.
+Generation: `scripts/build-logo.mjs` (run with `npm run logo`; outputs committed) uses the devDependencies `opentype.js` and `@fontsource/unbounded` (the `unbounded-latin-800-normal.woff` file), so no font files are committed. The RGB offset is 3% of the cap height.
 
 ### Tokens (`src/styles/tokens.css`)
 ```css
