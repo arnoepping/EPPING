@@ -29,8 +29,9 @@ Website for Epping: DJ and party organizer. (`CLAUDE.md` is a symlink to this fi
   - DNS snapshot from before the switch: `.superpowers/sdd/2026-10-02-deploy-pipeline/dns-before.txt` (git-ignored, local only).
   - Set the domain with `gh api -X PUT repos/arnoepping/EPPING/pages -f cname=eppingmusic.com`
   - Cancel the Squarespace website subscription only after the new site is live.
+- **Brand:** spec approved (`docs/superpowers/specs/2026-10-02-brand-identity-design.md`): logo A (Unbounded 800, RGB split), black/pink/cyan palette. Plan not written yet.
+- **Website (brainstorming):** three.js "memorable" site. Products: Rave Wedding, Private Events, plus public Epping Presents. Each gets a SoundCloud track, its own visual and punchy copy.
 - **Later (content):**
-  - logo
   - contact form via Web3Forms or Formspree (Pages has no backend)
   - SoundCloud mixes
   - sections for each service, e.g. rave weddings (only weddings that end as a proper rave)
