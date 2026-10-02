@@ -1,0 +1,13 @@
+---
+import Base from '../layouts/Base.astro';
+import Experience from '../components/Experience.astro';
+import { FLOORS } from '../content/floors.ts';
+import type { Floor } from '../content/floors.ts';
+export function getStaticPaths() {
+  return FLOORS.map((floor) => ({ params: { floor: floor.slug }, props: { floor } }));
+}
+const { floor } = Astro.props as { floor: Floor };
+---
+<Base title={`${floor.name} | EPPING`} description={`${floor.headline} ${floor.lines[0]}`}>
+  <Experience initial={floor.slug} />
+</Base>

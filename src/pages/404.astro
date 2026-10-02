@@ -1,12 +1,11 @@
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width" />
-    <title>Not found | EPPING</title>
-  </head>
-  <body>
-    <h1>404</h1>
-    <p><a href="/">Back to EPPING</a></p>
-  </body>
-</html>
+---
+import Base from '../layouts/Base.astro';
+import Wordmark from '../components/Wordmark.astro';
+---
+<Base title="Not found | EPPING">
+  <main class="wrap" style="padding-block:96px;display:grid;gap:20px">
+    <Wordmark tag="h1" size="clamp(48px,12vw,120px)" />
+    <p>This floor doesn't exist.</p>
+    <a class="btn" href="/">Back to the hall</a>
+  </main>
+</Base>

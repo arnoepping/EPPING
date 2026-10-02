@@ -1,3 +1,4 @@
+import { FLOORS } from '../src/content/floors.ts';
 import { readFileSync, existsSync } from 'node:fs';
 
 const fail = (msg) => { console.error(`FAIL: ${msg}`); process.exit(1); };
@@ -17,5 +18,17 @@ if (!fav.includes('#FF2BD6') || !fav.includes('#00E5FF')) fail('favicon.svg lack
 
 const brand = existsSync('dist/brand/index.html') ? readFileSync('dist/brand/index.html', 'utf8') : '';
 if (!brand.includes('EPPING') || !brand.includes('name="robots" content="noindex"')) fail('dist/brand/index.html missing, or lacks EPPING/noindex');
+
+const decode = (s) => s.replace(/&#39;|&#x27;/g, "'").replace(/&quot;|&#34;/g, '"').replace(/&amp;/g, '&');
+const home = decode(readFileSync('dist/index.html', 'utf8'));
+for (const f of FLOORS) {
+  if (!home.includes(f.name)) fail(`index.html lacks floor name "${f.name}"`);
+  const p = `dist/${f.slug}/index.html`;
+  if (!existsSync(p)) fail(`${p} missing`);
+  const html = decode(readFileSync(p, 'utf8'));
+  if (!html.includes(f.headline)) fail(`${p} lacks headline`);
+  if (!html.includes(f.soundcloudUrl)) fail(`${p} lacks SoundCloud URL`);
+  if (!html.includes(`data-initial="${f.slug}"`)) fail(`${p} lacks data-initial`);
+}
 
 console.log('OK: build output valid');
