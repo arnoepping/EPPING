@@ -1,7 +1,7 @@
 # Festival site: three.js tunnel → indoor festival
 
 Date: 2026-10-02
-Status: approved in brainstorm; spec pending review
+Status: approved 2026-10-02
 Depends on: `2026-10-02-brand-identity-design.md` (tokens, logo). Build that first.
 
 ## Goal

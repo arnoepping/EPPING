@@ -30,9 +30,8 @@ Website for Epping: DJ and party organizer. (`CLAUDE.md` is a symlink to this fi
   - Set the domain with `gh api -X PUT repos/arnoepping/EPPING/pages -f cname=eppingmusic.com`
   - Cancel the Squarespace website subscription only after the new site is live.
 - **Brand:** spec approved (`docs/superpowers/specs/2026-10-02-brand-identity-design.md`): logo A (Unbounded 800, RGB split), black/pink/cyan palette. Plan not written yet.
-- **Website (brainstorming):** three.js "memorable" site. Products: Rave Wedding, Private Events, plus public Epping Presents. Each gets a SoundCloud track, its own visual and punchy copy.
-- **Later (content):**
-  - contact form via Web3Forms or Formspree (Pages has no backend)
-  - SoundCloud mixes
-  - sections for each service, e.g. rave weddings (only weddings that end as a proper rave)
+- **Website:** spec approved (`docs/superpowers/specs/2026-10-02-festival-site-design.md`): three.js tunnel → festival hall with 3 floors (Rave Wedding, Private Events, Epping Presents). Plan not written yet.
+  - Visual check: Playwright is installed (headless WebGL works via `--use-angle=swiftshader --enable-unsafe-swiftshader`); shots go to `.superpowers/shots/`.
+  - Content still needed from user: 3 SoundCloud URLs, WhatsApp number, booking email, next Presents event, Instagram handle.
+- **Later:**
   - possibly add DMARC, and possibly move the domain to Cloudflare
