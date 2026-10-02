@@ -1,0 +1,82 @@
+---
+import Base from '../layouts/Base.astro';
+import Wordmark from '../components/Wordmark.astro';
+const colors = [
+  ['Black', '--bg', '#0A0A10', 'Background, always'],
+  ['Pink', '--pink', '#FF2BD6', 'Primary accent: CTAs, highlights, quotes'],
+  ['Cyan', '--cyan', '#00E5FF', 'Secondary: links, focus, hover'],
+  ['Text', '--text', '#EDEDF3', 'Body and headings'],
+  ['Muted', '--muted', '#9494A8', 'Secondary text, labels'],
+  ['Surface', '--surface', '#13131C', 'Cards, inputs'],
+  ['Line', '--line', '#262634', 'Borders, dividers'],
+];
+const files = [['epping-logo.svg', 'RGB split'], ['epping-white.svg', 'White'], ['epping-pink.svg', 'Pink']];
+---
+<Base title="Brand | EPPING" noindex>
+  <main class="wrap brand">
+    <section class="scanlines hero"><span class="label">Brand book</span><Wordmark tag="h1" /></section>
+
+    <section>
+      <h2>Logo</h2>
+      <div class="grid3">
+        {files.map(([f, name]) => (
+          <figure class="card"><img src={f} alt={`EPPING logo, ${name}`} /><figcaption class="label">{name} · <a href={f} download>SVG</a></figcaption></figure>
+        ))}
+      </div>
+      <ul class="rules">
+        <li><b>Do</b> keep clear space of at least the height of the "E" around the logo.</li>
+        <li><b>Do</b> use the RGB-split logo on black only.</li>
+        <li><b>Don't</b> recolor outside the palette, stretch, rotate or outline it.</li>
+        <li><b>Don't</b> put the RGB-split version on light or busy backgrounds; use white or pink instead.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Color</h2>
+      <div class="swatches">
+        {colors.map(([name, v, hex, role]) => (
+          <div class="swatch"><div class="chip" style={`background:var(${v})`}></div><p><b>{name}</b> <code>{hex}</code><br /><span>{role}</span></p></div>
+        ))}
+      </div>
+      <div class="gradbar" aria-hidden="true"></div>
+      <p class="label">Gradient: cyan → pink, for meters and accents only</p>
+    </section>
+
+    <section>
+      <h2>Type</h2>
+      <p class="t-display">Unbounded 800: Rave Wedding</p>
+      <p class="t-display500">Unbounded 500: The night builds to a floor that won't stop.</p>
+      <p>Archivo 400/17px: Body copy. Short, punchy, no fluff. ABBA to acid.</p>
+      <p class="label">JetBrains Mono 500/12px: labels, buttons, metadata</p>
+    </section>
+
+    <section>
+      <h2>UI</h2>
+      <div class="ui">
+        <a class="btn primary" href="#">Book now</a>
+        <a class="btn" href="#">Listen</a>
+        <span class="label">DJ · Amsterdam</span>
+      </div>
+      <div class="card ui-card"><span class="label">Floor 01</span><h3>Rave Wedding</h3><p>From the first dance to the last drop.</p></div>
+      <div class="field"><label for="demo">Email</label><input id="demo" placeholder="you@example.com" /></div>
+    </section>
+  </main>
+</Base>
+<style>
+  .brand{display:grid;gap:72px;padding-block:48px 96px}
+  .hero{display:grid;gap:16px;padding:32px 0;overflow:hidden}
+  h2{font:800 clamp(24px,5vw,36px)/1.1 var(--display);margin:0 0 20px}
+  h3{font:800 20px/1.2 var(--display);margin:8px 0}
+  .grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:12px}
+  figure{margin:0;display:grid;gap:14px}
+  .rules{padding-left:18px;color:var(--muted)} .rules b{color:var(--text)}
+  .swatches{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,150px),1fr));gap:12px}
+  .swatch{border:1px solid var(--line)} .chip{height:72px} .swatch p{margin:0;padding:10px;font-size:14px;line-height:1.4}
+  .swatch span{color:var(--muted)} code{font-family:var(--mono);font-size:12px}
+  .gradbar{height:8px;background:var(--grad);margin:20px 0 8px}
+  .t-display{font:800 clamp(24px,6vw,44px)/1.1 var(--display);margin:0 0 12px}
+  .t-display500{font:500 clamp(18px,3vw,24px)/1.3 var(--display);margin:0 0 12px}
+  .ui{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:20px}
+  .ui-card{max-width:420px;margin-bottom:20px} .ui-card p{margin:0;color:var(--muted)}
+  .field{max-width:420px}
+</style>

@@ -1,0 +1,12 @@
+.wrap{max-width:1080px;margin:0 auto;padding-inline:16px}
+.label{font:500 12px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.btn{display:inline-flex;align-items:center;gap:10px;padding:14px 22px;font:500 13px/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;text-decoration:none;color:var(--text);background:transparent;border:1px solid var(--text);border-radius:0;cursor:pointer;transition:background .15s,color .15s,box-shadow .15s}
+.btn.primary{background:var(--pink);border-color:var(--pink);color:var(--bg)}
+.btn:hover{box-shadow:-3px 0 0 var(--cyan),3px 0 0 var(--pink)}
+.card{background:var(--surface);border:1px solid var(--line);padding:22px 24px}
+.field{display:grid;gap:8px}
+.field label{font:500 11px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.field input{font:400 16px/1.4 var(--body);color:var(--text);background:var(--surface);border:1px solid var(--line);padding:13px 14px;border-radius:0;width:100%}
+.field input:focus{outline:none;border-color:var(--cyan)}
+.scanlines{position:relative}
+.scanlines::after{content:"";position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(0deg,transparent 0 3px,rgba(255,255,255,.025) 3px 4px)}

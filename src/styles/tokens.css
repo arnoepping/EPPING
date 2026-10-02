@@ -1,0 +1,17 @@
+:root{
+  color-scheme: dark;
+  --bg:#0A0A10; --surface:#13131C; --line:#262634;
+  --text:#EDEDF3; --muted:#9494A8;
+  --pink:#FF2BD6;   /* primary accent */
+  --cyan:#00E5FF;   /* secondary accent */
+  --grad:linear-gradient(90deg,var(--cyan),var(--pink));
+  --display:"Unbounded","Arial Black",system-ui,sans-serif;
+  --body:"Archivo","Helvetica Neue",Arial,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--text);font:400 17px/1.6 var(--body);-webkit-font-smoothing:antialiased}
+a{color:inherit}
+:focus-visible{outline:2px solid var(--cyan);outline-offset:3px}
+img,svg{max-width:100%;display:block}

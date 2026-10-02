@@ -1,0 +1,14 @@
+---
+interface Props { tag?: 'h1' | 'div' | 'span'; size?: string }
+const { tag: Tag = 'div', size = 'clamp(64px,17vw,200px)' } = Astro.props;
+---
+<Tag class="glitch" data-text="EPPING" style={`--wm-size:${size}`}>EPPING</Tag>
+<style>
+  .glitch{position:relative;display:inline-block;font:800 var(--wm-size)/.9 var(--display);letter-spacing:-.02em;margin:0;color:var(--text)}
+  .glitch::before,.glitch::after{content:attr(data-text);position:absolute;inset:0;mix-blend-mode:screen}
+  .glitch::before{color:var(--cyan);transform:translate(-.02em,0);animation:gA 4.2s infinite steps(1)}
+  .glitch::after{color:var(--pink);transform:translate(.02em,0);animation:gB 4.2s infinite steps(1)}
+  @keyframes gA{0%,86%,100%{transform:translate(-.02em,0);clip-path:none}88%{transform:translate(-.05em,.01em);clip-path:inset(12% 0 55% 0)}91%{transform:translate(.03em,-.01em);clip-path:inset(60% 0 8% 0)}94%{transform:translate(-.02em,0);clip-path:none}}
+  @keyframes gB{0%,86%,100%{transform:translate(.02em,0);clip-path:none}88%{transform:translate(.05em,-.01em);clip-path:inset(48% 0 20% 0)}91%{transform:translate(-.03em,.01em);clip-path:inset(5% 0 70% 0)}94%{transform:translate(.02em,0);clip-path:none}}
+  @media (prefers-reduced-motion:reduce){.glitch::before,.glitch::after{animation:none}}
+</style>

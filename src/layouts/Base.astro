@@ -1,0 +1,28 @@
+---
+import '../styles/tokens.css';
+import '../styles/ui.css';
+interface Props { title: string; description?: string; noindex?: boolean; ogImage?: string }
+const { title, description = 'EPPING: rave weddings, private events and our own parties.', noindex = false, ogImage } = Astro.props;
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    {noindex && <meta name="robots" content="noindex" />}
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    {ogImage && <meta property="og:image" content={new URL(ogImage, Astro.site)} />}
+    <meta name="theme-color" content="#0A0A10" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;800&family=Archivo:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" />
+    <slot name="head" />
+  </head>
+  <body>
+    <slot />
+  </body>
+</html>
