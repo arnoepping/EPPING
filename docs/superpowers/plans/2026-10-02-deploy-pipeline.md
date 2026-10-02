@@ -187,6 +187,7 @@ Workflow may fail until Task 3 done (Pages not enabled). Expected.
 - [ ] **Step 1: Snapshot current DNS**
 ```bash
 for t in A AAAA MX TXT; do echo "== $t"; dig +short $t eppingmusic.com; done; dig +short CNAME www.eppingmusic.com
+dig +short TXT google._domainkey.eppingmusic.com; dig +short TXT _dmarc.eppingmusic.com
 ```
 Save output to scratchpad. Expected MX: `1 smtp.google.com.`
 
@@ -203,7 +204,7 @@ dig +short A eppingmusic.com @8.8.8.8
 Expected: four `185.199.10x.153` IPs only.
 
 - [ ] **Step 4: Verify email untouched**
-`dig +short MX eppingmusic.com; dig +short TXT eppingmusic.com` — identical to snapshot (+ nothing removed).
+`dig +short MX eppingmusic.com; dig +short TXT eppingmusic.com; dig +short TXT google._domainkey.eppingmusic.com; dig +short TXT _dmarc.eppingmusic.com` — identical to snapshot (+ nothing removed).
 
 - [ ] **Step 5 (Arno):** Account Settings → Pages → Verify domain. Repo Settings → Pages → DNS check green → tick **Enforce HTTPS** once available.
 
