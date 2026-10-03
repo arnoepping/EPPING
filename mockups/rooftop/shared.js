@@ -104,7 +104,8 @@
         <canvas></canvas>
         <div class="finale"><video src="${video}" muted loop playsinline preload="none"></video>
           <div class="fin"><div class="fin-logo"></div><p>Rave weddings. Private parties. Our own nights.</p>
-          <nav class="floors" aria-label="Floors"><a href="#">Rave Wedding</a><a href="#">Private Events</a><a href="#">Epping Presents</a></nav><button class="again" id="again">↺ Back to the street</button></div></div>
+          <nav class="floors" aria-label="Floors">${(window.FLOORS || []).map((f) => `<a href="#" data-floor="${f.id}">${f.name}</a>`).join('')}</nav><button class="again" id="again">↺ Back to the street</button></div></div>
+        <section class="floor-page" id="fp" hidden aria-live="polite"></section>
         <div class="grain"></div>
         <div class="hud top"><span class="tag">EPPING · rooftop entrance</span>
           <div class="group"><label class="pal"><span class="sr">Palette</span><select id="pals" aria-label="Palette"></select></label><button id="snd" aria-pressed="false">Sound off</button><button id="skip">Skip ↓</button></div></div>
@@ -128,7 +129,7 @@
     $('skip').onclick = () => { p = autoFrom; scrollTo(0, document.documentElement.scrollHeight); };
     // lock / unlock scrolling once you're on the roof
     let autoStart = null;
-    const block = (e) => { if (autoStart !== null) e.preventDefault(); };
+    const block = (e) => { if (autoStart !== null && !e.target.closest?.('.floor-page')) e.preventDefault(); };
     addEventListener('wheel', block, { passive: false }); addEventListener('touchmove', block, { passive: false });
     addEventListener('keydown', (e) => { if (autoStart !== null && ['ArrowDown', 'ArrowUp', 'PageDown', 'PageUp', ' ', 'End', 'Home'].includes(e.key)) e.preventDefault(); });
     const lock = (on) => { document.documentElement.style.overflow = on ? 'hidden' : ''; document.body.style.overflow = on ? 'hidden' : ''; };
@@ -143,7 +144,57 @@
     cv.addEventListener('mousemove', (e) => { cv.style.cursor = autoStart === null && hitAt(e.clientX, e.clientY) ? 'pointer' : ''; });
     for (const ev of ['wheel', 'touchstart', 'keydown']) addEventListener(ev, () => { anim = null; }, { passive: true });
     $('again').onclick = () => { autoStart = null; lock(false); p = 0; scrollTo(0, 0); };
-    for (const a of document.querySelectorAll('.floors a')) a.onclick = (e) => e.preventDefault();
+    // ---------- floor pages: black, readable, video paused ----------
+    const esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+    function floorHTML(f) {
+      const C = window.CONTACT, mail = `mailto:${C.email}?subject=${encodeURIComponent(f.mail.subject)}&body=${encodeURIComponent(f.mail.body)}`;
+      const wa = `https://wa.me/${C.whatsapp}?text=${encodeURIComponent(f.whatsapp)}`;
+      const bars = Array.from({ length: 48 }, (_, i) => `<i style="height:${Math.round(20 + 80 * Math.abs(Math.sin(i * 0.7) * Math.sin(i * 0.23 + 1)))}%"></i>`).join('');
+      const others = window.FLOORS.filter((o) => o.id !== f.id).map((o) => `<a href="#" data-floor="${o.id}">${o.name} →</a>`).join('');
+      return `<div class="fp-in">
+        <button class="fp-back" data-back>← Back to the roof</button>
+        <p class="fp-k">Floor ${f.n} · ${esc(f.tagline)}</p>
+        <h1 class="fp-h">${esc(f.name)}</h1>
+        <p class="fp-head">${esc(f.headline)}</p>
+        <p class="fp-intro">${esc(f.intro)}</p>
+        ${f.event ? `<div class="fp-event"><span>Next night</span><b>${esc(f.event.date)}</b><span>${esc(f.event.place)} · ${esc(f.event.note)}</span></div>` : ''}
+        <div class="fp-cols">
+          <div class="fp-body">${f.body.map((b) => `<p>${esc(b)}</p>`).join('')}</div>
+          <ul class="fp-list">${f.includes.map((x) => `<li>${esc(x)}</li>`).join('')}</ul>
+        </div>
+        <div class="sc">
+          <span class="sc-play" aria-hidden="true">▶</span>
+          <div class="sc-meta"><span>SoundCloud · ${esc(f.mix.length)}</span><b>${esc(f.mix.title)}</b><div class="sc-wave">${bars}</div></div>
+          <a class="sc-link" href="${f.mix.url}" target="_blank" rel="noopener">Listen ↗</a>
+        </div>
+        <p class="fp-note">On the live site this is the real SoundCloud player. This preview can't embed other sites.</p>
+        <div class="fp-contact">
+          <h2>${esc(f.cta)}</h2>
+          <div class="fp-btns">
+            <a class="btn-wa" href="${wa}" target="_blank" rel="noopener">WhatsApp</a>
+            <a class="btn-mail" href="${mail}">Email</a>
+          </div>
+          <p class="fp-addr"><span>${esc(C.email)}</span><button data-copy="${esc(C.email)}">Copy</button> · <span>${esc(C.whatsappLabel)}</span></p>
+        </div>
+        <nav class="fp-others" aria-label="Other floors">${others}</nav>
+      </div>`;
+    }
+    const fp = $('fp');
+    function openFloor(id) {
+      const f = (window.FLOORS || []).find((x) => x.id === id);
+      if (!f) return;
+      fp.innerHTML = floorHTML(f); fp.hidden = false; fp.scrollTop = 0;
+      document.querySelector('.ent').classList.add('reading');
+      vid.pause();
+    }
+    function closeFloor() { fp.hidden = true; document.querySelector('.ent').classList.remove('reading'); vid.play().catch(() => {}); }
+    document.querySelector('.ent').addEventListener('click', (e) => {
+      const fl = e.target.closest('[data-floor]'), back = e.target.closest('[data-back]'), cp = e.target.closest('[data-copy]');
+      if (fl) { e.preventDefault(); openFloor(fl.dataset.floor); }
+      if (back) closeFloor();
+      if (cp) navigator.clipboard.writeText(cp.dataset.copy).then(() => (cp.textContent = 'Copied'), () => {});
+    });
+    addEventListener('keydown', (e) => { if (e.key === 'Escape' && !fp.hidden) closeFloor(); });
     setPal(pal);
 
     let p = 0;
@@ -180,6 +231,7 @@
       fin.classList.toggle('on', f > 0.6);
       if (f > 0 && vid.paused) { vid.preload = 'auto'; vid.play().catch(() => {}); }
       if (f === 0 && !vid.paused) vid.pause();
+      if (!fp.hidden && !vid.paused) vid.pause();
       requestAnimationFrame(frame);
     }
     requestAnimationFrame(frame);
