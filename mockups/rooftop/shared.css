@@ -23,6 +23,11 @@ html, body { margin: 0; background: var(--bg); color: var(--fg); font: 15px/1.4 
 .hud button[aria-pressed="true"] { border-color: var(--b); color: var(--bg); background: var(--b); }
 .hud a:focus-visible, .hud button:focus-visible, .floors a:focus-visible { outline: 2px solid var(--a); outline-offset: 2px; }
 .hud .tag { opacity: .8; }
+.hud select { font: inherit; letter-spacing: inherit; text-transform: inherit; color: var(--fg); background: color-mix(in srgb, var(--bg) 70%, transparent);
+  border: 1px solid var(--b); border-radius: 999px; padding: 8px 12px; cursor: pointer; max-width: 46vw; }
+.hud select:focus-visible { outline: 2px solid var(--a); outline-offset: 2px; }
+.hud select option { background: var(--bg); color: var(--fg); text-transform: none; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
 .hud .group { display: flex; gap: 6px; flex-wrap: wrap; }
 .stage { display: grid; gap: 6px; min-width: 0; }
 .stage b { font: 800 clamp(16px, 3.4vw, 26px)/1 var(--display); letter-spacing: -.01em; text-transform: none; }

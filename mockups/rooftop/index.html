@@ -154,7 +154,8 @@ function stairs(ctx, S) {
     }
     ctx.globalCompositeOperation = 'source-over';
     // posters (album / single covers), drawn with an affine fit to the wall
-    const list = window.POSTERS || [];
+    // posters made per palette ({pal}) only exist for Sunset rave and Gold rush; other palettes show the rest
+    const list = (window.POSTERS || []).filter((it) => !it.src.includes('{pal}') || palKey === 'sunset' || palKey === 'gold');
     SLOTS.forEach(([sd, pz], k) => {
       if (sd !== side || !list.length) return;
       const item = list[k % list.length], img = posterImg(item.src.replace('{pal}', palKey));

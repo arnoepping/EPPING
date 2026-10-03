@@ -4,6 +4,15 @@
   const PALETTES = {
     sunset: { name: 'Sunset rave', bg: '#12061A', fg: '#FFF4E8', a: '#FF4D00', b: '#FF2BD6' },
     gold: { name: 'Gold rush', bg: '#0A0A0A', fg: '#FFF8E1', a: '#FFC400', b: '#FF3D7F' },
+    // the other palettes from the logo lab, for comparison
+    current: { name: 'Current (pink/cyan)', bg: '#0A0A10', fg: '#EDEDF3', a: '#00E5FF', b: '#FF2BD6' },
+    acid: { name: 'Acid', bg: '#0B0B0B', fg: '#F4F4F0', a: '#C6FF00', b: '#FF2BD6' },
+    ultraviolet: { name: 'Ultraviolet', bg: '#0D0221', fg: '#F2EBFF', a: '#00F0B5', b: '#8C1EFF' },
+    glasses: { name: '3D glasses', bg: '#050505', fg: '#FFFFFF', a: '#00E5FF', b: '#FF1A1A' },
+    mono: { name: 'Mono', bg: '#0A0A10', fg: '#FFFFFF', a: '#5A5A6E', b: '#B4B4C8' },
+    pastel: { name: 'Wedding pastel', bg: '#FFF6F0', fg: '#1A1020', a: '#7FD6FF', b: '#FF8FC8' },
+    paper: { name: 'Paper', bg: '#F2F2EE', fg: '#0A0A10', a: '#2B3BFF', b: '#FF2BD6' },
+    hotpink: { name: 'Hot pink', bg: '#FF2BD6', fg: '#0A0A10', a: '#00E5FF', b: '#FFFFFF' },
   };
   const STAGES = [
     { label: 'In line outside', from: 0, to: 0.3 },
@@ -98,7 +107,7 @@
           <nav class="floors" aria-label="Floors"><a href="#">Rave Wedding</a><a href="#">Private Events</a><a href="#">Epping Presents</a></nav><button class="again" id="again">↺ Back to the street</button></div></div>
         <div class="grain"></div>
         <div class="hud top"><span class="tag">EPPING · rooftop entrance</span>
-          <div class="group"><span class="group" id="pals"></span><button id="snd" aria-pressed="false">Sound off</button><button id="skip">Skip ↓</button></div></div>
+          <div class="group"><label class="pal"><span class="sr">Palette</span><select id="pals" aria-label="Palette"></select></label><button id="snd" aria-pressed="false">Sound off</button><button id="skip">Skip ↓</button></div></div>
         <div class="hud bottom"><div class="stage"><span><span class="n" id="sn">01</span> / 03</span><b id="sl"></b><div class="bar"><i id="bar"></i></div></div><span class="hint" id="hint">Scroll to get in</span></div>
       </div><div class="spacer"></div>`);
     const $ = (id) => document.getElementById(id);
@@ -109,11 +118,12 @@
       pal = k;
       const p = PALETTES[k], r = document.documentElement.style;
       for (const n of ['bg', 'fg', 'a', 'b']) r.setProperty('--' + n, p[n]);
-      $('pals').innerHTML = Object.entries(PALETTES).map(([key, q]) => `<button data-k="${key}" aria-pressed="${key === k}">${q.name}</button>`).join('');
+      if (!$('pals').options.length) $('pals').innerHTML = Object.entries(PALETTES).map(([key, q]) => `<option value="${key}">${q.name}</option>`).join('');
+      $('pals').value = k;
       document.querySelector('.fin-logo').innerHTML = logoSVG(p);
       history.replaceState(null, '', '#' + k);
     }
-    $('pals').onclick = (e) => { const b = e.target.closest('button'); if (b) setPal(b.dataset.k); };
+    $('pals').onchange = (e) => setPal(e.target.value);
     $('snd').onclick = async () => { const on = await sound.toggle(); $('snd').setAttribute('aria-pressed', on); $('snd').textContent = on ? 'Sound on' : 'Sound off'; };
     $('skip').onclick = () => { p = autoFrom; scrollTo(0, document.documentElement.scrollHeight); };
     // lock / unlock scrolling once you're on the roof
