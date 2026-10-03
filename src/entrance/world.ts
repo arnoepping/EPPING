@@ -122,7 +122,7 @@ export function buildWorld(): World {
   // ---------- sky (follows the camera so the horizon stays at eye level) ----------
   const sky = new THREE.Mesh(new THREE.SphereGeometry(300, 32, 16), new THREE.ShaderMaterial({
     side: THREE.BackSide, depthWrite: false, fog: false,
-    uniforms: { top: { value: C(PAL.bg) }, mid: { value: C(PAL.b).multiplyScalar(0.55) }, low: { value: C(PAL.a) } },
+    uniforms: { top: { value: C('#070b2a') }, mid: { value: C('#4a2a8a') }, low: { value: C('#ff6b5e') } }, // blue hour: deep blue → purple → warm horizon
     vertexShader: 'varying vec3 v; void main(){ v = normalize(position); gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.); }',
     fragmentShader: 'uniform vec3 top, mid, low; varying vec3 v; void main(){ float h = v.y; vec3 c = h > .18 ? mix(mid, top, smoothstep(.18,.75,h)) : mix(low, mid, smoothstep(-.02,.18,h)); gl_FragColor = vec4(c,1.); }',
   }));
@@ -191,29 +191,50 @@ export function buildWorld(): World {
   }
   scene.add(steps, noses);
 
-  // ceiling: dusk gradient along the climb, glass light panels all the way, neon strips on both edges
+  // ceiling, after the club reference: dark, with a triangular grid of light lines running pink → violet → blue
+  // along the climb, and small spots where the lines cross
   const cy = (z: number) => (z > Z0 ? 0 : z < TOP_Z ? TOP_Y : stairY(z)) + CEIL;
-  const ceilPts = [IN, Z0, TOP_Z, ROOF_Z - 0.1];
+  const ceilPts = [IN, Z0, TOP_Z, ROOF_Z - 0.1], ceilBase = C('#0b0814');
   for (let k = 0; k < 3; k++) {
     const za = ceilPts[k], zb = ceilPts[k + 1];
-    const ca = C(PAL.bg).lerp(climbColor(za), 0.3), cb = C(PAL.bg).lerp(climbColor(zb), 0.3);
-    scene.add(new THREE.Mesh(quad([new THREE.Vector3(-W / 2, cy(za), za), new THREE.Vector3(W / 2, cy(za), za), new THREE.Vector3(W / 2, cy(zb), zb), new THREE.Vector3(-W / 2, cy(zb), zb)], [ca, ca, cb, cb]),
-      new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.DoubleSide })));
+    scene.add(new THREE.Mesh(quad([new THREE.Vector3(-W / 2, cy(za), za), new THREE.Vector3(W / 2, cy(za), za), new THREE.Vector3(W / 2, cy(zb), zb), new THREE.Vector3(-W / 2, cy(zb), zb)]),
+      new THREE.MeshBasicMaterial({ color: ceilBase, side: THREE.DoubleSide })));
   }
-  for (let z = IN - 0.1; z > ROOF_Z + 0.6; z -= 0.9) {
-    const z2 = z - 0.7, c1 = climbColor(z).multiplyScalar(0.9), c2 = climbColor(z2).multiplyScalar(0.9);
-    const panel = new THREE.Mesh(quad([new THREE.Vector3(-0.45, cy(z) - 0.02, z), new THREE.Vector3(0.45, cy(z) - 0.02, z), new THREE.Vector3(0.45, cy(z2) - 0.02, z2), new THREE.Vector3(-0.45, cy(z2) - 0.02, z2)], [c1, c1, c2, c2]),
-      new THREE.MeshBasicMaterial({ vertexColors: true, toneMapped: false, side: THREE.DoubleSide, transparent: true, opacity: 0.9 }));
-    scene.add(panel);
-  }
-  const neonPieces = (x: number, h: (z: number) => number, r: number) => {
-    for (let z = IN; z > ROOF_Z; z -= 0.6) {
-      const z2 = Math.max(ROOF_Z, z - 0.6);
-      scene.add(tube(new THREE.Vector3(x, h(z), z), new THREE.Vector3(x, h(z2), z2), r, glow(climbColor(z).multiplyScalar(2.4))));
-    }
+  const ceilColor = (z: number) => { // pink at the bottom, violet halfway, blue at the top (like the reference's sweep)
+    const k = clamp((IN - z) / (IN - ROOF_Z));
+    return k < 0.5 ? C(PAL.b).lerp(C('#8a3cff'), k * 2) : C('#8a3cff').lerp(C('#3d6bff'), (k - 0.5) * 2);
   };
-  neonPieces(-W / 2 + 0.03, (z) => cy(z) - 0.04, 0.014);
-  neonPieces(W / 2 - 0.03, (z) => cy(z) - 0.04, 0.014);
+  {
+    const S = 0.75, H3 = (S * Math.sqrt(3)) / 2, x0 = -W / 2 + 0.03, x1 = W / 2 - 0.03, zTop = IN - 0.02, zEnd = ROOF_Z + 0.05;
+    const at = (x: number, z: number) => new THREE.Vector3(x, cy(z) - 0.025, z);
+    // clip a 2D segment (x, z) to the ceiling rectangle (Liang-Barsky)
+    const clip = (ax: number, az: number, bx: number, bz: number): number[] | null => {
+      let t0 = 0, t1 = 1; const dx = bx - ax, dz = bz - az;
+      for (const [p, q] of [[-dx, ax - x0], [dx, x1 - ax], [-dz, az - zEnd], [dz, zTop - az]]) {
+        if (p === 0) { if (q < 0) return null; continue; }
+        const r = q / p; if (p < 0) { if (r > t1) return null; if (r > t0) t0 = r; } else { if (r < t0) return null; if (r < t1) t1 = r; }
+      }
+      return [ax + t0 * dx, az + t0 * dz, ax + t1 * dx, az + t1 * dz];
+    };
+    const segs: number[][] = [], spots: number[][] = [];
+    for (let i = -3; i < 30; i++) for (let j = -3; j <= 3; j++) {
+      const px = j * H3, pz = zTop - i * S + (j % 2 ? S / 2 : 0);   // lattice point
+      if (px >= x0 && px <= x1 && pz <= zTop && pz >= zEnd) spots.push([px, pz]);
+      for (const [dx, dz] of [[0, -S], [H3, -S / 2], [H3, S / 2]]) { const c = clip(px, pz, px + dx, pz + dz); if (c) segs.push(c); }
+    }
+    const strip = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.012, 0.012, 1, 6), glow(C('#ffffff'), 0.7), segs.length);
+    const up = new THREE.Vector3(0, 1, 0), m = new THREE.Matrix4(), qt = new THREE.Quaternion();
+    segs.forEach(([ax, az, bx, bz], k) => {
+      const a = at(ax, az), b = at(bx, bz), len = a.distanceTo(b);
+      qt.setFromUnitVectors(up, b.clone().sub(a).normalize());
+      m.compose(a.clone().add(b).multiplyScalar(0.5), qt, new THREE.Vector3(1, len, 1));
+      strip.setMatrixAt(k, m); strip.setColorAt(k, ceilColor((az + bz) / 2).multiplyScalar(2.2));
+    });
+    scene.add(strip);
+    const dots = new THREE.InstancedMesh(new THREE.CircleGeometry(0.035, 12), glowMat(C('#fff1d6').multiplyScalar(2.5)), spots.length);
+    spots.forEach(([x, z], k) => { const p = at(x, z); p.y -= 0.01; m.compose(p, new THREE.Quaternion().setFromEuler(new THREE.Euler(Math.PI / 2, 0, 0)), new THREE.Vector3(1, 1, 1)); dots.setMatrixAt(k, m); });
+    scene.add(dots);
+  }
   // balustrades like the reference photo: vertical pink neon tubes on every other step, a dark metal handrail on top
   const railMat = new THREE.MeshStandardMaterial({ color: C('#16121c'), metalness: 0.8, roughness: 0.35 });
   const tubeMat = glow(C(PAL.b).multiplyScalar(2.8));
@@ -243,15 +264,6 @@ export function buildWorld(): World {
     const z = lerp(Z0 - 1, TOP_Z + 1, k / 2), l = new THREE.PointLight(C('#3d4dff'), 5, 7, 2);
     l.position.set(0, cy(z) - 0.3, z); scene.add(l);
   }
-  // haze: big soft additive sprites hanging in the stairwell (fog itself switches to a blue-violet haze inside, see update)
-  const hazeTex = puff();
-  for (let k = 0; k < 16; k++) {
-    const z = lerp(Z0 + 0.3, TOP_Z - 0.6, k / 15), pink = k % 3 === 0;
-    const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: hazeTex, color: C(pink ? PAL.b : '#4a52ff'), transparent: true, opacity: pink ? 0.07 : 0.06, depthWrite: false, blending: THREE.AdditiveBlending, fog: false }));
-    sp.position.set(Math.sin(k * 2.1) * 0.4, (z > Z0 ? 0 : stairY(z)) + 1.6 + Math.cos(k * 1.3) * 0.5, z); sp.scale.setScalar(2.6);
-    scene.add(sp);
-  }
-
   // posters: album covers hung high on both walls
   const loader = new THREE.TextureLoader();
   POSTERS.forEach((src, i) => {
@@ -283,71 +295,126 @@ export function buildWorld(): World {
   roofLeaf.position.set(0.55, 1.1, 0); roofDoor.add(roofLeaf);
   roofDoor.position.set(-0.55, TOP_Y, ROOF_Z - 0.03); scene.add(roofDoor);
 
-  // ---------- 3 · the roof ----------
-  const RY = TOP_Y;
-  const deck = new THREE.Mesh(new THREE.PlaneGeometry(40, 40), new THREE.MeshStandardMaterial({ color: C('#140c16'), roughness: 0.95 }));
-  deck.rotation.x = -Math.PI / 2; deck.position.set(0, RY - 0.001, ROOF_Z - 20); scene.add(deck);
-  const parapet = new THREE.Mesh(new THREE.BoxGeometry(40, 0.6, 0.3), new THREE.MeshStandardMaterial({ color: C('#1a1119'), roughness: 0.9 }));
-  parapet.position.set(0, RY + 0.3, ROOF_Z - 16); scene.add(parapet);
-  // Amsterdam skyline: gabled silhouettes with a few lit windows
-  const R = (() => { let s = 9; return () => ((s = (s * 16807) % 2147483647) / 2147483647); })();
-  const silhouette = new THREE.MeshBasicMaterial({ color: C(PAL.bg).lerp(C('#000000'), 0.35) });
-  const windowMat = glowMat(C(PAL.a).multiplyScalar(1.4));
-  for (let i = 0; i < 46; i++) {
-    const ang = -1.25 + (i / 45) * 2.5, dist = 45 + R() * 35, bw = 5 + R() * 6, bh = 4 + R() * 9, gable = R() > 0.35;
-    const s = new THREE.Shape();
-    s.moveTo(-bw / 2, -14); s.lineTo(-bw / 2, bh);
-    if (gable) { s.lineTo(-bw / 4, bh); s.lineTo(-bw / 4, bh + 2.2); s.lineTo(bw / 4, bh + 2.2); s.lineTo(bw / 4, bh); }
-    s.lineTo(bw / 2, bh); s.lineTo(bw / 2, -14);
-    const b = new THREE.Mesh(new THREE.ShapeGeometry(s), silhouette);
-    b.position.set(Math.sin(ang) * dist, RY - 6, ROOF_Z - Math.cos(ang) * dist);
-    b.lookAt(0, RY - 6, ROOF_Z);
-    scene.add(b);
-    for (let k = 0; k < 4; k++) if (R() > 0.5) {
-      const win = new THREE.Mesh(new THREE.PlaneGeometry(0.7, 1), windowMat);
-      win.position.set(-bw / 3 + R() * bw * 0.66, bh - 2 - R() * 6, 0.05); b.add(win);
-    }
+  // ---------- 3 · the roof ---------- (after the rooftop-party reference: blue hour, glass railing, glowing bar, crowd)
+  const RY = TOP_Y, R = (() => { let sd = 9; return () => ((sd = (sd * 16807) % 2147483647) / 2147483647); })();
+  const EDGE = ROOF_Z - 16, VIOLET = '#9a4dff';
+  const deck = new THREE.Mesh(new THREE.PlaneGeometry(24, 18), new THREE.MeshStandardMaterial({ map: texture('concrete_pavement_02_diff_web.jpg', true, 10, 8), color: C('#4a3f5c'), roughness: 0.55, metalness: 0.1 }));
+  deck.rotation.x = -Math.PI / 2; deck.position.set(0, RY - 0.001, ROOF_Z - 8); scene.add(deck);
+
+  // glass railing around the roof edge, metal top rail, a violet LED strip along the foot
+  const glass = new THREE.MeshStandardMaterial({ color: C('#9fb7ff'), transparent: true, opacity: 0.12, roughness: 0.05, metalness: 0.2, depthWrite: false });
+  const rail = new THREE.MeshStandardMaterial({ color: C('#2a2533'), metalness: 0.9, roughness: 0.3 });
+  const led = glow(C(VIOLET).multiplyScalar(2.4), 0.5);
+  for (const [x0, z0, x1, z1] of [[-12, EDGE, 12, EDGE], [-9, ROOF_Z - 1, -9, EDGE], [9, ROOF_Z - 1, 9, EDGE]]) {
+    const len = Math.hypot(x1 - x0, z1 - z0), mid = new THREE.Vector3((x0 + x1) / 2, RY + 0.55, (z0 + z1) / 2), ang = Math.atan2(z1 - z0, x1 - x0);
+    const pane = new THREE.Mesh(new THREE.BoxGeometry(len, 1.1, 0.02), glass); pane.position.copy(mid); pane.rotation.y = -ang; scene.add(pane);
+    scene.add(tube(new THREE.Vector3(x0, RY + 1.12, z0), new THREE.Vector3(x1, RY + 1.12, z1), 0.03, rail));
+    scene.add(tube(new THREE.Vector3(x0, RY + 0.03, z0), new THREE.Vector3(x1, RY + 0.03, z1), 0.02, led));
   }
-  const sun = new THREE.Mesh(new THREE.CircleGeometry(9, 48), glowMat(C(PAL.fg).lerp(C(PAL.a), 0.35).multiplyScalar(1.8)));
-  sun.position.set(30, RY + 1, ROOF_Z - 160); sun.lookAt(0, RY + 1, ROOF_Z); scene.add(sun);
-  // DJ table (the plank from the photos) with decks and blinking lights
+
+  // the skyline: blocks of flats and a few towers, thousands of lit windows (one shared window texture)
+  const winCanvas = document.createElement('canvas'); winCanvas.width = 256; winCanvas.height = 512;
+  { const g = winCanvas.getContext('2d')!; g.fillStyle = '#0a0812'; g.fillRect(0, 0, 256, 512);
+    for (let y = 0; y < 512; y += 16) for (let x = 0; x < 256; x += 16) {
+      const r = R(); if (r > 0.42) continue;
+      g.fillStyle = r < 0.08 ? '#a9c4ff' : r < 0.3 ? '#ffb46a' : '#ff8a4c'; g.globalAlpha = 0.45 + R() * 0.55;
+      g.fillRect(x + 4, y + 5, 8, 8);
+    } g.globalAlpha = 1; }
+  const winTex = new THREE.CanvasTexture(winCanvas); winTex.colorSpace = THREE.SRGBColorSpace; winTex.wrapS = winTex.wrapT = THREE.RepeatWrapping;
+  for (let i = 0; i < 70; i++) {
+    const ang = -1.35 + (i / 69) * 2.7 + (R() - 0.5) * 0.04, dist = 40 + R() * 80, tower = R() < 0.07; // mostly low-rise, a few towers in the distance
+    const w = 8 + R() * 14, h = tower ? 24 + R() * 16 : 9 + R() * 11, d = 8 + R() * 8;
+    const t = winTex.clone(); t.repeat.set(w / 16, h / 32); t.offset.set(R(), R());
+    const b = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), new THREE.MeshBasicMaterial({ map: t, color: C('#b9a8c8') }));
+    b.position.set(Math.sin(ang) * dist, RY - 14 + h / 2, ROOF_Z - Math.cos(ang) * dist); b.lookAt(0, b.position.y, ROOF_Z);
+    scene.add(b);
+  }
+
+  // the bar on the left: a counter glowing violet-pink, bottles lit on the back wall
+  const barZ0 = ROOF_Z - 3.2, barZ1 = ROOF_Z - 10.5, barX = -6.2;
+  const front = new THREE.Mesh(new THREE.PlaneGeometry(barZ0 - barZ1, 1.05), glow(C(PAL.b).lerp(C(VIOLET), 0.5).multiplyScalar(1.6), 0.4));
+  front.rotation.y = Math.PI / 2; front.position.set(barX + 0.36, RY + 0.53, (barZ0 + barZ1) / 2); scene.add(front);
+  const counter = new THREE.Mesh(new THREE.BoxGeometry(0.75, 0.06, barZ0 - barZ1 + 0.1), new THREE.MeshStandardMaterial({ color: C('#d9d2e6'), roughness: 0.25 }));
+  counter.position.set(barX, RY + 1.08, (barZ0 + barZ1) / 2); scene.add(counter);
+  const back = new THREE.Mesh(new THREE.BoxGeometry(0.3, 2.4, barZ0 - barZ1), new THREE.MeshStandardMaterial({ color: C('#1a1424'), roughness: 0.6 }));
+  back.position.set(barX - 1.5, RY + 1.2, (barZ0 + barZ1) / 2); scene.add(back);
+  const bottles = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.04, 0.045, 0.3, 8), glowMat(C('#ffb36b').multiplyScalar(1.6)), 40);
+  for (let k = 0; k < 40; k++) bottles.setMatrixAt(k, m4.makeTranslation(barX - 1.3, RY + 1.3 + (k % 2) * 0.5, barZ0 - 0.2 - (k / 40) * (barZ0 - barZ1 - 0.4)));
+  scene.add(bottles);
+  const barLight = new THREE.PointLight(C(PAL.b), 18, 8, 2); barLight.position.set(barX + 1.2, RY + 0.5, (barZ0 + barZ1) / 2); scene.add(barLight);
+
+  // DJ at the far end: the plank table from the photos, decks with blinking lights, two speakers
   const wood = new THREE.MeshStandardMaterial({ color: C('#4a3424'), roughness: 0.8 });
-  const plank = new THREE.Mesh(new THREE.BoxGeometry(1.9, 0.05, 0.7), wood); plank.position.set(0, RY + 1.0, ROOF_Z - 6.5); scene.add(plank);
+  const DJZ = ROOF_Z - 12.5;
+  const plank = new THREE.Mesh(new THREE.BoxGeometry(1.9, 0.05, 0.7), wood); plank.position.set(0, RY + 1.0, DJZ); scene.add(plank);
   const deckBox = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.07, 0.45), new THREE.MeshStandardMaterial({ color: C('#0b0a0c'), roughness: 0.4 }));
-  deckBox.position.set(0, RY + 1.06, ROOF_Z - 6.5); scene.add(deckBox);
+  deckBox.position.set(0, RY + 1.06, DJZ); scene.add(deckBox);
   const leds: THREE.Mesh[] = [];
-  for (let i = 0; i < 10; i++) { const led = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.01, 0.03), glow(C(i % 3 ? PAL.b : PAL.a).multiplyScalar(2.5))); led.position.set(-0.4 + i * 0.09, RY + 1.1, ROOF_Z - 6.4); scene.add(led); leds.push(led); }
-  scene.add(tube(new THREE.Vector3(-0.8, RY, ROOF_Z - 6.5), new THREE.Vector3(-0.8, RY + 1, ROOF_Z - 6.5), 0.03, wood), tube(new THREE.Vector3(0.8, RY, ROOF_Z - 6.5), new THREE.Vector3(0.8, RY + 1, ROOF_Z - 6.5), 0.03, wood));
-  // festoon lights
+  for (let i = 0; i < 10; i++) { const l = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.01, 0.03), glow(C(i % 3 ? PAL.b : PAL.a).multiplyScalar(2.5))); l.position.set(-0.4 + i * 0.09, RY + 1.1, DJZ + 0.1); scene.add(l); leds.push(l); }
+  scene.add(tube(new THREE.Vector3(-0.8, RY, DJZ), new THREE.Vector3(-0.8, RY + 1, DJZ), 0.03, wood), tube(new THREE.Vector3(0.8, RY, DJZ), new THREE.Vector3(0.8, RY + 1, DJZ), 0.03, wood));
+  for (const sx of [-1.8, 1.8]) {
+    const spk = new THREE.Mesh(new THREE.BoxGeometry(0.55, 1.3, 0.5), new THREE.MeshStandardMaterial({ color: C('#0c0b10'), roughness: 0.7 }));
+    spk.position.set(sx, RY + 0.65, DJZ); scene.add(spk);
+  }
+  const dj = new THREE.Group();
+  dj.add(new THREE.Mesh(new THREE.CapsuleGeometry(0.21, 0.75, 4, 10), new THREE.MeshStandardMaterial({ color: C('#16141c'), roughness: 0.8 })));
+  const djHead = new THREE.Mesh(new THREE.SphereGeometry(0.12, 12, 10), new THREE.MeshStandardMaterial({ color: C('#d8c2b6'), roughness: 0.7 })); djHead.position.y = 0.62; dj.add(djHead);
+  dj.position.set(0, RY + 0.6, DJZ - 0.55); scene.add(dj);
+
+  // the crowd: people standing and moving to the beat between the door and the DJ (kept clear of the walk-out path)
+  const crowdN = 46, bodies = new THREE.InstancedMesh(new THREE.CapsuleGeometry(0.2, 0.8, 4, 10), new THREE.MeshStandardMaterial({ roughness: 0.8 }), crowdN);
+  const heads = new THREE.InstancedMesh(new THREE.SphereGeometry(0.11, 12, 10), new THREE.MeshStandardMaterial({ roughness: 0.7 }), crowdN);
+  const shoulders = new THREE.InstancedMesh(new THREE.CapsuleGeometry(0.075, 0.36, 4, 8), new THREE.MeshStandardMaterial({ roughness: 0.8 }), crowdN);
+  const arms = new THREE.InstancedMesh(new THREE.CapsuleGeometry(0.045, 0.55, 4, 8), new THREE.MeshStandardMaterial({ roughness: 0.8 }), crowdN);
+  const people: { x: number; z: number; h: number; ph: number; up: boolean }[] = [];
+  const shirts = ['#141218', '#1d1a26', '#2a2236', '#d9d4e2', '#3a1d2e', '#101418', '#4a4458'], skin = ['#e0c3b0', '#b88a6e', '#7a5440', '#f0d6c4'];
+  while (people.length < crowdN) {
+    const x = (R() - 0.5) * 9, z = ROOF_Z - 4 - R() * 8;
+    if (Math.abs(x) < 1.1 && z > ROOF_Z - 6) continue;              // keep the view from the door open
+    if (x < barX + 1.4) continue;                                   // not inside the bar
+    const pp = { x, z, h: 0.92 + R() * 0.2, ph: R() * 6, up: R() < 0.35 }; people.push(pp);
+    const shirt = C(shirts[Math.floor(R() * shirts.length)]);
+    bodies.setColorAt(people.length - 1, shirt); shoulders.setColorAt(people.length - 1, shirt); arms.setColorAt(people.length - 1, shirt);
+    heads.setColorAt(people.length - 1, C(skin[Math.floor(R() * skin.length)]));
+  }
+  // pose one person: body, head, shoulders (a bar across), and for some an arm in the air
+  const rotZ = new THREE.Matrix4().makeRotationZ(Math.PI / 2), mm = new THREE.Matrix4();
+  const pose = (p: (typeof people)[number], i: number, bob: number, sway: number) => {
+    bodies.setMatrixAt(i, mm.makeTranslation(p.x + sway, RY + 0.6 * p.h + bob, p.z).multiply(new THREE.Matrix4().makeScale(1, p.h, 1)));
+    heads.setMatrixAt(i, mm.makeTranslation(p.x + sway * 1.3, RY + 1.33 * p.h + bob, p.z));
+    shoulders.setMatrixAt(i, mm.makeTranslation(p.x + sway * 1.2, RY + 1.1 * p.h + bob, p.z).multiply(rotZ));
+    const ay = p.up ? RY + 1.55 * p.h + bob * 2 : RY + 0.85 * p.h + bob;
+    arms.setMatrixAt(i, mm.makeTranslation(p.x + sway * 1.4 + 0.22, ay, p.z).multiply(new THREE.Matrix4().makeRotationZ(p.up ? -0.25 : 0.12)));
+  };
+  people.forEach((p, i) => pose(p, i, 0, 0)); // start in place (they only animate once you're on the roof)
+  scene.add(bodies, heads, shoulders, arms);
+  const crowdLights = [new THREE.PointLight(C(VIOLET), 22, 10, 2), new THREE.PointLight(C(PAL.b), 14, 9, 2), new THREE.PointLight(C('#3d6bff'), 14, 10, 2)];
+  crowdLights[0].position.set(-2, RY + 0.4, ROOF_Z - 7); crowdLights[1].position.set(2.5, RY + 2.5, ROOF_Z - 9); crowdLights[2].position.set(0, RY + 3, DJZ - 1);
+  crowdLights.forEach((l) => scene.add(l));
+
+  // festoon lights over the crowd
   const bulbs = new THREE.InstancedMesh(new THREE.SphereGeometry(0.055, 10, 8), glow(C(PAL.a).lerp(C(PAL.fg), 0.3).multiplyScalar(2.6)), 3 * 18);
   let bi = 0;
-  for (const z of [ROOF_Z - 4.5, ROOF_Z - 7, ROOF_Z - 9.5]) {
+  for (const z of [ROOF_Z - 4.5, ROOF_Z - 7.5, ROOF_Z - 10.5]) {
     const pts: THREE.Vector3[] = [];
-    for (let k = 0; k <= 18; k++) { const u = k / 18, x = lerp(-6, 6, u); pts.push(new THREE.Vector3(x, RY + 3.4 - Math.sin(u * Math.PI) * 0.9, z)); }
+    for (let k = 0; k <= 18; k++) { const u = k / 18, x = lerp(-6, 7, u); pts.push(new THREE.Vector3(x, RY + 3.6 - Math.sin(u * Math.PI) * 0.8, z)); }
     scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineBasicMaterial({ color: C('#050305') })));
     for (let k = 1; k < 19 && bi < bulbs.count; k++) bulbs.setMatrixAt(bi++, m4.makeTranslation(pts[k - 1].x, pts[k - 1].y - 0.08, z));
   }
   scene.add(bulbs);
-  const roofLight = new THREE.PointLight(C(PAL.a), 30, 18, 2); roofLight.position.set(0, RY + 3, ROOF_Z - 5); scene.add(roofLight);
   // smoke drifting from the booth
   const puffTex = puff(), smoke: { s: THREE.Sprite; ph: number; x: number }[] = [];
   for (let i = 0; i < 12; i++) {
-    const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: puffTex, color: C(PAL.fg), transparent: true, opacity: 0.18, depthWrite: false }));
-    scene.add(s); smoke.push({ s, ph: i / 12, x: (R() - 0.5) * 2.5 });
+    const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: puffTex, color: C(PAL.fg), transparent: true, opacity: 0.16, depthWrite: false }));
+    scene.add(sp); smoke.push({ s: sp, ph: i / 12, x: (R() - 0.5) * 2.5 });
   }
 
   // ---------- behaviour ----------
   // the street door opens outward (toward you) so the stairwell stays clear; the roof door opens onto the roof
   const setDoors = (street: number, roof: number) => { streetDoor.rotation.y = -street * 1.85; roofDoor.rotation.y = roof * 1.85; };
   const tmp = new THREE.Color();
-  // fog: thin night air outside, a blue-violet haze inside the stairwell
-  const fog = scene.fog as THREE.FogExp2, outFog = C(PAL.bg), inFog = C('#17123f');
-  let haze = 0;
   function update(t: number, kick: number, camera: THREE.Camera) {
     sky.position.copy(camera.position);
-    const inside = camera.position.z < -0.3 && camera.position.z > ROOF_Z - 0.2 ? 1 : 0;
-    haze += (inside - haze) * 0.05;
-    fog.color.copy(outFog).lerp(inFog, haze); fog.density = lerp(0.012, 0.075, haze);
     const k = 0.6 + 0.4 * kick;
     for (const p of pulse) p.mat.color.copy(p.base).multiplyScalar(lerp(1, k, p.k));
     for (let i = 0; i < N; i++) noses.setColorAt(i, tmp.copy(noseBase[i]).multiplyScalar(k));
@@ -357,9 +424,14 @@ export function buildWorld(): World {
     signLight.intensity = 14 * k * flicker; signCore.visible = flicker > 0.5;
     leak.intensity = 0.5 * k;
     leds.forEach((l, i) => (l.visible = Math.sin(t * 8 + i * 1.7) > -0.2));
+    if (camera.position.z < ROOF_Z + 3) { // the crowd moves only when you can see it
+      people.forEach((p, i) => pose(p, i, Math.max(0, Math.sin(t * 6.6 + p.ph)) * 0.05 * (0.4 + kick), Math.sin(t * 1.7 + p.ph) * 0.04));
+      for (const im of [bodies, heads, shoulders, arms]) im.instanceMatrix.needsUpdate = true;
+      dj.position.y = RY + 0.6 + Math.max(0, Math.sin(t * 6.6)) * 0.03;
+    }
     for (const m of smoke) {
       const life = (t * 0.07 + m.ph) % 1;
-      m.s.position.set(m.x + Math.sin(t * 0.4 + m.ph * 6) * 0.6, RY + 1.2 + life * 4, ROOF_Z - 6.8 - life * 1.5);
+      m.s.position.set(m.x + Math.sin(t * 0.4 + m.ph * 6) * 0.6, RY + 1.2 + life * 4, DJZ - 0.3 - life * 1.5);
       m.s.scale.setScalar(1 + life * 4); (m.s.material as THREE.SpriteMaterial).opacity = 0.2 * (1 - life);
     }
   }
@@ -386,7 +458,9 @@ export function buildWorld(): World {
     } else { // out onto the roof, then a slow look around
       const k = ease(clamp(l / 0.4)), z = lerp(ROOF_Z + 0.9, ROOF_Z - 2.0, k), drift = clamp((l - 0.4) / 0.6);
       pos.set(drift * 0.4, TOP_Y + 1.6, z - drift * 0.6);
-      look.set(lerp(0, 2.5, ease(drift)) + Math.sin(t * 0.3) * 0.2, TOP_Y + lerp(1.6, 1.9, k), z - 10);
+      // straight out of the door, then a look left at the bar, then across the crowd to the DJ
+      const lx = l < 0.3 ? 0 : l < 0.45 ? lerp(0, -4.2, ease((l - 0.3) / 0.15)) : lerp(-4.2, 1.2, ease(clamp((l - 0.45) / 0.4)));
+      look.set(lx + Math.sin(t * 0.3) * 0.2, TOP_Y + lerp(1.6, 1.8, k), z - 10);
     }
     return { pos, look };
   }
