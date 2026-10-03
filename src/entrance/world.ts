@@ -191,19 +191,17 @@ export function buildWorld(): World {
   }
   scene.add(steps, noses);
 
-  // ceiling, after the club reference: dark, with a triangular grid of light lines running pink → violet → blue
-  // along the climb, and small spots where the lines cross
+  // ceiling, after the club reference: a triangular grid of warm light lines with spots where they cross,
+  // over a brand-palette gradient (pink at the bottom of the stairs → orange at the top) instead of black
   const cy = (z: number) => (z > Z0 ? 0 : z < TOP_Z ? TOP_Y : stairY(z)) + CEIL;
-  const ceilPts = [IN, Z0, TOP_Z, ROOF_Z - 0.1], ceilBase = C('#0b0814');
+  const ceilPts = [IN, Z0, TOP_Z, ROOF_Z - 0.1];
+  const baseAt = (z: number) => C(PAL.bg).lerp(climbColor(z), 0.55); // Sunset rave gradient, toned so the grid still reads
   for (let k = 0; k < 3; k++) {
-    const za = ceilPts[k], zb = ceilPts[k + 1];
-    scene.add(new THREE.Mesh(quad([new THREE.Vector3(-W / 2, cy(za), za), new THREE.Vector3(W / 2, cy(za), za), new THREE.Vector3(W / 2, cy(zb), zb), new THREE.Vector3(-W / 2, cy(zb), zb)]),
-      new THREE.MeshBasicMaterial({ color: ceilBase, side: THREE.DoubleSide })));
+    const za = ceilPts[k], zb = ceilPts[k + 1], ca = baseAt(za), cb = baseAt(zb);
+    scene.add(new THREE.Mesh(quad([new THREE.Vector3(-W / 2, cy(za), za), new THREE.Vector3(W / 2, cy(za), za), new THREE.Vector3(W / 2, cy(zb), zb), new THREE.Vector3(-W / 2, cy(zb), zb)], [ca, ca, cb, cb]),
+      new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.DoubleSide })));
   }
-  const ceilColor = (z: number) => { // pink at the bottom, violet halfway, blue at the top (like the reference's sweep)
-    const k = clamp((IN - z) / (IN - ROOF_Z));
-    return k < 0.5 ? C(PAL.b).lerp(C('#8a3cff'), k * 2) : C('#8a3cff').lerp(C('#3d6bff'), (k - 0.5) * 2);
-  };
+  const ceilColor = (z: number) => C(PAL.fg).lerp(climbColor(z), 0.25); // warm cream lines, a hint of the gradient
   {
     const S = 0.75, H3 = (S * Math.sqrt(3)) / 2, x0 = -W / 2 + 0.03, x1 = W / 2 - 0.03, zTop = IN - 0.02, zEnd = ROOF_Z + 0.05;
     const at = (x: number, z: number) => new THREE.Vector3(x, cy(z) - 0.025, z);
@@ -228,7 +226,7 @@ export function buildWorld(): World {
       const a = at(ax, az), b = at(bx, bz), len = a.distanceTo(b);
       qt.setFromUnitVectors(up, b.clone().sub(a).normalize());
       m.compose(a.clone().add(b).multiplyScalar(0.5), qt, new THREE.Vector3(1, len, 1));
-      strip.setMatrixAt(k, m); strip.setColorAt(k, ceilColor((az + bz) / 2).multiplyScalar(2.2));
+      strip.setMatrixAt(k, m); strip.setColorAt(k, ceilColor((az + bz) / 2).multiplyScalar(1.6));
     });
     scene.add(strip);
     const dots = new THREE.InstancedMesh(new THREE.CircleGeometry(0.035, 12), glowMat(C('#fff1d6').multiplyScalar(2.5)), spots.length);
