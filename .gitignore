@@ -29,6 +29,3 @@ pnpm-debug.log*
 # raw photos/videos from the user (large, private; repo is public)
 media/
 
-# media: the user's footage, the song and cover art stay out of the public repo until the rights are sorted
-public/media/
-public/posters/

@@ -60,7 +60,7 @@ export function start(root: HTMLElement): void {
   canvas.addEventListener('mousemove', (e) => { canvas.style.cursor = doorUnder(e) !== null ? 'pointer' : ''; });
 
   // ---------- sound + HUD ----------
-  const sound = new Sound('media/song.mp3');
+  const sound = new Sound('media/ade-house-mix.mp3', 26 * 60); // Epping – ADE House Mix, from 26:00
   const snd = $<HTMLButtonElement>('[data-sound]');
   snd.addEventListener('click', async () => { const on = await sound.toggle(); snd.setAttribute('aria-pressed', String(on)); snd.textContent = on ? 'Sound on' : 'Sound off'; });
   const skip = $<HTMLButtonElement>('[data-skip]');

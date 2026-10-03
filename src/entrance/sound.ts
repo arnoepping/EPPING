@@ -1,13 +1,14 @@
-// One song through a low-pass: bass only outside, opening up while you climb, the full track on the roof.
+// One track (Epping's ADE House Mix, from 26:00) through a low-pass: bass only outside, opening up while you climb, the full track on the roof.
 // An analyser on the unfiltered song gives the kick that drives the neon.
-const BPM = 128, SPB = 60 / BPM;
+const BPM = 126, SPB = 60 / BPM;
 const clamp = (v: number, a = 0, b = 1) => Math.min(b, Math.max(a, v));
 
 export class Sound {
   on = false;
   private ctx?: AudioContext; private el?: HTMLAudioElement; private lp?: BiquadFilterNode;
   private an?: AnalyserNode; private bins?: Uint8Array<ArrayBuffer>; private peak = 0.2;
-  constructor(private src: string) {}
+  /** startAt: seconds into the track for the first play; afterwards it loops from the top */
+  constructor(private src: string, private startAt = 0) {}
 
   async toggle(): Promise<boolean> {
     if (!this.ctx) this.init();
@@ -24,6 +25,8 @@ export class Sound {
     try { (navigator as Navigator & { audioSession?: { type: string } }).audioSession!.type = 'playback'; } catch { /* not Safari 17+ */ }
     const c = (this.ctx = new AudioContext());
     this.el = new Audio(this.src); this.el.loop = true; this.el.preload = 'auto'; this.el.setAttribute('playsinline', '');
+    this.el.currentTime = this.startAt; // some browsers only honour this once the metadata is in
+    this.el.addEventListener('loadedmetadata', () => { if (this.el!.currentTime < 1) this.el!.currentTime = this.startAt; }, { once: true });
     const src = c.createMediaElementSource(this.el);
     this.an = c.createAnalyser(); this.an.fftSize = 1024; this.an.smoothingTimeConstant = 0.35; src.connect(this.an);
     this.bins = new Uint8Array(this.an.frequencyBinCount);

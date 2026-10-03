@@ -82,8 +82,9 @@ export function buildWorld(): World {
   scene.add(new THREE.HemisphereLight(C(PAL.b).lerp(C(PAL.fg), 0.4).multiplyScalar(0.6), C('#0a0510'), 1.1));
 
   // ---------- 1 · the street ----------
-  const facadeShape = new THREE.Shape([new THREE.Vector2(-9, 0), new THREE.Vector2(9, 0), new THREE.Vector2(9, 11), new THREE.Vector2(-9, 11)]);
-  facadeShape.holes.push(new THREE.Path([new THREE.Vector2(-0.6, 0), new THREE.Vector2(-0.6, 2.3), new THREE.Vector2(0.6, 2.3), new THREE.Vector2(0.6, 0)]));
+  // the doorway is a notch in the outline (a hole touching the edge breaks the triangulation)
+  const V = (x: number, y: number) => new THREE.Vector2(x, y);
+  const facadeShape = new THREE.Shape([V(-9, 0), V(-0.6, 0), V(-0.6, 2.3), V(0.6, 2.3), V(0.6, 0), V(9, 0), V(9, 11), V(-9, 11)]);
   const facade = new THREE.Mesh(new THREE.ExtrudeGeometry(facadeShape, { depth: 0.35, bevelEnabled: false }), brickMat(bricks, 1, 1));
   facade.position.z = -0.35;
   scene.add(facade);
@@ -131,11 +132,12 @@ export function buildWorld(): World {
   scene.add(new THREE.Mesh(new THREE.TubeGeometry(rope, 24, 0.022, 8), new THREE.MeshStandardMaterial({ color: C(PAL.b).multiplyScalar(0.55), roughness: 0.7 })));
 
   // ---------- 2 · the stairwell ----------
-  const L = -ROOF_Z + 0.5, H = TOP_Y + CEIL + 1;
+  // everything inside starts behind the facade (back face at z = -0.35), so nothing pokes through the brick
+  const IN = -0.36, L = IN - ROOF_Z + 0.1, H = TOP_Y + CEIL + 1;
   for (const side of [-1, 1]) {
     const wall = new THREE.Mesh(new THREE.PlaneGeometry(L, H), brickMat(bricks, L, H));
     wall.rotation.y = side < 0 ? Math.PI / 2 : -Math.PI / 2;
-    wall.position.set(side * W / 2, H / 2, ROOF_Z / 2 - 0.1);
+    wall.position.set(side * W / 2, H / 2, (IN + ROOF_Z - 0.1) / 2);
     scene.add(wall);
   }
   const floorMat = new THREE.MeshStandardMaterial({ color: C(PAL.bg).lerp(C(PAL.fg), 0.06), roughness: 0.85 });
@@ -157,21 +159,21 @@ export function buildWorld(): World {
 
   // ceiling: dusk gradient along the climb, glass light panels all the way, neon strips on both edges
   const cy = (z: number) => (z > Z0 ? 0 : z < TOP_Z ? TOP_Y : stairY(z)) + CEIL;
-  const ceilPts = [0.2, Z0, TOP_Z, ROOF_Z - 0.1];
+  const ceilPts = [IN, Z0, TOP_Z, ROOF_Z - 0.1];
   for (let k = 0; k < 3; k++) {
     const za = ceilPts[k], zb = ceilPts[k + 1];
     const ca = C(PAL.bg).lerp(climbColor(za), 0.45), cb = C(PAL.bg).lerp(climbColor(zb), 0.45);
     scene.add(new THREE.Mesh(quad([new THREE.Vector3(-W / 2, cy(za), za), new THREE.Vector3(W / 2, cy(za), za), new THREE.Vector3(W / 2, cy(zb), zb), new THREE.Vector3(-W / 2, cy(zb), zb)], [ca, ca, cb, cb]),
       new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.DoubleSide })));
   }
-  for (let z = -0.2; z > ROOF_Z + 0.6; z -= 0.9) {
+  for (let z = IN - 0.1; z > ROOF_Z + 0.6; z -= 0.9) {
     const z2 = z - 0.7, c1 = climbColor(z).multiplyScalar(1.6), c2 = climbColor(z2).multiplyScalar(1.6);
     const panel = new THREE.Mesh(quad([new THREE.Vector3(-0.45, cy(z) - 0.02, z), new THREE.Vector3(0.45, cy(z) - 0.02, z), new THREE.Vector3(0.45, cy(z2) - 0.02, z2), new THREE.Vector3(-0.45, cy(z2) - 0.02, z2)], [c1, c1, c2, c2]),
       new THREE.MeshBasicMaterial({ vertexColors: true, toneMapped: false, side: THREE.DoubleSide, transparent: true, opacity: 0.9 }));
     scene.add(panel);
   }
   const neonPieces = (x: number, h: (z: number) => number, r: number) => {
-    for (let z = 0; z > ROOF_Z; z -= 0.6) {
+    for (let z = IN; z > ROOF_Z; z -= 0.6) {
       const z2 = Math.max(ROOF_Z, z - 0.6);
       scene.add(tube(new THREE.Vector3(x, h(z), z), new THREE.Vector3(x, h(z2), z2), r, glow(climbColor(z).multiplyScalar(2.4))));
     }
@@ -202,8 +204,7 @@ export function buildWorld(): World {
   });
 
   // top wall with the roof door
-  const topShape = new THREE.Shape([new THREE.Vector2(-W / 2, TOP_Y), new THREE.Vector2(W / 2, TOP_Y), new THREE.Vector2(W / 2, TOP_Y + CEIL + 0.2), new THREE.Vector2(-W / 2, TOP_Y + CEIL + 0.2)]);
-  topShape.holes.push(new THREE.Path([new THREE.Vector2(-0.55, TOP_Y), new THREE.Vector2(-0.55, TOP_Y + 2.2), new THREE.Vector2(0.55, TOP_Y + 2.2), new THREE.Vector2(0.55, TOP_Y)]));
+  const topShape = new THREE.Shape([V(-W / 2, TOP_Y), V(-0.55, TOP_Y), V(-0.55, TOP_Y + 2.2), V(0.55, TOP_Y + 2.2), V(0.55, TOP_Y), V(W / 2, TOP_Y), V(W / 2, TOP_Y + CEIL + 0.2), V(-W / 2, TOP_Y + CEIL + 0.2)]);
   const topWall = new THREE.Mesh(new THREE.ShapeGeometry(topShape), brickMat(bricks, 1, 1));
   (topWall.material as THREE.MeshStandardMaterial).map!.repeat.set(0.5, 0.5); (topWall.material as THREE.MeshStandardMaterial).bumpMap!.repeat.set(0.5, 0.5);
   topWall.position.z = ROOF_Z; scene.add(topWall);
