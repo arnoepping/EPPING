@@ -25,8 +25,11 @@ export class Sound {
     try { (navigator as Navigator & { audioSession?: { type: string } }).audioSession!.type = 'playback'; } catch { /* not Safari 17+ */ }
     const c = (this.ctx = new AudioContext());
     this.el = new Audio(this.src); this.el.loop = true; this.el.preload = 'auto'; this.el.setAttribute('playsinline', '');
-    this.el.currentTime = this.startAt; // some browsers only honour this once the metadata is in
-    this.el.addEventListener('loadedmetadata', () => { if (this.el!.currentTime < 1) this.el!.currentTime = this.startAt; }, { once: true });
+    // Jump to startAt. Some browsers (iPhone Safari) ignore a seek before playback, so repeat it once it's actually playing.
+    const seek = () => { if (Math.abs(this.el!.currentTime - this.startAt) > 3 && this.el!.currentTime < this.startAt) this.el!.currentTime = this.startAt; };
+    this.el.currentTime = this.startAt;
+    this.el.addEventListener('loadedmetadata', seek, { once: true });
+    this.el.addEventListener('playing', seek, { once: true });
     const src = c.createMediaElementSource(this.el);
     this.an = c.createAnalyser(); this.an.fftSize = 1024; this.an.smoothingTimeConstant = 0.35; src.connect(this.an);
     this.bins = new Uint8Array(this.an.frequencyBinCount);
