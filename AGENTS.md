@@ -22,11 +22,14 @@ Website for Epping: DJ and party organizer. (`CLAUDE.md` is a symlink to this fi
 - Dev server: `astro dev --background` (manage it with `astro dev stop`, `astro dev status` and `astro dev logs`). Docs: https://docs.astro.build
 
 ## Status (2026-10-03)
-- **Domain:** http://eppingmusic.com is live on GitHub Pages. DNS has been moved to GitHub (A/AAAA records, plus `www` CNAME → `arnoepping.github.io`), and domain verification passed.
-  - **Next:** wait for the HTTPS certificate, then tick Enforce HTTPS (repo Settings → Pages). After that, cancel the Squarespace *website* subscription (keep the domain).
+- **Domain:** https://eppingmusic.com is live on GitHub Pages with HTTPS enforced. DNS is on GitHub (A/AAAA records, plus `www` CNAME → `arnoepping.github.io`).
+  - **Next:** cancel the Squarespace *website* subscription (keep the domain).
   - Never touch MX, SPF or `google._domainkey`: email runs on Google Workspace.
   - DNS snapshot from before the switch: `.superpowers/sdd/2026-10-02-deploy-pipeline/dns-before.txt` (git-ignored, local only).
-- **Logo lab (current focus):** user likes P01 + P02 colours, Unbounded 800 is fixed, and the G is being reworked (G1–G6 options). separate repo `~/Documents/GitHub/epping-lab` (→ github.com/arnoepping/epping-lab, Pages at arnoepping.github.io/epping-lab/). Gallery with variant IDs (G/P/S/F/W), a tunnel site mockup tab, plus an editor with share links and SVG/PNG export. Once the logo is final, port it to `scripts/build-logo.mjs` + tokens here.
+- **Logo lab (current focus):** separate repo `~/Documents/GitHub/epping-lab` (→ github.com/arnoepping/epping-lab, Pages at arnoepping.github.io/epping-lab/). Unbounded 800 is fixed. User leans to G3 (now the lab default). Liked palettes: Sunset rave, Current, Gold rush. The brand is for Instagram as much as for the site.
+  - Lab tabs: Gallery (IDs R/G/P/S/F/W), Editor (share links, SVG/PNG export), Site mockup, Instagram (6 feed posts + story per liked palette, profile/grid preview, PNG download).
+  - Replay-button G exploration: R1–R6 (`glyphs-replay.js`), awaiting feedback.
+  - Once the logo is final, port it to `scripts/build-logo.mjs` + tokens here.
 - **Brand:** spec approved (`docs/superpowers/specs/2026-10-02-brand-identity-design.md`): logo A (Unbounded 800, RGB split), black/pink/cyan palette. Built (commits 3373c00..8d50901, not pushed): logo SVGs in `public/brand/`, favicon, `tokens.css`/`ui.css`, `Base.astro`, `Wordmark.astro`, `/brand/` page. Regenerate logos with `npm run logo`.
 - **Website:** built and pushed (spec `docs/superpowers/specs/2026-10-02-festival-site-design.md`, plan `docs/superpowers/plans/2026-10-02-festival-site.md`). Three.js tunnel → hall with 3 floors (Rave Wedding, Private Events, Epping Presents); static fallback for no-JS/reduced motion.
   - Local phone test: `npm run build && npx astro preview --host`.
