@@ -175,6 +175,7 @@
             <a class="btn-mail" href="${mail}">Email</a>
           </div>
           <p class="fp-addr"><span>${esc(C.email)}</span><button data-copy="${esc(C.email)}">Copy</button> · <span>${esc(C.whatsappLabel)}</span></p>
+          <p class="fp-social"><a href="${C.instagram}" target="_blank" rel="noopener">Instagram ${esc(C.instagramLabel)} ↗</a><a href="${C.soundcloud}" target="_blank" rel="noopener">All mixes on SoundCloud ↗</a></p>
         </div>
         <nav class="fp-others" aria-label="Other floors">${others}</nav>
       </div>`;

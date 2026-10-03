@@ -93,3 +93,6 @@ html, body { margin: 0; background: var(--bg); color: var(--fg); font: 15px/1.4 
 .fp-back:focus-visible, .fp-btns a:focus-visible, .sc-link:focus-visible, .fp-addr button:focus-visible { outline: 2px solid var(--a); outline-offset: 2px; }
 @media (max-width: 640px) { .fp-cols { grid-template-columns: 1fr; gap: 12px; } .fp-btns a { flex: 1; } }
 .ent.reading .hud.top { background: linear-gradient(#000 75%, transparent); padding-bottom: 22px; }
+.fp-social { margin: 0; display: flex; flex-wrap: wrap; gap: 18px; }
+.fp-social a { color: var(--a); text-decoration: none; font: 600 14px var(--mono); letter-spacing: .04em; }
+.fp-social a:hover, .fp-social a:focus-visible { text-decoration: underline; }

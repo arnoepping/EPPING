@@ -1,6 +1,6 @@
 // Floor pages behind the three buttons on the roof. Mockup copy: edit freely.
-// Contact details are PLACEHOLDERS (same as src/content/floors.ts): replace with the real email and WhatsApp number.
-window.CONTACT = { email: 'hello@eppingmusic.com', whatsapp: '31600000000', whatsappLabel: '+31 6 0000 0000' };
+// Contact details: keep in sync with src/content/floors.ts.
+window.CONTACT = { email: 'bookings@eppingmusic.com', whatsapp: '31640187865', whatsappLabel: '+31 6 4018 7865', instagram: 'https://www.instagram.com/epping.music/', instagramLabel: '@epping.music', soundcloud: 'https://soundcloud.com/arno-epping' };
 
 window.FLOORS = [
   {
@@ -12,7 +12,7 @@ window.FLOORS = [
       'From drinks after the ceremony to the afterparty, with light and smoke that turn any venue into a club for a few hours.',
     ],
     includes: ['Planning call and a shared playlist', 'DJ set from first dance to last song', 'Club sound and light show, smoke on request', 'Room for 50 to 250 guests'],
-    mix: { title: 'Rave Wedding mix', length: '62 min', url: 'https://soundcloud.com/eppingmusic/rave-wedding' },
+    mix: { title: 'Marta & Donald’s wedding', length: 'Set', url: 'https://soundcloud.com/arno-epping/sets/marta-donalds-wedding' },
     cta: 'Book your date',
     mail: { subject: 'Rave Wedding booking', body: 'Hi Epping,\n\nWe are getting married on [date] at [venue] and would love a rave wedding.\n\n' },
     whatsapp: 'Hi Epping! We are getting married on [date] and want a rave wedding.',
@@ -26,7 +26,7 @@ window.FLOORS = [
       'I bring the gear and set up and break down myself, so all you have to do is send the invites.',
     ],
     includes: ['DJ set of 3 to 6 hours', 'Sound system and lights', 'Indoor, outdoor or rooftop', 'Set-up and break-down included'],
-    mix: { title: 'Rooftop Session 001', length: '58 min', url: 'https://soundcloud.com/eppingmusic/private-events' },
+    mix: { title: 'ADE House Mix', length: 'Mix', url: 'https://soundcloud.com/arno-epping/ade-house-mix' },
     cta: 'Plan your party',
     mail: { subject: 'Private event booking', body: 'Hi Epping,\n\nI am planning a [type of party] on [date] for about [number] guests.\n\n' },
     whatsapp: 'Hi Epping! I am planning a party on [date] and would like to book you.',
@@ -41,7 +41,7 @@ window.FLOORS = [
     ],
     event: { date: 'Sat 14 November', place: 'Amsterdam, secret location', note: 'Vol. 03 · 22:00 – 05:00' },
     includes: ['Announcements via WhatsApp and Instagram', 'Early-bird tickets for the list', 'Guest DJs from the Amsterdam scene'],
-    mix: { title: 'Epping Presents Vol. 02 (live)', length: '75 min', url: 'https://soundcloud.com/eppingmusic/presents' },
+    mix: { title: 'ADE House Mix', length: 'Mix', url: 'https://soundcloud.com/arno-epping/ade-house-mix' },
     cta: 'Get on the list',
     mail: { subject: 'Epping Presents: put me on the list', body: 'Hi Epping,\n\nPlease put me on the list for the next Epping Presents.\n\n' },
     whatsapp: 'Hi Epping! Put me on the list for the next Epping Presents.',
