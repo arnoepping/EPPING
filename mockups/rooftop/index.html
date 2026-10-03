@@ -1,0 +1,175 @@
+<title>Epping Rooftop Entrance</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@800&family=Space+Grotesk:wght@500;600&display=swap">
+<link rel="stylesheet" href="shared.css">
+<script src="wordmark.js"></script>
+<script src="shared.js"></script>
+<script>
+// Rooftop entrance (from concept 1, The Door): brick wall, rope and neon sign outside; through the door a
+// stairwell takes you up; at the top the door opens onto a rooftop party at dusk, then the footage takes over.
+const { clamp, lerp, ease, rgba, mix, drawLogo, rand } = Entrance.util;
+const R = rand(7), BRICKS = Array.from({ length: 400 }, () => R());
+const SKY = Array.from({ length: 40 }, () => ({ w: 0.6 + R() * 1.2, h: 0.5 + R() * 1.1, gable: R() > 0.4, chim: R() > 0.6, lit: Array.from({ length: 6 }, () => R() > 0.6) }));
+const SMOKE = Array.from({ length: 14 }, () => ({ x: R(), ph: R() * 10, s: 0.6 + R() * 0.8 }));
+
+// ---------- 1 · outside: the door ----------
+function wall(ctx, S, scale) {
+  const { w, h, pal } = S, bw = 64 * scale, bh = 26 * scale;
+  ctx.fillStyle = mix(pal.bg, pal.a, 0.05); ctx.fillRect(0, 0, w, h);
+  let i = 0;
+  for (let y = h / 2 - Math.ceil(h / 2 / bh) * bh; y < h; y += bh) {
+    const row = Math.round((y - h / 2) / bh), off = row % 2 ? bw / 2 : 0;
+    for (let x = w / 2 - Math.ceil(w / 2 / bw + 1) * bw + off; x < w; x += bw) {
+      ctx.fillStyle = mix(pal.bg, pal.fg, 0.03 + BRICKS[i++ % BRICKS.length] * 0.05);
+      ctx.fillRect(x + 1, y + 1, bw - 2, bh - 2);
+    }
+  }
+}
+
+function outside(ctx, S) {
+  const { w, h, pal, local, kick, t } = S, cx = w / 2, cy = h / 2;
+  const z = lerp(0.42, 1.05, ease(local)), dh = h * 0.62 * z, dw = dh * 0.5;
+  wall(ctx, S, z * 1.1);
+  const dx = cx - dw / 2, dy = cy - dh * 0.42;
+  ctx.shadowColor = pal.b; ctx.shadowBlur = 40 * z * (0.6 + kick);
+  ctx.strokeStyle = rgba(pal.b, 0.45 + 0.35 * kick); ctx.lineWidth = 4 * z; ctx.strokeRect(dx, dy, dw, dh);
+  ctx.shadowBlur = 0;
+  ctx.fillStyle = mix(pal.bg, '#000000', 0.4); ctx.fillRect(dx, dy, dw, dh);
+  ctx.fillStyle = rgba(pal.a, 0.15 + 0.25 * kick); ctx.fillRect(dx, dy + dh - 4 * z, dw, 4 * z);
+  const g = ctx.createRadialGradient(cx, dy + dh, 0, cx, dy + dh, dw * 1.6);
+  g.addColorStop(0, rgba(pal.b, 0.25 + 0.2 * kick)); g.addColorStop(1, rgba(pal.b, 0));
+  ctx.fillStyle = g; ctx.fillRect(0, dy + dh - dw, w, dw * 2);
+  // small sign on the door: the party is upstairs
+  ctx.fillStyle = rgba(pal.fg, 0.7); ctx.font = `600 ${Math.max(9, 11 * z)}px "Space Grotesk", system-ui, sans-serif`; ctx.textAlign = 'center';
+  ctx.fillText('ROOFTOP ↑', cx, dy + dh * 0.3); ctx.textAlign = 'start';
+  drawLogo(ctx, pal, cx, dy - dh * 0.16, dw * 1.5, { glow: 30 * z, alpha: Math.sin(t * 13) > 0.92 ? 0.35 : 1, split: 2 });
+  ctx.strokeStyle = pal.a; ctx.lineWidth = 5 * z; ctx.beginPath();
+  ctx.moveTo(dx - dw * 0.9, dy + dh * 0.82); ctx.quadraticCurveTo(dx - dw * 0.45, dy + dh * 0.95, dx - dw * 0.05, dy + dh * 0.82); ctx.stroke();
+  ctx.fillStyle = mix(pal.fg, pal.a, 0.4);
+  for (const px of [dx - dw * 0.9, dx - dw * 0.05]) ctx.fillRect(px - 3 * z, dy + dh * 0.78, 6 * z, dh * 0.22);
+}
+
+// ---------- 2 · up the stairs ----------
+const N = 30, RISE = 0.18, DEPTH = 0.3, HW = 0.75, SLOPE = RISE / DEPTH, PITCH = 0.32;
+function stairs(ctx, S) {
+  const { w, h, pal, local, kick } = S, cx = w / 2, cy = h * 0.5, F = Math.min(w, h) * 0.9;
+  const climb = ease(clamp((local - 0.1) / 0.78)) * (N - 7);
+  const zc = climb * DEPTH - 0.9, yc = climb * RISE + 1.55 + Math.sin(climb * Math.PI * 2) * 0.025;
+  const cs = Math.cos(PITCH), sn = Math.sin(PITCH);
+  const P = (x, y, z) => { const dy = y - yc, dz = z - zc, Z = dy * sn + dz * cs, Y = dy * cs - dz * sn; return Z < 0.05 ? null : [cx + (x * F) / Z, cy - (Y * F) / Z, Z]; };
+  const quad = (pts, fill) => { const q = pts.map((p) => P(...p)); if (q.some((v) => !v)) return null; ctx.beginPath(); q.forEach(([x, y], i) => (i ? ctx.lineTo(x, y) : ctx.moveTo(x, y))); ctx.closePath(); ctx.fillStyle = fill; ctx.fill(); return q; };
+  const zT = N * DEPTH, yT = N * RISE, zn = zc + 0.15;
+  ctx.fillStyle = mix(pal.bg, '#000000', 0.45); ctx.fillRect(0, 0, w, h);
+  // the door at the top: dusk light
+  const doorOpen = clamp((local - 0.82) / 0.18);
+  const dq = quad([[-0.5, yT, zT], [0.5, yT, zT], [0.5, yT + 2.1, zT], [-0.5, yT + 2.1, zT]], rgba(pal.a, 0.9));
+  if (dq) {
+    const [x0, y0] = dq[3], [x1, y1] = dq[1];
+    const sky = ctx.createLinearGradient(0, y0, 0, y1);
+    sky.addColorStop(0, mix(pal.bg, pal.b, 0.6)); sky.addColorStop(1, pal.a);
+    ctx.fillStyle = sky; ctx.fillRect(x0, y0, x1 - x0, y1 - y0);
+    ctx.shadowColor = pal.a; ctx.shadowBlur = 50 * (0.6 + 0.4 * kick); ctx.strokeStyle = rgba(pal.fg, 0.8); ctx.lineWidth = 2; ctx.strokeRect(x0, y0, x1 - x0, y1 - y0); ctx.shadowBlur = 0;
+    // door leaf swinging open
+    ctx.fillStyle = mix(pal.bg, pal.fg, 0.12); ctx.fillRect(x0, y0, (x1 - x0) * (1 - doorOpen), y1 - y0);
+  }
+  // side walls with brick courses, clipped to each wall
+  for (const side of [-1, 1]) {
+    const X = side * HW, pts = [[X, zn * SLOPE - 0.3, zn], [X, yT, zT], [X, yT + 3.2, zT], [X, zn * SLOPE + 3.2, zn]];
+    const q = quad(pts, mix(pal.bg, pal.a, 0.07));
+    if (!q) continue;
+    ctx.save(); ctx.clip();
+    ctx.strokeStyle = rgba(pal.bg, 0.55); ctx.lineWidth = 1;
+    for (let yy = Math.floor(yc - 4); yy < yT + 4; yy += 0.14) {
+      const a = P(X, yy, zn), b = P(X, yy, zT);
+      if (a && b) { ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.stroke(); }
+    }
+    // gig posters on the left wall
+    if (side < 0) for (const [pz, col] of [[2.2, pal.b], [4.6, pal.a], [6.8, pal.b]]) {
+      const py = pz * SLOPE + 1.1;
+      const pq = quad([[X, py, pz], [X, py, pz + 0.55], [X, py + 0.75, pz + 0.55], [X, py + 0.75, pz]], rgba(col, 0.75));
+      if (pq) { ctx.fillStyle = rgba(pal.fg, 0.8); const [a, , , d] = pq; ctx.fillRect(Math.min(a[0], d[0]), lerp(a[1], d[1], 0.25), Math.abs(a[0] - d[0]) * 0.6 + 2, 2); }
+    }
+    ctx.restore();
+  }
+  // neon handrail on the right wall
+  const r0 = P(HW - 0.02, zn * SLOPE + 0.9, zn), r1 = P(HW - 0.02, yT + 0.9, zT);
+  if (r0 && r1) { ctx.strokeStyle = pal.b; ctx.lineWidth = 4; ctx.shadowColor = pal.b; ctx.shadowBlur = 18; ctx.beginPath(); ctx.moveTo(r0[0], r0[1]); ctx.lineTo(r1[0], r1[1]); ctx.stroke(); ctx.shadowBlur = 0; }
+  // steps, far to near, with an LED strip on each nose
+  for (let i = N - 1; i >= 0; i--) {
+    const z0 = i * DEPTH, y0 = i * RISE;
+    if (z0 + DEPTH < zn) continue;
+    const fog = clamp(1 - (z0 - zc) / 9);
+    quad([[-HW, y0 + RISE, z0], [HW, y0 + RISE, z0], [HW, y0 + RISE, z0 + DEPTH], [-HW, y0 + RISE, z0 + DEPTH]], mix(pal.bg, pal.fg, 0.04 + 0.1 * fog));
+    if (z0 > zn) quad([[-HW, y0, z0], [HW, y0, z0], [HW, y0 + RISE, z0], [-HW, y0 + RISE, z0]], mix(pal.bg, pal.fg, 0.02 + 0.04 * fog));
+    const a = P(-HW, y0 + RISE, z0), b = P(HW, y0 + RISE, z0);
+    if (a && b && z0 > zn) {
+      ctx.strokeStyle = rgba(pal.a, (0.35 + 0.5 * fog) * (0.75 + 0.25 * kick)); ctx.lineWidth = Math.max(1, 3 * fog);
+      ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.stroke();
+    }
+  }
+  // the street door closing behind you (opening at the start of this stage)
+  if (local < 0.12) {
+    const o = ease(local / 0.12), half = w / 2;
+    ctx.fillStyle = mix(pal.bg, '#000000', 0.4); ctx.fillRect(-o * half, 0, half, h); ctx.fillRect(half + o * half, 0, half, h);
+  }
+  // stepping out into the light
+  if (doorOpen > 0) { ctx.fillStyle = rgba(pal.fg, doorOpen * doorOpen * 0.9); ctx.fillRect(0, 0, w, h); }
+}
+
+// ---------- 3 · the roof ----------
+function roof(ctx, S) {
+  const { w, h, pal, local, kick, t, beat } = S, rise = (1 - ease(clamp(local * 1.5))) * h * 0.12;
+  const horizon = h * 0.62 + rise;
+  const sky = ctx.createLinearGradient(0, 0, 0, horizon);
+  sky.addColorStop(0, pal.bg); sky.addColorStop(0.55, mix(pal.bg, pal.b, 0.55)); sky.addColorStop(1, pal.a);
+  ctx.fillStyle = sky; ctx.fillRect(0, 0, w, h);
+  // setting sun
+  ctx.fillStyle = rgba(pal.fg, 0.85); ctx.shadowColor = pal.a; ctx.shadowBlur = 60;
+  ctx.beginPath(); ctx.arc(w * 0.68, horizon - h * 0.02, Math.min(w, h) * 0.07, Math.PI, 0); ctx.fill(); ctx.shadowBlur = 0;
+  // Amsterdam rooftops: gables and chimneys
+  let x = -20; const u = h / 900;
+  ctx.fillStyle = mix(pal.bg, '#000000', 0.25);
+  for (const b of SKY) {
+    const bw = 110 * u * b.w, bh = 120 * u * b.h, top = horizon - bh;
+    ctx.beginPath(); ctx.moveTo(x, h);
+    if (b.gable) { ctx.lineTo(x, top + 30 * u); ctx.lineTo(x + bw * 0.25, top + 30 * u); ctx.lineTo(x + bw * 0.25, top); ctx.lineTo(x + bw * 0.75, top); ctx.lineTo(x + bw * 0.75, top + 30 * u); ctx.lineTo(x + bw, top + 30 * u); }
+    else { ctx.lineTo(x, top); ctx.lineTo(x + bw, top); }
+    ctx.lineTo(x + bw, h); ctx.fill();
+    if (b.chim) ctx.fillRect(x + bw * 0.6, top - 26 * u, 12 * u, 26 * u);
+    b.lit.forEach((on, k) => { if (on) { ctx.fillStyle = rgba(pal.a, 0.6); ctx.fillRect(x + bw * (0.2 + (k % 3) * 0.25), top + 45 * u + Math.floor(k / 3) * 34 * u, 9 * u, 14 * u); ctx.fillStyle = mix(pal.bg, '#000000', 0.25); } });
+    x += bw - 2; if (x > w) break;
+  }
+  // the roof deck
+  ctx.fillStyle = mix(pal.bg, '#000000', 0.5); ctx.fillRect(0, horizon + 40 * u, w, h);
+  ctx.fillStyle = rgba(pal.fg, 0.08); ctx.fillRect(0, horizon + 40 * u, w, 3 * u);
+  // DJ table (the wooden plank from the photos) with decks
+  const tw = Math.min(w * 0.5, 460 * u), tx = w / 2 - tw / 2, ty = horizon + 10 * u;
+  ctx.fillStyle = mix(pal.a, '#000000', 0.55); ctx.fillRect(tx, ty, tw, 16 * u);
+  ctx.fillStyle = mix(pal.bg, '#000000', 0.3); ctx.fillRect(tx + tw * 0.15, ty - 22 * u, tw * 0.7, 22 * u);
+  for (let i = 0; i < 12; i++) { ctx.fillStyle = i % 3 ? rgba(pal.b, 0.4 + 0.6 * kick) : rgba(pal.a, 0.8); ctx.fillRect(tx + tw * (0.3 + i * 0.035), ty - 14 * u, 5 * u, 4 * u); }
+  // festoon lights, bulbs pulsing with the kick
+  for (const [y0, sag] of [[h * 0.14, h * 0.1], [h * 0.26, h * 0.08]]) {
+    ctx.strokeStyle = rgba(pal.bg, 0.9); ctx.lineWidth = 1.5; ctx.beginPath();
+    for (let i = 0; i <= 40; i++) { const u2 = i / 40, yy = y0 + rise + Math.sin(u2 * Math.PI) * sag; i ? ctx.lineTo(u2 * w, yy) : ctx.moveTo(0, yy); }
+    ctx.stroke();
+    for (let i = 1; i < 14; i++) {
+      const u2 = i / 14, yy = y0 + rise + Math.sin(u2 * Math.PI) * sag + 8;
+      ctx.fillStyle = rgba(pal.a, 0.75 + 0.25 * kick); ctx.shadowColor = pal.a; ctx.shadowBlur = 14 + 16 * kick;
+      ctx.beginPath(); ctx.arc(u2 * w, yy, 5, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.shadowBlur = 0;
+  }
+  // smoke drifting up from the booth
+  for (const s of SMOKE) {
+    const life = ((t * 0.08 + s.ph) % 1), sx = w / 2 + (s.x - 0.5) * tw * 1.4 + Math.sin(t * 0.5 + s.ph) * 30, sy = ty - life * h * 0.35;
+    const r = (60 + life * 160) * u * s.s, g = ctx.createRadialGradient(sx, sy, 0, sx, sy, r);
+    g.addColorStop(0, rgba(pal.fg, 0.12 * (1 - life))); g.addColorStop(1, rgba(pal.fg, 0));
+    ctx.fillStyle = g; ctx.fillRect(sx - r, sy - r, r * 2, r * 2);
+  }
+  // white-out from the stairwell door fading away
+  if (local < 0.25) { ctx.fillStyle = rgba(pal.fg, 0.9 * (1 - local / 0.25) ** 2); ctx.fillRect(0, 0, w, h); }
+}
+
+window.addEventListener('DOMContentLoaded', () => Entrance.start({ draw: (ctx, S) => (S.stage === 0 ? outside : S.stage === 1 ? stairs : roof)(ctx, S) }));
+</script>
