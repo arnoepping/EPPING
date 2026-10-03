@@ -67,24 +67,36 @@ export interface World {
   cameraAt(stage: number, local: number, t: number): { pos: THREE.Vector3; look: THREE.Vector3 };
 }
 
-// Baked lightmaps per material (blender/street.py writes them next to the model).
-const LIGHTMAPS = ['brick', 'pavement', 'road', 'trim', 'kerb', 'dark', 'bollard', 'bark', 'leaf'];
+// The street model carries geometry, UVs and baked lightmaps; textures are applied here by material name
+// (keeps the .glb small and avoids browsers that fail on embedded images).
+const LIGHTMAPS = ['brick', 'pavement', 'road', 'kerb', 'trim', 'tile', 'dark', 'bollard', 'bark'];
+const TEXTURES: Record<string, { map: string; normal?: string; rough?: string; tint: string }> = {
+  brick: { map: 'red_brick_03_diff_web.jpg', normal: 'red_brick_03_nor_web.jpg', rough: 'red_brick_03_rough_web.jpg', tint: '#ffb08a' }, // orange-red Amsterdam School brick
+  pavement: { map: 'concrete_pavement_02_diff_web.jpg', normal: 'concrete_pavement_02_nor_web.jpg', tint: '#55525a' },
+  road: { map: 'asphalt_02_diff_web.jpg', normal: 'asphalt_02_nor_web.jpg', tint: '#3a383e' },
+};
+// night levels for the emissive parts (Blender's strengths are tuned for the bake, not for bloom)
+const GLOW: Record<string, number> = { window_lit: 0.5, shop_lit: 0.06 };
+
 async function loadStreet(scene: THREE.Scene): Promise<void> {
   const loader = new GLTFLoader().setDRACOLoader(new DRACOLoader().setDecoderPath('draco/'));
   // the private preview page can't serve .glb files, so it hands the model over inline (see scripts/preview-artifact.sh)
   const inline = (window as Window & { __STREET_GLB__?: ArrayBuffer }).__STREET_GLB__;
   const gltf = inline ? await loader.parseAsync(inline, '') : await loader.loadAsync('models/street.glb');
-  const tl = new THREE.TextureLoader(), jobs: Promise<void>[] = [];
-  // night levels for the emissive parts (Blender's strengths are tuned for the bake, not for bloom)
-  const GLOW: Record<string, number> = { window_lit: 0.42, window_dim: 0.3, shop_lit: 0.06, lamp_head: 2.5 };
+  const tl = new THREE.TextureLoader(), jobs: Promise<unknown>[] = [];
+  const tex = (file: string, srgb: boolean) => { const t = tl.load(`models/textures/${file}`); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 8; t.flipY = false; if (srgb) t.colorSpace = THREE.SRGBColorSpace; return t; };
   gltf.scene.traverse((o) => {
     const m = (o as THREE.Mesh).material as THREE.MeshStandardMaterial | undefined;
-    if (m && m.name in GLOW) { m.emissiveIntensity = GLOW[m.name]; if (m.name !== 'shop_lit') m.color.set(0x000000); }
-    if (!m || !LIGHTMAPS.includes(m.name)) return;
-    jobs.push(tl.loadAsync(`models/lightmaps/${m.name}.jpg`).then((t) => {
-      t.flipY = false; t.channel = 1; t.colorSpace = THREE.SRGBColorSpace;
-      m.lightMap = t; m.lightMapIntensity = 1.0; m.envMapIntensity = 0; m.needsUpdate = true;
+    if (!m) return;
+    if (m.name in GLOW) { m.emissiveIntensity = GLOW[m.name]; if (m.name !== 'shop_lit') m.color.set(0x000000); }
+    const t = TEXTURES[m.name];
+    if (t) { m.map = tex(t.map, true); m.color.set(t.tint); if (t.normal) m.normalMap = tex(t.normal, false); if (t.rough) m.roughnessMap = tex(t.rough, false); }
+    if (m.name === 'leaf') { m.map = tex('leaves.png', true); m.alphaTest = 0.5; m.side = THREE.DoubleSide; m.color.set('#6f8a62'); }
+    if (LIGHTMAPS.includes(m.name)) jobs.push(tl.loadAsync(`models/lightmaps/${m.name}.jpg`).then((lm) => {
+      lm.flipY = false; lm.channel = 1; lm.colorSpace = THREE.SRGBColorSpace;
+      m.lightMap = lm; m.lightMapIntensity = 0.85;
     }));
+    m.envMapIntensity = 0; m.needsUpdate = true;
   });
   await Promise.all(jobs);
   scene.add(gltf.scene);
@@ -110,6 +122,8 @@ export function buildWorld(): World {
   scene.add(new THREE.HemisphereLight(C(PAL.b).lerp(C(PAL.fg), 0.4).multiplyScalar(0.6), C('#0a0510'), 0.35)); // low: the street's light is baked
 
   // ---------- 1 · the street ----------
+  // faint cool moonlight for the parts without baked light (leaves, bikes), so they read as silhouettes
+  const moon = new THREE.DirectionalLight(C('#8fa0ff'), 0.35); moon.position.set(-6, 12, 10); scene.add(moon);
   // Building, pavement, road, bikes, trees and the street lamp come from Blender (blender/street.py) with baked light.
   const ready = loadStreet(scene);
 
