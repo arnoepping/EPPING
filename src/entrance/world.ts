@@ -122,9 +122,9 @@ export function buildWorld(): World {
   // ---------- sky (follows the camera so the horizon stays at eye level) ----------
   const sky = new THREE.Mesh(new THREE.SphereGeometry(300, 32, 16), new THREE.ShaderMaterial({
     side: THREE.BackSide, depthWrite: false, fog: false,
-    uniforms: { top: { value: C('#2a0b3a') }, mid: { value: C(PAL.b).multiplyScalar(0.8) }, low: { value: C(PAL.a).lerp(C('#ffb36b'), 0.25) } }, // Sunset rave: plum → pink → orange horizon
+    uniforms: { top: { value: C('#070b2a') }, mid: { value: C('#4a2a8a') }, low: { value: C('#ff6b5e') } }, // blue hour: deep blue → purple → warm horizon
     vertexShader: 'varying vec3 v; void main(){ v = normalize(position); gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.); }',
-    fragmentShader: 'uniform vec3 top, mid, low; varying vec3 v; void main(){ float h = v.y; vec3 c = mix(mix(low, mid, smoothstep(0.02, 0.32, h)), top, smoothstep(0.3, 0.85, h)); gl_FragColor = vec4(c,1.); }',
+    fragmentShader: 'uniform vec3 top, mid, low; varying vec3 v; void main(){ float h = v.y; vec3 c = h > .18 ? mix(mid, top, smoothstep(.18,.75,h)) : mix(low, mid, smoothstep(-.02,.18,h)); gl_FragColor = vec4(c,1.); }',
   }));
   sky.renderOrder = -1;
   scene.add(sky);
@@ -297,8 +297,8 @@ export function buildWorld(): World {
 
   // ---------- 3 · the roof ---------- (after the rooftop-party reference: blue hour, glass railing, glowing bar, crowd)
   const RY = TOP_Y, R = (() => { let sd = 9; return () => ((sd = (sd * 16807) % 2147483647) / 2147483647); })();
-  const EDGE = ROOF_Z - 16, VIOLET = PAL.b; // roof accents in the brand pink/orange (the stairwell keeps the cool violet/blue)
-  const deck = new THREE.Mesh(new THREE.PlaneGeometry(24, 18), new THREE.MeshStandardMaterial({ map: texture('concrete_pavement_02_diff_web.jpg', true, 10, 8), color: C('#8a5a66'), roughness: 0.5, metalness: 0.1 }));
+  const EDGE = ROOF_Z - 16, VIOLET = '#9a4dff';
+  const deck = new THREE.Mesh(new THREE.PlaneGeometry(24, 18), new THREE.MeshStandardMaterial({ map: texture('concrete_pavement_02_diff_web.jpg', true, 10, 8), color: C('#4a3f5c'), roughness: 0.55, metalness: 0.1 }));
   deck.rotation.x = -Math.PI / 2; deck.position.set(0, RY - 0.001, ROOF_Z - 8); scene.add(deck);
 
   // glass railing around the roof edge, metal top rail, a violet LED strip along the foot
@@ -325,14 +325,14 @@ export function buildWorld(): World {
     const ang = -1.35 + (i / 69) * 2.7 + (R() - 0.5) * 0.04, dist = 40 + R() * 80, tower = R() < 0.07; // mostly low-rise, a few towers in the distance
     const w = 8 + R() * 14, h = tower ? 24 + R() * 16 : 9 + R() * 11, d = 8 + R() * 8;
     const t = winTex.clone(); t.repeat.set(w / 16, h / 32); t.offset.set(R(), R());
-    const b = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), new THREE.MeshBasicMaterial({ map: t, color: C('#e0a8b8') }));
+    const b = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), new THREE.MeshBasicMaterial({ map: t, color: C('#b9a8c8') }));
     b.position.set(Math.sin(ang) * dist, RY - 14 + h / 2, ROOF_Z - Math.cos(ang) * dist); b.lookAt(0, b.position.y, ROOF_Z);
     scene.add(b);
   }
 
   // the bar on the left: a counter glowing violet-pink, bottles lit on the back wall
   const barZ0 = ROOF_Z - 3.2, barZ1 = ROOF_Z - 10.5, barX = -6.2;
-  const front = new THREE.Mesh(new THREE.PlaneGeometry(barZ0 - barZ1, 1.05), glow(C(PAL.a).lerp(C(PAL.b), 0.45).multiplyScalar(1.6), 0.4));
+  const front = new THREE.Mesh(new THREE.PlaneGeometry(barZ0 - barZ1, 1.05), glow(C(PAL.b).lerp(C(VIOLET), 0.5).multiplyScalar(1.6), 0.4));
   front.rotation.y = Math.PI / 2; front.position.set(barX + 0.36, RY + 0.53, (barZ0 + barZ1) / 2); scene.add(front);
   const counter = new THREE.Mesh(new THREE.BoxGeometry(0.75, 0.06, barZ0 - barZ1 + 0.1), new THREE.MeshStandardMaterial({ color: C('#d9d2e6'), roughness: 0.25 }));
   counter.position.set(barX, RY + 1.08, (barZ0 + barZ1) / 2); scene.add(counter);
@@ -388,11 +388,7 @@ export function buildWorld(): World {
   };
   people.forEach((p, i) => pose(p, i, 0, 0)); // start in place (they only animate once you're on the roof)
   scene.add(bodies, heads, shoulders, arms);
-  const crowdLights = [new THREE.PointLight(C(PAL.b), 24, 10, 2), new THREE.PointLight(C(PAL.a), 20, 10, 2), new THREE.PointLight(C(PAL.a).lerp(C(PAL.b), 0.5), 18, 10, 2)];
-  // the setting sun: a big orange disc on the horizon behind the skyline, and its low warm light on the crowd
-  const sun = new THREE.Mesh(new THREE.CircleGeometry(14, 48), glowMat(C(PAL.a).lerp(C('#ffd29a'), 0.35).multiplyScalar(1.4)));
-  sun.position.set(-30, RY + 9, ROOF_Z - 150); sun.lookAt(0, RY + 9, ROOF_Z); scene.add(sun);
-  const sunLight = new THREE.DirectionalLight(C(PAL.a).lerp(C('#ffb36b'), 0.4), 1.4); sunLight.position.set(-30, RY + 4, ROOF_Z - 80); sunLight.target.position.set(0, RY, ROOF_Z - 6); scene.add(sunLight, sunLight.target);
+  const crowdLights = [new THREE.PointLight(C(VIOLET), 22, 10, 2), new THREE.PointLight(C(PAL.b), 14, 9, 2), new THREE.PointLight(C('#3d6bff'), 14, 10, 2)];
   crowdLights[0].position.set(-2, RY + 0.4, ROOF_Z - 7); crowdLights[1].position.set(2.5, RY + 2.5, ROOF_Z - 9); crowdLights[2].position.set(0, RY + 3, DJZ - 1);
   crowdLights.forEach((l) => scene.add(l));
 
@@ -417,13 +413,8 @@ export function buildWorld(): World {
   // the street door opens outward (toward you) so the stairwell stays clear; the roof door opens onto the roof
   const setDoors = (street: number, roof: number) => { streetDoor.rotation.y = -street * 1.85; roofDoor.rotation.y = roof * 1.85; };
   const tmp = new THREE.Color();
-  // on the roof the distance fades into a pink-plum sunset haze; down on the street it stays the night colour
-  const fog = scene.fog as THREE.FogExp2, streetFog = C(PAL.bg), roofFog = C(PAL.b).lerp(C('#2a0b3a'), 0.55);
-  let roofMix = 0;
   function update(t: number, kick: number, camera: THREE.Camera) {
     sky.position.copy(camera.position);
-    roofMix += ((camera.position.z < ROOF_Z + 0.5 ? 1 : 0) - roofMix) * 0.04;
-    fog.color.copy(streetFog).lerp(roofFog, roofMix); fog.density = lerp(0.012, 0.009, roofMix);
     const k = 0.6 + 0.4 * kick;
     for (const p of pulse) p.mat.color.copy(p.base).multiplyScalar(lerp(1, k, p.k));
     for (let i = 0; i < N; i++) noses.setColorAt(i, tmp.copy(noseBase[i]).multiplyScalar(k));
