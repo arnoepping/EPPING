@@ -29,19 +29,29 @@ function wall(ctx, S, scale) {
 }
 
 function outside(ctx, S) {
-  const { w, h, pal, local, kick, t } = S, cx = w / 2, cy = h / 2;
+  const { w, h, pal, local, kick, t } = S, cx = w / 2, cy = h / 2, pulse = 0.55 + 0.45 * kick;
   const z = lerp(0.42, 1.05, ease(local)), dh = h * 0.62 * z, dw = dh * 0.5;
-  wall(ctx, S, z * 1.1);
-  const dx = cx - dw / 2, dy = cy - dh * 0.42;
-  ctx.shadowColor = pal.b; ctx.shadowBlur = 40 * z * (0.6 + kick);
-  ctx.strokeStyle = rgba(pal.b, 0.45 + 0.35 * kick); ctx.lineWidth = 4 * z; ctx.strokeRect(dx, dy, dw, dh);
-  ctx.shadowBlur = 0;
-  ctx.fillStyle = mix(pal.bg, '#000000', 0.4); ctx.fillRect(dx, dy, dw, dh);
-  ctx.fillStyle = rgba(pal.a, 0.15 + 0.25 * kick); ctx.fillRect(dx, dy + dh - 4 * z, dw, 4 * z);
-  const g = ctx.createRadialGradient(cx, dy + dh, 0, cx, dy + dh, dw * 1.6);
-  g.addColorStop(0, rgba(pal.b, 0.25 + 0.2 * kick)); g.addColorStop(1, rgba(pal.b, 0));
-  ctx.fillStyle = g; ctx.fillRect(0, dy + dh - dw, w, dw * 2);
-  drawLogo(ctx, pal, cx, dy - dh * 0.16, dw * 1.5, { glow: 30 * z, alpha: Math.sin(t * 13) > 0.92 ? 0.35 : 1, split: 2 });
+  wall(ctx, S, 0.9); // the bricks stay put while you walk up to the door
+  const dx = cx - dw / 2, dy = cy - dh * 0.42, sy = dy - dh * 0.16;
+  // frame and door leaf: lit from the sign above, darker toward the ground
+  ctx.fillStyle = mix(pal.bg, '#000000', 0.3); ctx.fillRect(dx - dw * 0.06, dy - dw * 0.06, dw * 1.12, dh + dw * 0.06);
+  const leaf = ctx.createLinearGradient(0, dy, 0, dy + dh);
+  leaf.addColorStop(0, mix(mix(pal.bg, '#000000', 0.15), pal.b, 0.22 * pulse));
+  leaf.addColorStop(0.55, mix(pal.bg, '#000000', 0.35)); leaf.addColorStop(1, mix(pal.bg, '#000000', 0.5));
+  ctx.fillStyle = leaf; ctx.fillRect(dx, dy, dw, dh);
+  ctx.strokeStyle = rgba(pal.fg, 0.07); ctx.lineWidth = Math.max(1, 1.5 * z);
+  ctx.strokeRect(dx + dw * 0.14, dy + dh * 0.07, dw * 0.72, dh * 0.38); ctx.strokeRect(dx + dw * 0.14, dy + dh * 0.53, dw * 0.72, dh * 0.38);
+  ctx.fillStyle = rgba(pal.fg, 0.35); ctx.fillRect(dx + dw * 0.8, dy + dh * 0.5, dw * 0.05, dh * 0.06);
+  // light: soft spill from under the door and the sign's glow falling over wall and door (no hard edges)
+  ctx.globalCompositeOperation = 'lighter';
+  const leak = ctx.createRadialGradient(cx, dy + dh, 0, cx, dy + dh, dw * 1.3);
+  leak.addColorStop(0, rgba(pal.b, 0.32 * pulse)); leak.addColorStop(1, rgba(pal.b, 0));
+  ctx.fillStyle = leak; ctx.fillRect(cx - dw * 1.3, dy + dh - dw * 1.3, dw * 2.6, dw * 2.6);
+  const glow = ctx.createRadialGradient(cx, sy, 0, cx, sy, dw * 1.8);
+  glow.addColorStop(0, rgba(pal.b, 0.3 * pulse)); glow.addColorStop(0.5, rgba(pal.a, 0.1 * pulse)); glow.addColorStop(1, rgba(pal.a, 0));
+  ctx.fillStyle = glow; ctx.fillRect(cx - dw * 1.8, sy - dw * 1.8, dw * 3.6, dw * 3.6);
+  ctx.globalCompositeOperation = 'source-over';
+  drawLogo(ctx, pal, cx, sy, dw * 1.5, { glow: 30 * z, alpha: Math.sin(t * 13) > 0.92 ? 0.35 : 1, split: 2 });
   S.hit(dx, dy, dw, dh, 0.36); // click the door: in you go
   ctx.strokeStyle = pal.a; ctx.lineWidth = 5 * z; ctx.beginPath();
   ctx.moveTo(dx - dw * 0.9, dy + dh * 0.82); ctx.quadraticCurveTo(dx - dw * 0.45, dy + dh * 0.95, dx - dw * 0.05, dy + dh * 0.82); ctx.stroke();
@@ -84,17 +94,30 @@ function stairs(ctx, S) {
     if (a[2] < NEAR) a = cut(a, b); else if (b[2] < NEAR) b = cut(b, a);
     const A = proj(a), B = proj(b); ctx.moveTo(A[0], A[1]); ctx.lineTo(B[0], B[1]); return true;
   }
+  const hx = (c) => [1, 3, 5].map((i) => parseInt(c.slice(i, i + 2), 16)), CB = hx(pal.b), CA = hx(pal.a);
+  const colAt = (z, al = 1) => { const k = clamp(z / (N * DEPTH)); return `rgba(${CB.map((v, i) => Math.round(v + (CA[i] - v) * k)).join(',')},${al})`; }; // neon colour along the climb
+  // a neon line split into short pieces so its colour follows colAt
+  function neonLine(x, h0, width, glow) {
+    for (let z = Math.max(0, Math.floor(zn)); z < N * DEPTH; z += 0.8) {
+      const z2 = Math.min(N * DEPTH, z + 0.8); neon(colAt(z), width, glow); ctx.beginPath();
+      if (seg([x, z * SLOPE + h0, z], [x, z2 * SLOPE + h0, z2])) ctx.stroke();
+    }
+  }
   const neon = (col, width, glow) => { ctx.strokeStyle = col; ctx.lineWidth = width; ctx.shadowColor = col; ctx.shadowBlur = glow; };
   const zT = N * DEPTH, yT = N * RISE, zn = zc - 0.6, pulse = 0.55 + 0.45 * kick;
   ctx.fillStyle = mix(pal.bg, '#000000', 0.15); ctx.fillRect(0, 0, w, h);
   const brick = mix(pal.bg, pal.fg, 0.09), mortar = rgba(mix(pal.bg, '#000000', 0.4), 0.8);
 
   // ceiling, with a skylight near the top showing the dusk sky
-  quad([[-HW, zn * SLOPE + CEIL, zn], [HW, zn * SLOPE + CEIL, zn], [HW, yT + CEIL, zT], [-HW, yT + CEIL, zT]], mix(pal.bg, '#000000', 0.05));
+  // the whole ceiling carries the dusk gradient; the skylight is a brighter window in it
+  const c0 = P(0, (zc + 0.4) * SLOPE + CEIL, zc + 0.4), c1 = P(0, yT + CEIL, zT);
+  let ceil = mix(pal.bg, pal.b, 0.4);
+  if (c0 && c1) { ceil = ctx.createLinearGradient(c0[0], c0[1], c1[0], c1[1]); ceil.addColorStop(0, mix(pal.bg, pal.b, 0.4)); ceil.addColorStop(1, mix(pal.bg, pal.a, 0.75)); }
+  quad([[-HW, zn * SLOPE + CEIL, zn], [HW, zn * SLOPE + CEIL, zn], [HW, yT + CEIL, zT], [-HW, yT + CEIL, zT]], ceil);
   const s0 = zT - 2.6, s1 = zT - 0.7, A = P(0, s0 * SLOPE + CEIL, s0), B = P(0, s1 * SLOPE + CEIL, s1);
   if (A && B) {
     const sky = ctx.createLinearGradient(A[0], A[1], B[0], B[1]);
-    sky.addColorStop(0, mix(pal.bg, pal.b, 0.45)); sky.addColorStop(1, pal.a);
+    sky.addColorStop(0, mix(pal.b, pal.fg, 0.25)); sky.addColorStop(1, mix(pal.a, pal.fg, 0.35));
     if (quad([[-0.5, s0 * SLOPE + CEIL - 0.01, s0], [0.5, s0 * SLOPE + CEIL - 0.01, s0], [0.5, s1 * SLOPE + CEIL - 0.01, s1], [-0.5, s1 * SLOPE + CEIL - 0.01, s1]], sky)) {
       ctx.strokeStyle = rgba(pal.bg, 0.9); ctx.lineWidth = 2; ctx.beginPath();
       for (let k = 1; k < 4; k++) { const zz = lerp(s0, s1, k / 4); seg([-0.5, zz * SLOPE + CEIL - 0.02, zz], [0.5, zz * SLOPE + CEIL - 0.02, zz]); }
@@ -117,7 +140,7 @@ function stairs(ctx, S) {
   }
   // side walls: brick, washed by the neon above, plus the posters
   for (const side of [-1, 1]) {
-    const X = side * HW, col = side < 0 ? pal.b : pal.a;
+    const X = side * HW;
     const q = quad([[X, zn * SLOPE - 0.3, zn], [X, yT, zT], [X, yT + CEIL, zT], [X, zn * SLOPE + CEIL, zn]], brick);
     if (!q) continue;
     ctx.save(); ctx.clip();
@@ -134,7 +157,7 @@ function stairs(ctx, S) {
       const L = P(X, lz * SLOPE + CEIL - 0.4, lz);
       if (!L) continue;
       const r = (1.5 * F) / L[2], g = ctx.createRadialGradient(L[0], L[1], 0, L[0], L[1], r);
-      g.addColorStop(0, rgba(col, 0.1 + 0.22 * pulse)); g.addColorStop(1, rgba(col, 0));
+      g.addColorStop(0, colAt(lz, 0.1 + 0.22 * pulse)); g.addColorStop(1, colAt(lz, 0));
       ctx.fillStyle = g; ctx.fillRect(L[0] - r, L[1] - r, r * 2, r * 2);
     }
     ctx.globalCompositeOperation = 'source-over';
@@ -144,7 +167,7 @@ function stairs(ctx, S) {
       if (sd !== side || !list.length) return;
       const item = list[k % list.length], img = posterImg(item.src.replace('{pal}', palKey));
       if (!img.complete || !img.naturalWidth) return;
-      const sz = 0.62, ph = sz * (img.naturalHeight / img.naturalWidth), py = pz * SLOPE + 1.05, za = side < 0 ? pz : pz + sz, zb = side < 0 ? pz + sz : pz;
+      const sz = 0.62, ph = sz * (img.naturalHeight / img.naturalWidth), py = pz * SLOPE + 1.5, za = side < 0 ? pz : pz + sz, zb = side < 0 ? pz + sz : pz;
       const tl = P(X, py + ph, za), tr = P(X, py + ph, zb), bl = P(X, py, za);
       if (!tl || !tr || !bl) return;
       ctx.save();
@@ -152,18 +175,13 @@ function stairs(ctx, S) {
       ctx.drawImage(img, 0, 0);
       ctx.restore();
       const fog = clamp((pz - zc) / 9), frame = quad([[X, py, za], [X, py, zb], [X, py + ph, zb], [X, py + ph, za]], rgba(pal.bg, fog * 0.6));
-      if (frame) { ctx.strokeStyle = rgba(col, 0.35 + 0.4 * kick); ctx.lineWidth = 1.5; ctx.stroke(); }
+      if (frame) { ctx.strokeStyle = colAt(pz, 0.35 + 0.4 * kick); ctx.lineWidth = 1.5; ctx.stroke(); }
     });
     ctx.restore();
   }
   // neon strips along both ceiling edges and the handrail, pulsing with the music
-  for (const side of [-1, 1]) {
-    const X = side * (HW - 0.02), col = side < 0 ? pal.b : pal.a;
-    neon(col, 3 + 2 * kick, 14 + 22 * kick); ctx.beginPath();
-    if (seg([X, zn * SLOPE + CEIL - 0.02, zn], [X, yT + CEIL - 0.02, zT])) ctx.stroke();
-  }
-  neon(pal.b, 3 + 2 * kick, 12 + 18 * kick); ctx.beginPath();
-  if (seg([HW - 0.03, zn * SLOPE + 0.9, zn], [HW - 0.03, yT + 0.9, zT])) ctx.stroke();
+  for (const side of [-1, 1]) neonLine(side * (HW - 0.02), CEIL - 0.02, 3 + 2 * kick, 14 + 22 * kick);
+  neonLine(HW - 0.03, 0.9, 3 + 2 * kick, 12 + 18 * kick);
   ctx.shadowBlur = 0;
   // steps, far to near, with a neon strip on each nose (alternating colours)
   for (let i = N - 1; i >= 0; i--) {
@@ -172,7 +190,7 @@ function stairs(ctx, S) {
     const fog = clamp(1 - (z0 - zc) / 9);
     quad([[-HW, y0 + RISE, z0], [HW, y0 + RISE, z0], [HW, y0 + RISE, z0 + DEPTH], [-HW, y0 + RISE, z0 + DEPTH]], mix(pal.bg, pal.fg, 0.05 + 0.1 * fog));
     if (z0 > zn) quad([[-HW, y0, z0], [HW, y0, z0], [HW, y0 + RISE, z0], [-HW, y0 + RISE, z0]], mix(pal.bg, pal.fg, 0.02 + 0.04 * fog));
-    ctx.strokeStyle = rgba(i % 2 ? pal.a : pal.b, (0.3 + 0.6 * fog) * pulse); ctx.lineWidth = Math.max(1, 3 * fog);
+    ctx.strokeStyle = colAt(z0, (0.3 + 0.6 * fog) * pulse); ctx.lineWidth = Math.max(1, 3 * fog);
     ctx.beginPath(); if (seg([-HW, y0 + RISE, z0], [HW, y0 + RISE, z0])) ctx.stroke();
   }
   // the street door closing behind you (opening at the start of this stage)
