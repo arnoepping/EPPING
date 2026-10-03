@@ -10,7 +10,7 @@
     { label: 'Up the stairs', from: 0.3, to: 0.72 },
     { label: 'On the roof', from: 0.72, to: 1 },
   ];
-  const BPM = 124, SPB = 60 / BPM;
+  const BPM = 128, SPB = 60 / BPM, SONG = 'audio/song.mp3'; // Mau P – Just A Little Bit More (~128 BPM)
 
   // ---------- helpers ----------
   const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
@@ -48,92 +48,42 @@
     ctx.restore();
   }
 
-  // ---------- sound: queue murmur -> muffled club -> full bounce ----------
+  // ---------- sound: one song through a low-pass ----------
+  // Outside you only hear the bass through the walls; climbing the stairs opens the filter; on the roof it's the full track.
+  // Analyser on the unfiltered song drives the visual kick, so the neon pulses with the real music.
   const sound = {
-    ctx: null, on: false,
+    ctx: null, el: null, on: false, peak: 0.2,
     async toggle() {
       if (!this.ctx) this.init();
       this.on = !this.on;
-      if (this.on) await this.ctx.resume(); else await this.ctx.suspend();
+      if (this.on) { const play = this.el.play(); this.ctx.resume(); try { await play; } catch (e) { this.on = false; } } // play() first: iOS needs it inside the tap
+      else { this.el.pause(); await this.ctx.suspend(); }
       return this.on;
     },
-    noise(sec) {
-      const c = this.ctx, b = c.createBuffer(1, c.sampleRate * sec, c.sampleRate), d = b.getChannelData(0);
-      for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
-      return b;
-    },
     init() {
+      // iPhone: treat this as media playback so the silent switch doesn't mute it (Safari 17+)
+      try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch (e) {}
       const c = this.ctx = new (window.AudioContext || window.webkitAudioContext)();
-      this.out = c.createGain(); this.out.gain.value = 0.9; this.out.connect(c.destination);
-      // Music goes through a low-pass: the walls between you and the floor.
-      this.lp = c.createBiquadFilter(); this.lp.type = 'lowpass'; this.lp.frequency.value = 140; this.lp.Q.value = 0.8;
-      this.music = c.createGain(); this.music.gain.value = 0.5; this.music.connect(this.lp); this.lp.connect(this.out);
-      // Crowd murmur: noise through wandering band-passes with syllable-rate wobble.
-      this.crowd = c.createGain(); this.crowd.gain.value = 0.5; this.crowd.connect(this.out);
-      this.nb = this.noise(4);
-      for (let i = 0; i < 7; i++) {
-        const src = c.createBufferSource(); src.buffer = this.nb; src.loop = true;
-        const bp = c.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 280 + Math.random() * 900; bp.Q.value = 5;
-        const g = c.createGain(); g.gain.value = 0.35;
-        const lfo = c.createOscillator(); lfo.frequency.value = 2.5 + Math.random() * 4; const lg = c.createGain(); lg.gain.value = 0.35; lfo.connect(lg); lg.connect(g.gain);
-        const wob = c.createOscillator(); wob.frequency.value = 0.2 + Math.random() * 0.5; const wg = c.createGain(); wg.gain.value = 160; wob.connect(wg); wg.connect(bp.frequency);
-        src.connect(bp); bp.connect(g); g.connect(this.crowd);
-        src.start(0, Math.random() * 3); lfo.start(); wob.start();
-      }
-      const bed = c.createBufferSource(); bed.buffer = this.nb; bed.loop = true;
-      const bl = c.createBiquadFilter(); bl.type = 'lowpass'; bl.frequency.value = 450;
-      const bg = c.createGain(); bg.gain.value = 0.12; bed.connect(bl); bl.connect(bg); bg.connect(this.crowd); bed.start();
-      this.t0 = this.next = c.currentTime + 0.1; this.step = 0;
-      setInterval(() => this.schedule(), 25);
-    },
-    schedule() {
-      if (!this.on) return;
-      const c = this.ctx;
-      while (this.next < c.currentTime + 0.12) { this.play(this.step, this.next); this.next += SPB / 4; this.step = (this.step + 1) % 64; }
-    },
-    env(node, t, peak, dur) { node.gain.setValueAtTime(peak, t); node.gain.exponentialRampToValueAtTime(0.001, t + dur); },
-    play(s, t) {
-      const c = this.ctx;
-      if (s % 4 === 0) { // kick
-        const o = c.createOscillator(), g = c.createGain();
-        o.frequency.setValueAtTime(150, t); o.frequency.exponentialRampToValueAtTime(44, t + 0.12);
-        this.env(g, t, 1, 0.4); o.connect(g); g.connect(this.music); o.start(t); o.stop(t + 0.45);
-      }
-      if (s % 4 === 2 || (s % 16 === 15)) { // hats
-        const n = c.createBufferSource(), hp = c.createBiquadFilter(), g = c.createGain();
-        n.buffer = this.nb; hp.type = 'highpass'; hp.frequency.value = 7500;
-        this.env(g, t, s % 4 === 2 ? 0.22 : 0.1, s % 4 === 2 ? 0.09 : 0.04); n.connect(hp); hp.connect(g); g.connect(this.music); n.start(t, Math.random() * 3); n.stop(t + 0.12);
-      }
-      if (s % 8 === 4) { // clap
-        const n = c.createBufferSource(), bp = c.createBiquadFilter(), g = c.createGain();
-        n.buffer = this.nb; bp.type = 'bandpass'; bp.frequency.value = 1400; bp.Q.value = 0.9;
-        this.env(g, t, 0.45, 0.18); n.connect(bp); bp.connect(g); g.connect(this.music); n.start(t, Math.random() * 3); n.stop(t + 0.2);
-      }
-      const bassline = [0, 0, 1, 0, 0, 1, 0, 1]; // rolling offbeat bass, A minor
-      if (s % 2 === 1 || s % 4 === 2) {
-        const notes = [55, 55, 65.4, 49], f = notes[Math.floor(s / 16) % 4] * (bassline[(s >> 1) % 8] ? 2 : 1);
-        const o = c.createOscillator(), lp = c.createBiquadFilter(), g = c.createGain();
-        o.type = 'sawtooth'; o.frequency.value = f; lp.type = 'lowpass'; lp.frequency.setValueAtTime(900, t); lp.frequency.exponentialRampToValueAtTime(180, t + 0.14);
-        this.env(g, t, 0.28, 0.16); o.connect(lp); lp.connect(g); g.connect(this.music); o.start(t); o.stop(t + 0.2);
-      }
-      if (s % 32 === 0) { // chord stab every two bars
-        for (const f of [220, 261.6, 329.6]) {
-          const o = c.createOscillator(), g = c.createGain(); o.type = 'square'; o.frequency.value = f;
-          this.env(g, t, 0.06, 0.5); o.connect(g); g.connect(this.music); o.start(t); o.stop(t + 0.55);
-        }
-      }
+      this.el = new Audio(SONG); this.el.loop = true; this.el.preload = 'auto'; this.el.setAttribute('playsinline', '');
+      const src = c.createMediaElementSource(this.el);
+      this.an = c.createAnalyser(); this.an.fftSize = 1024; this.an.smoothingTimeConstant = 0.35; src.connect(this.an);
+      this.bins = new Uint8Array(this.an.frequencyBinCount);
+      this.lp = c.createBiquadFilter(); this.lp.type = 'lowpass'; this.lp.frequency.value = 160; this.lp.Q.value = 0.9;
+      this.gain = c.createGain(); this.gain.gain.value = 0.9;
+      src.connect(this.lp); this.lp.connect(this.gain); this.gain.connect(c.destination);
     },
     update(st, local) {
       if (!this.ctx) return;
-      const now = this.ctx.currentTime;
-      const cut = st === 0 ? lerp(110, 200, local) : st === 1 ? lerp(240, 2400, local ** 2.2) : lerp(4000, 18000, clamp(local * 3));
-      const crowd = st === 0 ? 0.55 : st === 1 ? lerp(0.12, 0.02, local) : 0.1;
-      const music = st === 0 ? 0.5 : st === 1 ? lerp(0.55, 0.75, local) : 0.8;
-      this.lp.frequency.setTargetAtTime(cut, now, 0.12);
-      this.crowd.gain.setTargetAtTime(crowd, now, 0.2);
-      this.music.gain.setTargetAtTime(music, now, 0.2);
+      const cut = st === 0 ? lerp(140, 220, local) : st === 1 ? 240 * Math.pow(18000 / 240, local ** 1.6) : 18000;
+      this.lp.frequency.setTargetAtTime(cut, this.ctx.currentTime, 0.1);
     },
-    beats() { return this.on ? (this.ctx.currentTime - this.t0) / SPB : null; },
+    // 0..1 kick level from the low bins (~40-170 Hz), normalised against a slowly falling peak
+    kick() {
+      this.an.getByteFrequencyData(this.bins);
+      const v = (this.bins[1] + this.bins[2] + this.bins[3]) / 765;
+      this.peak = Math.max(v, this.peak * 0.995, 0.2);
+      return clamp((v / this.peak - 0.55) / 0.45) ** 1.5;
+    },
   };
 
   // ---------- page ----------
@@ -204,9 +154,9 @@
       }
       if (autoStart !== null) p = autoFrom + (1 - autoFrom) * clamp((ms - autoStart) / 1000 / autoDur);
       const st = p < STAGES[1].from ? 0 : p < STAGES[2].from ? 1 : 2, S0 = STAGES[st], local = clamp((p - S0.from) / (S0.to - S0.from));
-      const t = ms / 1000, beat = sound.beats() ?? t / SPB, kick = reduce ? 0 : Math.exp(-(beat % 1) * 5);
+      const t = ms / 1000, beat = sound.on ? sound.el.currentTime / SPB : t / SPB, kick = reduce ? 0 : sound.on ? sound.kick() : Math.exp(-(beat % 1) * 5);
       hits = [];
-      const S = { w, h, t, p, stage: st, local, beat, kick, pal: PALETTES[pal], energy: [0.25, 0.55, 1][st], dpr, util, hit: (x, y, ww, hh, toP) => hits.push({ x, y, w: ww, h: hh, toP }) };
+      const S = { w, h, t, p, stage: st, local, beat, kick, pal: PALETTES[pal], palKey: pal, energy: [0.25, 0.55, 1][st], dpr, util, hit: (x, y, ww, hh, toP) => hits.push({ x, y, w: ww, h: hh, toP }) };
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over'; ctx.shadowBlur = 0;
       draw(ctx, S);

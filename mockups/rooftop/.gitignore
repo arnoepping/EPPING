@@ -1,2 +1,5 @@
-# the user's footage stays out of the public repo
+# the user's footage, music and poster images stay out of the public repo
 video/
+audio/
+posters/*.jpg
+posters/*.png
