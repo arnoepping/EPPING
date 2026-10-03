@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>The Door · Epping entrance</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@800&family=Space+Grotesk:wght@500;600&display=swap">
+<link rel="stylesheet" href="shared.css">
+</head>
+<body>
+<script src="wordmark.js"></script>
+<script src="shared.js"></script>
+<script>
+// Concept 1 · The Door: a brick wall with a door leaking light, a neon EPPING sign above it.
+// The door slides open into a corridor of neon door frames; the light at the end swallows you.
+const { clamp, lerp, ease, rgba, mix, drawLogo, rand } = Entrance.util;
+const R = rand(7), BRICKS = Array.from({ length: 400 }, () => R());
+
+function wall(ctx, S, scale) {
+  const { w, h, pal } = S, bw = 64 * scale, bh = 26 * scale;
+  ctx.fillStyle = mix(pal.bg, pal.a, 0.05); ctx.fillRect(0, 0, w, h);
+  ctx.lineWidth = Math.max(1, 1.5 * scale);
+  let i = 0;
+  for (let y = h / 2 - Math.ceil(h / 2 / bh) * bh; y < h; y += bh) {
+    const row = Math.round((y - h / 2) / bh), off = row % 2 ? bw / 2 : 0;
+    for (let x = w / 2 - Math.ceil(w / 2 / bw + 1) * bw + off; x < w; x += bw) {
+      const v = BRICKS[i++ % BRICKS.length];
+      ctx.fillStyle = mix(pal.bg, pal.fg, 0.03 + v * 0.05);
+      ctx.fillRect(x + 1, y + 1, bw - 2, bh - 2);
+    }
+  }
+}
+
+function draw(ctx, S) {
+  const { w, h, pal, stage, local, kick } = S, cx = w / 2, cy = h / 2;
+  if (stage === 0) {
+    // approach the door
+    const z = lerp(0.42, 1.05, ease(local)), dh = h * 0.62 * z, dw = dh * 0.5, scale = z * 1.1;
+    wall(ctx, S, scale);
+    const dx = cx - dw / 2, dy = cy - dh * 0.42;
+    // light leaking around the door, pulsing with the (muffled) kick
+    const leak = 0.25 + 0.35 * kick;
+    ctx.shadowColor = pal.b; ctx.shadowBlur = 40 * z * (0.6 + kick);
+    ctx.strokeStyle = rgba(pal.b, leak + 0.2); ctx.lineWidth = 4 * z;
+    ctx.strokeRect(dx, dy, dw, dh);
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = mix(pal.bg, '#000000', 0.4); ctx.fillRect(dx, dy, dw, dh);
+    ctx.fillStyle = rgba(pal.a, 0.15 + 0.25 * kick); ctx.fillRect(dx, dy + dh - 4 * z, dw, 4 * z); // light under the door
+    // floor glow spilling out
+    const g = ctx.createRadialGradient(cx, dy + dh, 0, cx, dy + dh, dw * 1.6);
+    g.addColorStop(0, rgba(pal.b, 0.25 + 0.2 * kick)); g.addColorStop(1, rgba(pal.b, 0));
+    ctx.fillStyle = g; ctx.fillRect(0, dy + dh - dw, w, dw * 2);
+    // neon sign, flickering
+    const flick = Math.sin(S.t * 13) > 0.92 ? 0.35 : 1;
+    drawLogo(ctx, pal, cx, dy - dh * 0.16, dw * 1.5, { glow: 30 * z, alpha: flick, split: 2 });
+    // velvet rope
+    ctx.strokeStyle = pal.a; ctx.lineWidth = 5 * z; ctx.beginPath();
+    ctx.moveTo(dx - dw * 0.9, dy + dh * 0.82); ctx.quadraticCurveTo(dx - dw * 0.45, dy + dh * 0.95, dx - dw * 0.05, dy + dh * 0.82); ctx.stroke();
+    ctx.fillStyle = mix(pal.fg, pal.a, 0.4);
+    for (const px of [dx - dw * 0.9, dx - dw * 0.05]) ctx.fillRect(px - 3 * z, dy + dh * 0.78, 6 * z, dh * 0.22);
+    return;
+  }
+  // corridor of door frames
+  ctx.fillStyle = pal.bg; ctx.fillRect(0, 0, w, h);
+  const travel = stage === 1 ? local * 26 : 26 + local * 30, F = Math.min(w, h) * 0.9;
+  const end = stage === 1 ? ease(local) : 1;
+  // the opening at the end
+  const er = lerp(0.04, 0.5, end) * Math.max(w, h) + (stage === 2 ? local * Math.max(w, h) * 3 : 0);
+  const eg = ctx.createRadialGradient(cx, cy, 0, cx, cy, er);
+  eg.addColorStop(0, rgba(pal.fg, 0.95)); eg.addColorStop(0.35, rgba(pal.b, 0.7 + 0.3 * kick)); eg.addColorStop(1, rgba(pal.b, 0));
+  ctx.fillStyle = eg; ctx.fillRect(0, 0, w, h);
+  ctx.globalCompositeOperation = 'lighter';
+  for (let i = 0; i < 40; i++) {
+    const z = ((i * 1.6 - travel) % 64 + 64) % 64 + 0.6;
+    const s = F / z, fw = s * 0.62, fh = s, fade = Math.exp(-((z / 34) ** 2)) * clamp(z - 0.6);
+    const col = i % 2 ? pal.a : pal.b, pulse = 0.6 + 0.4 * kick * (stage === 2 ? 1 : 0.7);
+    ctx.strokeStyle = rgba(col, fade * pulse); ctx.lineWidth = Math.max(1, s * 0.05);
+    ctx.shadowColor = col; ctx.shadowBlur = s * 0.12;
+    ctx.strokeRect(cx - fw / 2, cy - fh * 0.48, fw, fh);
+  }
+  ctx.shadowBlur = 0;
+  // light strips on the floor rushing past
+  for (let i = 0; i < 24; i++) {
+    const z = ((i * 2.7 - travel * 1.3) % 64 + 64) % 64 + 0.8, s = F / z;
+    ctx.fillStyle = rgba(pal.fg, Math.exp(-((z / 30) ** 2)) * 0.5);
+    ctx.fillRect(cx - s * 0.02, cy + s * 0.52, s * 0.04, s * 0.18);
+  }
+  ctx.globalCompositeOperation = 'source-over';
+  // door halves sliding open at the start of the corridor
+  if (stage === 1 && local < 0.18) {
+    const o = ease(local / 0.18), half = w / 2;
+    ctx.fillStyle = mix(pal.bg, '#000000', 0.4);
+    ctx.fillRect(-o * half, 0, half, h); ctx.fillRect(half + o * half, 0, half, h);
+  }
+  if (stage === 2) { ctx.fillStyle = rgba(pal.fg, clamp(local * 2.2) * 0.85); ctx.fillRect(0, 0, w, h); }
+}
+Entrance.start({ draw });
+</script>
+</body>
+</html>

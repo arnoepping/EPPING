@@ -1,0 +1,120 @@
+<title>Epping Entrance Concepts</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;800&family=Space+Grotesk:wght@400;500;600&display=swap">
+<style>
+/* Layout: a short intro, then one row per concept: name + what happens at each of the three steps + open buttons per palette.
+   Deliberately single dark theme, like the site itself. */
+:root {
+  color-scheme: dark;
+  --bg: #0D0A10; --panel: #17131C; --line: #2B2632; --fg: #F4EEF0; --muted: #A39BAA;
+  --sun-a: #FF4D00; --sun-b: #FF2BD6; --sun-bg: #12061A;
+  --gold-a: #FFC400; --gold-b: #FF3D7F; --gold-bg: #0A0A0A;
+  --display: "Unbounded", "Arial Black", system-ui, sans-serif;
+  --body: "Space Grotesk", system-ui, -apple-system, sans-serif;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--fg); font: 16px/1.5 var(--body); }
+.wrap { max-width: 1100px; margin: 0 auto; padding-inline: 20px; padding-block: 36px 72px; display: grid; gap: 36px; }
+header { display: grid; gap: 14px; }
+.eyebrow { margin: 0; font: 600 12px var(--body); letter-spacing: .18em; text-transform: uppercase; background: linear-gradient(90deg, var(--sun-a), var(--sun-b), var(--gold-a)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+h1 { margin: 0; font: 800 clamp(30px, 6vw, 60px)/1 var(--display); letter-spacing: -.02em; text-wrap: balance; }
+.lede { margin: 0; max-width: 64ch; color: var(--muted); }
+.steps { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.steps li { font-size: 13px; padding: 6px 12px; border: 1px solid var(--line); border-radius: 999px; color: var(--fg); }
+.steps li b { color: var(--muted); font-weight: 500; margin-right: 6px; }
+
+.concepts { display: grid; gap: 14px; }
+.c { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 2fr) auto; gap: 24px; align-items: center; padding: 22px; border: 1px solid var(--line); border-radius: 16px; background: var(--panel); }
+.c h2 { margin: 0 0 6px; font: 800 clamp(20px, 3vw, 28px)/1.05 var(--display); letter-spacing: -.01em; }
+.c .pitch { margin: 0; color: var(--muted); font-size: 14px; }
+.flow { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 0; padding: 0; list-style: none; font-size: 14px; }
+.flow li { display: grid; gap: 2px; min-width: 0; }
+.flow span { font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+.open { display: grid; gap: 8px; }
+.open a { display: flex; align-items: center; gap: 10px; justify-content: space-between; text-decoration: none; color: var(--fg); font: 600 14px var(--body);
+  padding: 10px 14px; border-radius: 999px; border: 1.5px solid var(--line); white-space: nowrap; }
+.open a i { width: 34px; height: 14px; border-radius: 7px; flex: none; }
+.open a.sun i { background: linear-gradient(90deg, var(--sun-a), var(--sun-b)); }
+.open a.gold i { background: linear-gradient(90deg, var(--gold-a), var(--gold-b)); }
+.open a.sun:hover, .open a.sun:focus-visible { border-color: var(--sun-b); background: var(--sun-bg); }
+.open a.gold:hover, .open a.gold:focus-visible { border-color: var(--gold-a); background: var(--gold-bg); }
+.open a:focus-visible { outline: 2px solid var(--fg); outline-offset: 2px; }
+.note { margin: 0; color: var(--muted); font-size: 14px; max-width: 70ch; }
+
+@media (max-width: 860px) {
+  .c { grid-template-columns: 1fr; gap: 16px; }
+  .open { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 480px) {
+  .flow { grid-template-columns: 1fr; }
+  .open { grid-template-columns: 1fr; }
+}
+</style>
+
+<div class="wrap">
+  <header>
+    <p class="eyebrow">eppingmusic.com · first screen</p>
+    <h1>Five ways into the party</h1>
+    <p class="lede">Every concept tells the same story as you scroll: you wait in line, get inside, and land on the dancefloor, where your footage takes over. Each one opens in Sunset rave or Gold rush, and you can switch palettes inside it. Tap <b>Sound off</b> to turn the sound on: murmur in the queue, muffled bass inside, the full track on the floor.</p>
+    <ol class="steps">
+      <li><b>1</b>In line outside</li>
+      <li><b>2</b>Inside, bass through the walls</li>
+      <li><b>3</b>On the floor</li>
+    </ol>
+  </header>
+
+  <div class="concepts">
+    <article class="c">
+      <div><h2>The Door</h2><p class="pitch">The current tunnel idea, rebuilt as a club entrance.</p></div>
+      <ol class="flow">
+        <li><span>Outside</span>A brick wall, light leaking around the door, a flickering EPPING neon sign.</li>
+        <li><span>Inside</span>The door slides open into a corridor of neon door frames rushing past.</li>
+        <li><span>Floor</span>The light at the end swallows you; your footage fades in.</li>
+      </ol>
+      <div class="open"><a class="sun" href="v1-door.html#sunset">Sunset rave <i></i></a><a class="gold" href="v1-door.html#gold">Gold rush <i></i></a></div>
+    </article>
+
+    <article class="c">
+      <div><h2>The Queue</h2><p class="pitch">A side view of an Amsterdam street at night.</p></div>
+      <ol class="flow">
+        <li><span>Outside</span>You move up the line past canal houses; people nod to the bass leaking out. Bouncer, rope, neon.</li>
+        <li><span>Inside</span>A dark hallway, ceiling lights passing overhead, the far door pulsing.</li>
+        <li><span>Floor</span>Behind the crowd, hands up, lights fanning from the booth.</li>
+      </ol>
+      <div class="open"><a class="sun" href="v2-queue.html#sunset">Sunset rave <i></i></a><a class="gold" href="v2-queue.html#gold">Gold rush <i></i></a></div>
+    </article>
+
+    <article class="c">
+      <div><h2>On the List</h2><p class="pitch">Typographic: the logo becomes the doorway.</p></div>
+      <ol class="flow">
+        <li><span>Outside</span>Your guest-list ticket gets scanned by a laser until it says ON THE LIST.</li>
+        <li><span>Inside</span>The EPPING stamp slams down, then you dive into the hole of the G.</li>
+        <li><span>Floor</span>Through the G, the floor opens up in rings of colour.</li>
+      </ol>
+      <div class="open"><a class="sun" href="v3-stamp.html#sunset">Sunset rave <i></i></a><a class="gold" href="v3-stamp.html#gold">Gold rush <i></i></a></div>
+    </article>
+
+    <article class="c">
+      <div><h2>Going Down</h2><p class="pitch">The party is in the basement.</p></div>
+      <ol class="flow">
+        <li><span>Outside</span>Lobby: press the call button, the brushed-metal doors open.</li>
+        <li><span>Inside</span>The display counts down: cloakroom, corridor, the floor. The car rattles harder with each floor.</li>
+        <li><span>Floor</span>The doors open into light beams.</li>
+      </ol>
+      <div class="open"><a class="sun" href="v4-elevator.html#sunset">Sunset rave <i></i></a><a class="gold" href="v4-elevator.html#gold">Gold rush <i></i></a></div>
+    </article>
+
+    <article class="c">
+      <div><h2>Through the Walls</h2><p class="pitch">Abstract: you see the sound instead of the rooms.</p></div>
+      <ol class="flow">
+        <li><span>Outside</span>Grey ridgelines jitter like chatter, with a faint thump in the middle.</li>
+        <li><span>Inside</span>Soft, muffled peaks swell and pick up colour.</li>
+        <li><span>Floor</span>The peaks turn sharp and spiky; your footage opens in a circle from the centre.</li>
+      </ol>
+      <div class="open"><a class="sun" href="v5-walls.html#sunset">Sunset rave <i></i></a><a class="gold" href="v5-walls.html#gold">Gold rush <i></i></a></div>
+    </article>
+  </div>
+
+  <p class="note">These are quick mockups to pick a direction. The floor buttons at the end don't go anywhere yet. The footage is the street-party clip. Concepts can also be combined, for example The Queue outside with On the List at the door.</p>
+</div>

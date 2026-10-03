@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>The Queue · Epping entrance</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@800&family=Space+Grotesk:wght@500;600&display=swap">
+<link rel="stylesheet" href="shared.css">
+</head>
+<body>
+<script src="wordmark.js"></script>
+<script src="shared.js"></script>
+<script>
+// Concept 2 · The Queue: side view of an Amsterdam street at night. You shuffle forward in the line
+// (people nod to the bass leaking out), past the bouncer, through a hallway of passing ceiling lights,
+// and out behind the crowd facing the booth.
+const { clamp, lerp, ease, rgba, mix, drawLogo, rand } = Entrance.util;
+const R = rand(11);
+const PEOPLE = Array.from({ length: 14 }, (_, i) => ({ x: 120 + i * 92 + R() * 30, hgt: 0.82 + R() * 0.3, w: 0.9 + R() * 0.3, ph: R() * 6, hat: R() > 0.7, phone: R() > 0.75 }));
+const WINDOWS = Array.from({ length: 60 }, () => ({ lit: R() > 0.55, warm: R() > 0.5 }));
+const CROWD = Array.from({ length: 70 }, () => ({ x: R(), row: Math.floor(R() * 3), ph: R() * 6, hand: R() > 0.6 }));
+
+function person(ctx, x, base, u, p, col, bob) {
+  const H = 170 * u * p.hgt, W = 52 * u * p.w, y = base - H + bob;
+  ctx.fillStyle = col;
+  ctx.beginPath(); ctx.roundRect(x - W / 2, y + H * 0.24, W, H * 0.76, [W * 0.4, W * 0.4, 4, 4]); ctx.fill();
+  ctx.beginPath(); ctx.arc(x, y + H * 0.13, H * 0.1, 0, Math.PI * 2); ctx.fill();
+  if (p.hat) ctx.fillRect(x - H * 0.12, y + H * 0.04, H * 0.24, H * 0.05);
+  return y;
+}
+
+function street(ctx, S) {
+  const { w, h, pal, local, kick, t } = S, u = h / 900, ground = h * 0.78;
+  const world = 1700 * u, door = 1450 * u, camX = lerp(0, door - w * 0.62, ease(local));
+  // sky
+  const sky = ctx.createLinearGradient(0, 0, 0, ground);
+  sky.addColorStop(0, pal.bg); sky.addColorStop(1, mix(pal.bg, pal.b, 0.22));
+  ctx.fillStyle = sky; ctx.fillRect(0, 0, w, h);
+  ctx.save(); ctx.translate(-camX, 0);
+  // canal houses (gabled facades)
+  const houses = [[0, 380, 520], [380, 300, 610], [680, 340, 560], [1020, 300, 640], [1320, 420, 590]];
+  let wi = 0;
+  for (const [x0, hw, hh] of houses) {
+    const X = x0 * u, W = hw * u, top = ground - hh * u;
+    ctx.fillStyle = mix(pal.bg, pal.fg, 0.07);
+    ctx.beginPath(); ctx.moveTo(X, ground); ctx.lineTo(X, top + 60 * u); ctx.lineTo(X + W * 0.3, top + 60 * u); ctx.lineTo(X + W * 0.3, top);
+    ctx.lineTo(X + W * 0.7, top); ctx.lineTo(X + W * 0.7, top + 60 * u); ctx.lineTo(X + W, top + 60 * u); ctx.lineTo(X + W, ground); ctx.fill();
+    for (let r = 0; r < 4; r++) for (let c = 0; c < 3; c++) {
+      const win = WINDOWS[wi++ % WINDOWS.length], wx = X + W * (0.14 + c * 0.28), wy = top + 100 * u + r * 105 * u;
+      if (wy > ground - 160 * u) continue;
+      ctx.fillStyle = win.lit ? rgba(win.warm ? pal.a : pal.fg, 0.55) : mix(pal.bg, pal.fg, 0.03);
+      ctx.fillRect(wx, wy, W * 0.16, 62 * u);
+    }
+  }
+  // the club door with leaking light
+  const dw = 120 * u, dh = 230 * u, dx = door, dy = ground - dh;
+  const leak = ctx.createRadialGradient(dx + dw / 2, ground, 0, dx + dw / 2, ground, 420 * u);
+  leak.addColorStop(0, rgba(pal.b, 0.35 + 0.35 * kick)); leak.addColorStop(1, rgba(pal.b, 0));
+  ctx.fillStyle = leak; ctx.fillRect(dx - 420 * u, ground - 420 * u, 840 * u + dw, 520 * u);
+  ctx.fillStyle = rgba(pal.b, 0.6 + 0.4 * kick); ctx.fillRect(dx, dy, dw, dh);
+  ctx.fillStyle = mix(pal.bg, '#000000', 0.5); ctx.fillRect(dx + dw * 0.08, dy + dh * 0.06, dw * 0.84, dh * 0.94);
+  drawLogo(ctx, pal, dx + dw / 2, dy - 70 * u, 300 * u, { glow: 26 * u, alpha: Math.sin(t * 9) > 0.95 ? 0.4 : 1 });
+  // bouncer + rope
+  person(ctx, dx - 70 * u, ground, u * 1.15, { hgt: 1.1, w: 1.5 }, mix(pal.bg, '#000000', 0.3), 0);
+  ctx.strokeStyle = pal.a; ctx.lineWidth = 5 * u; ctx.beginPath(); ctx.moveTo(dx - 340 * u, ground - 70 * u);
+  ctx.quadraticCurveTo(dx - 240 * u, ground - 40 * u, dx - 130 * u, ground - 70 * u); ctx.stroke();
+  // the queue, nodding to the leaking kick
+  for (const p of PEOPLE) {
+    const x = p.x * u;
+    if (x > dx - 360 * u) continue;
+    const bob = -kick * 5 * u * (0.5 + 0.5 * Math.sin(p.ph));
+    const top = person(ctx, x, ground, u, p, mix(pal.bg, pal.fg, 0.13), bob);
+    if (p.phone) { ctx.fillStyle = rgba(pal.fg, 0.9); ctx.fillRect(x + 14 * u, top + 30 * u, 9 * u, 15 * u); }
+  }
+  // street lamp
+  ctx.fillStyle = mix(pal.bg, pal.fg, 0.18); ctx.fillRect(820 * u, ground - 420 * u, 6 * u, 420 * u);
+  const lamp = ctx.createRadialGradient(823 * u, ground - 420 * u, 0, 823 * u, ground - 420 * u, 260 * u);
+  lamp.addColorStop(0, rgba(pal.a, 0.45)); lamp.addColorStop(1, rgba(pal.a, 0));
+  ctx.fillStyle = lamp; ctx.fillRect(560 * u, ground - 680 * u, 520 * u, 680 * u);
+  ctx.restore();
+  // pavement
+  ctx.fillStyle = mix(pal.bg, pal.fg, 0.05); ctx.fillRect(0, ground, w, h - ground);
+  ctx.fillStyle = rgba(pal.b, 0.12 + 0.1 * kick); ctx.fillRect(0, ground, w, 3 * u);
+  // you, in the foreground, the camera's shoulder
+  ctx.fillStyle = mix(pal.bg, '#000000', 0.6);
+  ctx.beginPath(); ctx.ellipse(w * 0.12, h * 1.02, w * 0.2, h * 0.28, 0, 0, Math.PI * 2); ctx.fill();
+  // zoom into the door at the very end
+  if (local > 0.85) { ctx.fillStyle = rgba(pal.bg, (local - 0.85) / 0.15); ctx.fillRect(0, 0, w, h); }
+}
+
+function hallway(ctx, S) {
+  const { w, h, pal, local, kick } = S, cx = w / 2 + kick * 2, cy = h * 0.46, travel = local * 18; // the kick shakes the walls
+  ctx.fillStyle = mix(pal.bg, '#000000', 0.35); ctx.fillRect(0, 0, w, h);
+  // walls in one-point perspective
+  ctx.fillStyle = mix(pal.bg, pal.fg, 0.05);
+  ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(cx - w * 0.06, cy - h * 0.08); ctx.lineTo(cx - w * 0.06, cy + h * 0.08); ctx.lineTo(0, h); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(w, 0); ctx.lineTo(cx + w * 0.06, cy - h * 0.08); ctx.lineTo(cx + w * 0.06, cy + h * 0.08); ctx.lineTo(w, h); ctx.fill();
+  // far door glowing, growing
+  const s = lerp(0.12, 1.3, local ** 2), fw = w * 0.12 * s * 2.2, fh = h * 0.16 * s * 2.2;
+  ctx.shadowColor = pal.b; ctx.shadowBlur = 60 * (0.5 + kick);
+  ctx.fillStyle = rgba(pal.b, 0.7 + 0.3 * kick); ctx.fillRect(cx - fw / 2, cy - fh / 2, fw, fh);
+  ctx.shadowBlur = 0;
+  ctx.fillStyle = rgba(pal.fg, 0.5 + 0.4 * kick); ctx.fillRect(cx - fw * 0.3, cy - fh * 0.35, fw * 0.6, fh * 0.7);
+  // ceiling lights passing overhead
+  for (let i = 0; i < 14; i++) {
+    const z = ((i * 1.4 - travel) % 20 + 20) % 20 + 0.5, k = 1 / z;
+    ctx.fillStyle = rgba(i % 3 ? pal.fg : pal.a, Math.min(1, 1.6 * k) * 0.8);
+    const lw = w * 0.16 * k, ly = cy - h * 0.5 * k * 1.4;
+    ctx.fillRect(cx - lw / 2, ly, lw, Math.max(2, 10 * k));
+  }
+}
+
+function floor(ctx, S) {
+  const { w, h, pal, local, kick, beat } = S, u = h / 900;
+  ctx.fillStyle = pal.bg; ctx.fillRect(0, 0, w, h);
+  // stage lights fanning from the booth
+  ctx.globalCompositeOperation = 'lighter';
+  for (let i = 0; i < 8; i++) {
+    const a = Math.sin(beat * 0.25 + i) * 0.5 + (i - 3.5) * 0.18, col = i % 2 ? pal.a : pal.b;
+    const g = ctx.createLinearGradient(w / 2, h * 0.3, w / 2 + Math.sin(a) * h, h * 0.3 - Math.cos(a) * h);
+    g.addColorStop(0, rgba(col, 0.55 * (0.5 + kick / 2))); g.addColorStop(1, rgba(col, 0));
+    ctx.fillStyle = g; ctx.beginPath(); ctx.moveTo(w / 2, h * 0.32);
+    ctx.lineTo(w / 2 + Math.sin(a - 0.06) * h * 1.4, h * 0.32 - Math.cos(a - 0.06) * h * 1.4);
+    ctx.lineTo(w / 2 + Math.sin(a + 0.06) * h * 1.4, h * 0.32 - Math.cos(a + 0.06) * h * 1.4); ctx.fill();
+  }
+  ctx.globalCompositeOperation = 'source-over';
+  drawLogo(ctx, pal, w / 2, h * 0.36, Math.min(w * 0.5, 420 * u), { glow: 30 * u });
+  // crowd from behind, hands up on the kick
+  for (const c of CROWD) {
+    const base = h * (0.82 + c.row * 0.08), x = c.x * w, s = u * (0.9 + c.row * 0.25);
+    const jump = -Math.max(0, Math.sin(beat * Math.PI + c.ph)) * 10 * s * (0.4 + local);
+    ctx.fillStyle = mix(pal.bg, '#000000', 0.2 + c.row * 0.15);
+    ctx.beginPath(); ctx.arc(x, base - 120 * s + jump, 24 * s, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.roundRect(x - 36 * s, base - 96 * s + jump, 72 * s, 200 * s, 30 * s); ctx.fill();
+    if (c.hand) { ctx.fillRect(x + 22 * s, base - 200 * s + jump - kick * 14 * s, 10 * s, 90 * s); }
+  }
+}
+
+Entrance.start({ draw: (ctx, S) => (S.stage === 0 ? street : S.stage === 1 ? hallway : floor)(ctx, S) });
+</script>
+</body>
+</html>

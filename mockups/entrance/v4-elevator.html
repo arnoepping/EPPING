@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Going Down · Epping entrance</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@800&family=Space+Grotesk:wght@500;600&display=swap">
+<link rel="stylesheet" href="shared.css">
+</head>
+<body>
+<script src="wordmark.js"></script>
+<script src="shared.js"></script>
+<script>
+// Concept 4 · Going Down: the party is in the basement. Press the button in the lobby, the doors close,
+// the floor display counts down (street, cloakroom, corridor, floor) while the bass rattles the car,
+// and the doors open onto the dancefloor.
+const { clamp, lerp, ease, rgba, mix, drawLogo } = Entrance.util;
+const FLOORS = [['0', 'STREET'], ['-1', 'CLOAKROOM'], ['-2', 'CORRIDOR'], ['-3', 'THE FLOOR']];
+const font = (px, wt = 800, fam = 'Unbounded') => `${wt} ${px}px ${fam}, system-ui, sans-serif`;
+
+function doors(ctx, S, open, x, y, dw, dh) {
+  const { pal } = S, half = dw / 2, o = open * half;
+  for (const side of [-1, 1]) {
+    const px = side < 0 ? x - o : x + half + o;
+    const g = ctx.createLinearGradient(px, 0, px + half, 0);
+    g.addColorStop(0, mix(pal.bg, pal.fg, 0.16)); g.addColorStop(0.5, mix(pal.bg, pal.fg, 0.26)); g.addColorStop(1, mix(pal.bg, pal.fg, 0.14));
+    ctx.fillStyle = g; ctx.fillRect(px, y, half, dh);
+    // brushed-metal streaks
+    ctx.fillStyle = rgba(pal.fg, 0.04);
+    for (let i = 0; i < 14; i++) ctx.fillRect(px + (i / 14) * half, y, 1, dh);
+  }
+}
+
+function display(ctx, S, cx, y, size, idx, moving) {
+  const { pal, t } = S, [num, name] = FLOORS[idx];
+  ctx.fillStyle = mix(pal.bg, '#000000', 0.5); ctx.beginPath(); ctx.roundRect(cx - size * 2.2, y, size * 4.4, size * 1.5, 8); ctx.fill();
+  ctx.fillStyle = pal.a; ctx.shadowColor = pal.a; ctx.shadowBlur = 12;
+  ctx.font = font(size * 0.8); ctx.textAlign = 'center'; ctx.fillText((moving ? (Math.sin(t * 6) > 0 ? '▼ ' : '  ') : '') + num, cx, y + size * 0.9);
+  ctx.font = font(size * 0.28, 600, 'Space Grotesk'); ctx.fillText(name, cx, y + size * 1.3);
+  ctx.shadowBlur = 0; ctx.textAlign = 'start';
+}
+
+function draw(ctx, S) {
+  const { w, h, pal, stage, local, kick } = S, cx = w / 2;
+  const dh = Math.min(h * 0.68, w * 0.95), dw = dh * 0.62, x = cx - dw / 2, y = h * 0.2, bx = Math.min(x + dw + 60, w - 24); // button column
+  ctx.fillStyle = pal.bg; ctx.fillRect(0, 0, w, h);
+
+  if (stage === 2 || (stage === 1 && local > 0.97)) {
+    // doors open onto the floor
+    const open = stage === 2 ? ease(clamp(local * 1.6)) : 0;
+    const beams = ctx.createRadialGradient(cx, y + dh / 2, 0, cx, y + dh / 2, Math.max(w, h) * (0.4 + open));
+    beams.addColorStop(0, rgba(pal.fg, 0.9)); beams.addColorStop(0.3, rgba(pal.b, 0.8 * (0.6 + 0.4 * kick))); beams.addColorStop(1, rgba(pal.a, 0));
+    ctx.fillStyle = beams; ctx.fillRect(0, 0, w, h);
+    ctx.globalCompositeOperation = 'lighter';
+    for (let i = 0; i < 10; i++) {
+      const a = (i / 10) * Math.PI * 2 + S.beat * 0.2, col = i % 2 ? pal.a : pal.b;
+      ctx.strokeStyle = rgba(col, 0.4 * (0.5 + kick / 2)); ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.moveTo(cx, y + dh / 2); ctx.lineTo(cx + Math.cos(a) * w, y + dh / 2 + Math.sin(a) * w); ctx.stroke();
+    }
+    ctx.globalCompositeOperation = 'source-over';
+    const zoom = 1 + open * 1.5;
+    ctx.save(); ctx.translate(cx, y + dh / 2); ctx.scale(zoom, zoom); ctx.translate(-cx, -(y + dh / 2));
+    doors(ctx, S, open, x, y, dw, dh);
+    ctx.restore();
+    return;
+  }
+
+  if (stage === 0) {
+    // lobby: closed doors, call button, the display says STREET
+    ctx.fillStyle = mix(pal.bg, pal.fg, 0.05); ctx.fillRect(0, 0, w, h);
+    ctx.fillStyle = mix(pal.bg, pal.fg, 0.1); ctx.fillRect(x - 20, y - 20, dw + 40, dh + 20);
+    const open = local > 0.55 ? ease(clamp((local - 0.55) / 0.35)) : 0;
+    // inside the car (seen when the doors open): warm light
+    ctx.fillStyle = mix(pal.bg, pal.a, 0.25); ctx.fillRect(x, y, dw, dh);
+    ctx.fillStyle = rgba(pal.fg, 0.2); ctx.fillRect(x, y, dw, 6);
+    doors(ctx, S, open, x, y, dw, dh);
+    display(ctx, S, cx, y - 20 - dh * 0.17, dh * 0.1, 0, false);
+    const pressed = local > 0.3;
+    ctx.fillStyle = pressed ? pal.b : mix(pal.bg, pal.fg, 0.35);
+    if (pressed) { ctx.shadowColor = pal.b; ctx.shadowBlur = 20; }
+    ctx.beginPath(); ctx.arc(bx, y + dh * 0.5, 16, 0, Math.PI * 2); ctx.fill(); ctx.shadowBlur = 0;
+    ctx.fillStyle = pal.bg; ctx.font = font(14); ctx.textAlign = 'center'; ctx.fillText('▼', bx, y + dh * 0.5 + 5); ctx.textAlign = 'start';
+    // floor plate next to the doors
+    if (x > 130) {
+      drawLogo(ctx, pal, x - 70, y + dh * 0.5, 90, { split: 1.5 });
+      ctx.fillStyle = rgba(pal.fg, 0.6); ctx.font = font(11, 600, 'Space Grotesk'); ctx.fillText('B3 · DANCEFLOOR', x - 112, y + dh * 0.5 + 30);
+    } else drawLogo(ctx, pal, cx, y + dh + 50, Math.min(dw, 200), { split: 1.5 });
+    return;
+  }
+
+  // inside the car, heading down; shaking more with every floor
+  const idx = Math.min(3, 1 + Math.floor(local * 3)), shake = kick * (2 + local * 8);
+  ctx.save(); ctx.translate((Math.random() - 0.5) * shake, (Math.random() - 0.5) * shake);
+  ctx.fillStyle = mix(pal.bg, pal.a, 0.08); ctx.fillRect(-20, -20, w + 40, h + 40);
+  // side panels and handrail
+  ctx.fillStyle = mix(pal.bg, pal.fg, 0.08); ctx.fillRect(0, 0, x - 30, h); ctx.fillRect(x + dw + 30, 0, w, h);
+  ctx.fillStyle = mix(pal.bg, pal.fg, 0.3); ctx.fillRect(0, y + dh * 0.62, x - 40, 8); ctx.fillRect(x + dw + 40, y + dh * 0.62, w, 8);
+  // closed doors from inside; the gap glows with the bass
+  doors(ctx, S, 0, x, y, dw, dh);
+  ctx.fillStyle = rgba(pal.b, 0.3 + 0.7 * kick * (0.4 + local)); ctx.shadowColor = pal.b; ctx.shadowBlur = 30 * (0.3 + local);
+  ctx.fillRect(cx - 1.5, y, 3, dh); ctx.shadowBlur = 0;
+  display(ctx, S, cx, y - dh * 0.19, dh * 0.1, idx, true);
+  // floor buttons panel
+  for (let i = 0; i < 4; i++) {
+    const by = y + dh * 0.2 + i * 44, lit = 3 - i === idx || i === 0;
+    ctx.fillStyle = lit ? pal.a : mix(pal.bg, pal.fg, 0.3); ctx.beginPath(); ctx.arc(bx, by, 15, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = pal.bg; ctx.font = font(11); ctx.textAlign = 'center'; ctx.fillText(FLOORS[3 - i][0], bx, by + 4); ctx.textAlign = 'start';
+  }
+  ctx.restore();
+}
+Entrance.start({ draw });
+</script>
+</body>
+</html>

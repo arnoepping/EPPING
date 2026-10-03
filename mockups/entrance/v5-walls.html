@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Through the Walls · Epping entrance</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@800&family=Space+Grotesk:wght@500;600&display=swap">
+<link rel="stylesheet" href="shared.css">
+</head>
+<body>
+<script src="wordmark.js"></script>
+<script src="shared.js"></script>
+<script>
+// Concept 5 · Through the Walls: no rooms, just the sound. Outside it is crowd chatter (fine jitter) with a
+// faint thump. Inside, the ridgelines swell with soft, muffled peaks. On the floor they turn sharp and
+// spiky in full colour, and the footage opens up in a circle from the centre.
+const { clamp, lerp, ease, rgba, mix, drawLogo, rand } = Entrance.util;
+const R = rand(3), SEEDS = Array.from({ length: 64 }, () => [R() * 6, R() * 6, R()]);
+
+function draw(ctx, S) {
+  const { w, h, pal, stage, local, kick, beat, t } = S;
+  ctx.fillStyle = pal.bg; ctx.fillRect(0, 0, w, h);
+  const p = S.p, lines = Math.round(clamp(h / 18, 26, 48)), top = h * 0.16, bottom = h * 0.8, gap = (bottom - top) / lines;
+  const left = Math.max(16, w * 0.1), right = w - left, N = 120;
+  // how sharp the peaks are: muffled (smooth) -> open (spiky)
+  const sharp = stage === 0 ? 0.05 : stage === 1 ? lerp(0.15, 0.5, local) : lerp(0.6, 1, clamp(local * 2));
+  const amp = stage === 0 ? lerp(0.15, 0.35, local) : stage === 1 ? lerp(0.4, 1, local) : 1.3;
+  const chatter = stage === 0 ? 1 : stage === 1 ? 1 - local : 0;
+  for (let i = 0; i < lines; i++) {
+    const y0 = top + i * gap, [a1, a2, rr] = SEEDS[i % SEEDS.length];
+    const col = mix(pal.a, pal.b, i / lines);
+    ctx.beginPath();
+    const pts = [];
+    for (let j = 0; j <= N; j++) {
+      const u = j / N, x = lerp(left, right, u), centre = Math.exp(-(((u - 0.5) / 0.17) ** 2));
+      // thump: a bump that rides the kick, wider and softer when muffled
+      const thump = kick * centre * (1 - sharp * 0.4);
+      // chatter: fine random jitter (the queue)
+      const jit = chatter * (Math.sin(u * 90 + t * 9 + a1) * Math.sin(u * 37 + t * 5 + a2)) * 0.25;
+      // open sound: sharp spikes in the middle
+      const spike = sharp * centre * Math.abs(Math.sin(u * (30 + rr * 40) + beat * Math.PI + a1)) ** (1 + 6 * sharp) * (0.6 + 0.4 * kick);
+      const v = (thump * 1.4 + spike * 2.2) * amp + jit;
+      pts.push([x, y0 - v * gap * 3]);
+    }
+    ctx.moveTo(pts[0][0], pts[0][1]);
+    for (const [x, y] of pts) ctx.lineTo(x, y);
+    // fill below in the background colour so lines in front hide those behind (the ridgeline look)
+    ctx.lineTo(right, y0 + gap); ctx.lineTo(left, y0 + gap); ctx.closePath();
+    ctx.fillStyle = pal.bg; ctx.fill();
+    ctx.beginPath(); ctx.moveTo(pts[0][0], pts[0][1]);
+    for (const [x, y] of pts) ctx.lineTo(x, y);
+    ctx.strokeStyle = stage === 0 ? rgba(pal.fg, 0.55) : stage === 1 ? mix(pal.fg, col, local) : col;
+    ctx.lineWidth = stage === 2 ? 2 : 1.4;
+    if (stage === 2) { ctx.shadowColor = col; ctx.shadowBlur = 10 * kick; }
+    ctx.stroke(); ctx.shadowBlur = 0;
+  }
+  // logo: small and grey outside, growing into colour
+  const lw = Math.min(w * 0.7, 640) * lerp(0.45, 1, ease(p)), ly = top - Math.max(30, h * 0.05);
+  drawLogo(ctx, pal, w / 2, Math.max(ly, 80), lw, stage === 0 ? { color: mix(pal.bg, pal.fg, 0.7), split: 0 } : { split: 2 + kick * 2 });
+  // caption describing what you hear
+  const caption = ['PEOPLE TALKING · A FAINT THUMP BEHIND THE WALL', 'BASS THROUGH THE WALLS · MUFFLED', 'FULL BOUNCE'][stage];
+  ctx.fillStyle = rgba(pal.fg, 0.6); ctx.font = '600 12px "Space Grotesk", system-ui, sans-serif'; ctx.textAlign = 'center';
+  ctx.fillText(caption, w / 2, bottom + 34); ctx.textAlign = 'start';
+}
+Entrance.start({ draw, finale: 'circle' });
+</script>
+</body>
+</html>
