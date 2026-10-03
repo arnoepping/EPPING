@@ -17,7 +17,7 @@ const others = FLOORS.filter((o) => o.slug !== f.slug);
     <div class="fp-body">{f.body.map((b) => <p>{b}</p>)}</div>
     <ul class="fp-list">{f.includes.map((x) => <li>{x}</li>)}</ul>
   </div>
-  <iframe class="fp-sc" title={`${f.mix.title} on SoundCloud`} loading="lazy" allow="autoplay" src={soundcloudEmbed(f.mix.url)}></iframe>
+  <iframe class:list={['fp-sc', { 'fp-sc-set': f.mix.embed }]} title={`${f.mix.title} on SoundCloud`} loading="lazy" allow="autoplay; encrypted-media" src={soundcloudEmbed(f.mix.embed ?? f.mix.url)}></iframe>
   <div class="fp-contact">
     <h2>{f.cta}</h2>
     <div class="fp-btns">

@@ -3,7 +3,8 @@ export type Slug = 'rave-wedding' | 'private-events' | 'presents';
 export interface Floor {
   slug: Slug; n: string; name: string; tagline: string; headline: string; intro: string; body: string[]; includes: string[];
   event?: { date: string; place: string; note: string };
-  mix: { title: string; length: string; url: string };
+  /** url: public SoundCloud page; embed: optional player URL (SoundCloud's own api URL works best for sets) */
+  mix: { title: string; length: string; url: string; embed?: string };
   cta: string; mail: { subject: string; body: string }; whatsapp: string;
 }
 
@@ -22,7 +23,7 @@ export const FLOORS: Floor[] = [
       'From drinks after the ceremony to the afterparty, with light and smoke that turn any venue into a club for a few hours.',
     ],
     includes: ['Planning call and a shared playlist', 'DJ set from first dance to last song', 'Club sound and light show, smoke on request', 'Room for 50 to 250 guests'],
-    mix: { title: 'Marta & Donald’s wedding', length: 'Set', url: 'https://soundcloud.com/arno-epping/sets/marta-donalds-wedding' },
+    mix: { title: 'Marta & Donald’s wedding', length: 'Set', url: 'https://soundcloud.com/arno-epping/sets/marta-donalds-wedding', embed: 'https://api.soundcloud.com/playlists/2277399272' },
     cta: 'Book your date',
     mail: { subject: 'Rave Wedding booking', body: 'Hi Epping,\n\nWe are getting married on [date] at [venue] and would love a rave wedding.\n\n' },
     whatsapp: 'Hi Epping! We are getting married on [date] and want a rave wedding.',
@@ -49,7 +50,7 @@ export const FLOORS: Floor[] = [
       'A few times a year we take over a rooftop, a basement or a place nobody expected and throw the party we want to go to ourselves.',
       'Locations are announced to the list first. Get on it and you hear about the next one before anyone else.',
     ],
-    // event: { date: '', place: '', note: '' }, // add the next night here to show the 'Next night' block
+    event: { date: 'Thu 22 October 2026', place: 'Hoofddorpplein, Amsterdam', note: 'Silent disco during ADE · 19:00 – 22:00' }, // remove after the night to hide the block
     includes: ['Announcements via WhatsApp and Instagram', 'Early-bird tickets for the list', 'Guest DJs from the Amsterdam scene'],
     mix: { title: 'ADE House Mix', length: 'Mix', url: 'https://soundcloud.com/arno-epping/ade-house-mix' },
     cta: 'Get on the list',

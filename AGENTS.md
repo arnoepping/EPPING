@@ -24,7 +24,7 @@ Website for Epping: DJ and party organizer. (`CLAUDE.md` is a symlink to this fi
 
 ## Status (2026-10-03, evening)
 - **Domain:** https://eppingmusic.com is live on GitHub Pages with HTTPS enforced. DNS is on GitHub (A/AAAA records, plus `www` CNAME → `arnoepping.github.io`).
-  - **Next:** cancel the Squarespace *website* subscription (keep the domain).
+  - Squarespace website subscription cancelled (domain kept).
   - Never touch MX, SPF or `google._domainkey`: email runs on Google Workspace.
   - DNS snapshot from before the switch: `.superpowers/sdd/2026-10-02-deploy-pipeline/dns-before.txt` (git-ignored, local only).
 - **Logo: final.** Unbounded 800, G3 (no spur), RGB split. Use it everywhere. `npm run logo` outlines it (G3 data in `scripts/g3.json`) into `public/brand/`, the favicon and `src/components/wordmark.json` (used by `Wordmark.astro`). Replay-G idea dropped.
@@ -34,8 +34,9 @@ Website for Epping: DJ and party organizer. (`CLAUDE.md` is a symlink to this fi
 - **Brand:** spec approved (`docs/superpowers/specs/2026-10-02-brand-identity-design.md`): logo A (Unbounded 800, RGB split), black/pink/cyan palette. Built (commits 3373c00..8d50901, not pushed): logo SVGs in `public/brand/`, favicon, `tokens.css`/`ui.css`, `Base.astro`, `Wordmark.astro`, `/brand/` page. Regenerate logos with `npm run logo`.
 - **New site: LIVE on eppingmusic.com since 2026-10-03** (merged from branch `rooftop-3d`). three.js rebuild of the rooftop mockup replaces the tunnel/hall entirely (spec `docs/superpowers/specs/2026-10-03-rooftop-entrance-3d.md`). Code: `src/entrance/` (world.ts = street/stairs/roof + camera walk, app.ts = renderer/bloom/scroll/doors/floor overlay, sound.ts), `src/components/Entrance.astro` + `FloorPage.astro`, routes `/rave-wedding/` etc. Palette Sunset rave (`src/entrance/palette.ts` + `src/styles/tokens.css`). Private preview https://claude.ai/artifact/VJo89VNU63RYo5S9WU9sD5 (rebuild with `scripts/preview-artifact.sh`, republish from `media/preview-3d/`).
   - Media is committed (user's choice, 2026-10-03): own ADE House Mix (plays from 18:30), the dusk clip, six covers. The Mau P track was dropped for rights reasons.
-  - Epping Presents event block hidden until there's a real date (`event` in `src/content/floors.ts`).
-  - Next ideas: share preview image (og:image), realism pass on the street (Blender MCP later), Squarespace website cancel.
+  - Epping Presents next night: silent disco during ADE, Thu 22 Oct 2026, 19:00–22:00, Hoofddorpplein (`event` in `src/content/floors.ts`; remove after the night).
+  - Rave Wedding SoundCloud set embeds via its api URL, but SoundCloud reports 0 playable tracks: the user needs to make the set's tracks public.
+  - Next ideas: share preview image (og:image), realism pass on the street (Blender MCP later).
 - **Rooftop mockup (done, reference):** The user picked concept 1 (The Door) and changed the story: brick wall + rope + neon sign outside → through the door, stairs up (muffled, louder as you climb) → rooftop party at dusk, ending on the dusk-with-smoke clip (`f8d559f2…MP4`). Mockup: `mockups/rooftop/` (forked engine), private page https://claude.ai/artifact/WDr3pafFf7zjuLDPAdGkAT, palette toggle (#sunset / #gold).
   - **For the real (three.js) build, keep:** a small "Scroll to get in" hint in the bottom-right corner (street-sign version rejected), clickable doors (street door → into the stairwell, top door → climb to the roof; scroll works too), sound on/off toggle, a small skip, a replay ("back to the street"). Mockup-only: stage counter + progress bar, palette switch.
   - **Next:** one more review round on story/pacing (not visuals), then rebuild in three.js on a branch (not `main`), with Playwright + Context7 MCPs. Blender MCP later for realism.
