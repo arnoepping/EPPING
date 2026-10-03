@@ -169,11 +169,13 @@ function stairs(ctx, S) {
       if (!img.complete || !img.naturalWidth) return;
       const sz = 0.62, ph = sz * (img.naturalHeight / img.naturalWidth), py = pz * SLOPE + 1.5, za = side < 0 ? pz : pz + sz, zb = side < 0 ? pz + sz : pz;
       const tl = P(X, py + ph, za), tr = P(X, py + ph, zb), bl = P(X, py, za);
-      if (!tl || !tr || !bl) return;
-      ctx.save();
+      // the flat image fit only holds at a distance: fade posters out as they come close, skip them once passed
+      if (!tl || !tr || !bl || Math.min(tl[2], tr[2], bl[2]) < 1.1) return;
+      ctx.save(); ctx.globalAlpha = clamp((Math.min(tl[2], tr[2], bl[2]) - 1.1) / 0.8);
       ctx.transform((tr[0] - tl[0]) / img.naturalWidth, (tr[1] - tl[1]) / img.naturalWidth, (bl[0] - tl[0]) / img.naturalHeight, (bl[1] - tl[1]) / img.naturalHeight, tl[0], tl[1]);
       ctx.drawImage(img, 0, 0);
       ctx.restore();
+      ctx.globalAlpha = 1;
       const fog = clamp((pz - zc) / 9), frame = quad([[X, py, za], [X, py, zb], [X, py + ph, zb], [X, py + ph, za]], rgba(pal.bg, fog * 0.6));
       if (frame) { ctx.strokeStyle = colAt(pz, 0.35 + 0.4 * kick); ctx.lineWidth = 1.5; ctx.stroke(); }
     });
