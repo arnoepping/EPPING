@@ -17,23 +17,18 @@ Website for Epping: DJ and party organizer. (`CLAUDE.md` is a symlink to this fi
 ## Stack / pipeline
 - Astro static site. `npm run build`. No tests.
 - `public/CNAME` is ignored by Actions-based Pages deploys (the domain is a repo setting).
-- Until the custom domain is live, the site is served under `/EPPING/`, so absolute paths like `/favicon.svg` break there. This is expected and needs no `base` config.
 - `.github/workflows/deploy.yml`: push to `main` triggers build, then deploy to GitHub Pages.
 - `gh` CLI is installed and logged in as `arnoepping` with workflow scope. Repo `arnoepping/EPPING` is public.
 - Dev server: `astro dev --background` (manage it with `astro dev stop`, `astro dev status` and `astro dev logs`). Docs: https://docs.astro.build
 
-## Status (2026-10-02)
-- Brand + festival site are pushed and deployed, but https://arnoepping.github.io/EPPING/ looks broken: CSS/JS load from absolute `/_astro/...`, which 404s under the `/EPPING/` subpath. Works locally and will work at the domain root. Fix: domain cutover. Step-by-step instructions are in `docs/DOMAIN-CUTOVER.md`.
-- **Next: domain cutover.** Remaining steps are Task 3 step 3+5 and Task 4 in `docs/superpowers/plans/2026-10-02-deploy-pipeline.md`.
-  - Domain is registered at Squarespace Domains; its DNS is in the Squarespace panel.
+## Status (2026-10-03)
+- **Domain:** http://eppingmusic.com is live on GitHub Pages. DNS has been moved to GitHub (A/AAAA records, plus `www` CNAME → `arnoepping.github.io`), and domain verification passed.
+  - **Next:** wait for the HTTPS certificate, then tick Enforce HTTPS (repo Settings → Pages). After that, cancel the Squarespace *website* subscription (keep the domain).
   - Never touch MX, SPF or `google._domainkey`: email runs on Google Workspace.
   - DNS snapshot from before the switch: `.superpowers/sdd/2026-10-02-deploy-pipeline/dns-before.txt` (git-ignored, local only).
-  - Set the domain with `gh api -X PUT repos/arnoepping/EPPING/pages -f cname=eppingmusic.com`
-  - Cancel the Squarespace website subscription only after the new site is live.
 - **Brand:** spec approved (`docs/superpowers/specs/2026-10-02-brand-identity-design.md`): logo A (Unbounded 800, RGB split), black/pink/cyan palette. Built (commits 3373c00..8d50901, not pushed): logo SVGs in `public/brand/`, favicon, `tokens.css`/`ui.css`, `Base.astro`, `Wordmark.astro`, `/brand/` page. Regenerate logos with `npm run logo`.
 - **Website:** built and pushed (spec `docs/superpowers/specs/2026-10-02-festival-site-design.md`, plan `docs/superpowers/plans/2026-10-02-festival-site.md`). Three.js tunnel → hall with 3 floors (Rave Wedding, Private Events, Epping Presents); static fallback for no-JS/reduced motion.
   - Local phone test: `npm run build && npx astro preview --host`.
   - Placeholders in `src/content/floors.ts`: 3 SoundCloud URLs, WhatsApp number, booking email, next Presents event, Instagram handle.
-  - Known: in-app URLs drop the `/EPPING/` prefix, so reloading a floor page 404s until the custom domain is live.
 - **Later:**
   - possibly add DMARC, and possibly move the domain to Cloudflare
