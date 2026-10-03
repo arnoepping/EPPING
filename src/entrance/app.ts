@@ -111,7 +111,8 @@ export function start(root: HTMLElement): void {
     const stage = p < STAGES[1] ? 0 : p < STAGES[2] ? 1 : 2, local = clamp((p - STAGES[stage]) / (STAGES[stage + 1] - STAGES[stage]));
 
     const kick = reduce ? 0 : sound.kick(t);
-    world.setDoors(stage === 0 ? 0 : stage === 1 ? ease(clamp(local / 0.12)) : 1, stage === 2 ? 1 : stage === 1 ? ease(clamp((local - 0.9) / 0.1)) : 0);
+    // the street door swings open just before you reach it, so you walk past an open door
+    world.setDoors(stage === 0 ? ease(clamp((local - 0.8) / 0.2)) : 1, stage === 2 ? 1 : stage === 1 ? ease(clamp((local - 0.9) / 0.1)) : 0);
     const c = world.cameraAt(stage, local, t);
     camera.position.lerp(c.pos, reduce ? 1 : 0.35); look.lerp(c.look, reduce ? 1 : 0.35);
     if (camera.position.distanceTo(c.pos) > 3) { camera.position.copy(c.pos); look.copy(c.look); }

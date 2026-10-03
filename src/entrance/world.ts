@@ -5,11 +5,11 @@ import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 import wordmark from '../components/wordmark.json';
 import { POSTERS } from '../content/posters.ts';
 import { PAL } from './palette.ts';
-import { brick, puff } from './textures.ts';
+import { puff } from './textures.ts';
 
 // One continuous world (metres, y up). The street is at z > 0, the facade at z = 0 with the door,
 // the stairwell climbs toward -z inside the building, and the roof starts behind the top door.
-export const N = 36, RISE = 0.24, RUN = 0.26, W = 1.5, Z0 = -1.0; // steep flight, ~43°
+export const N = 36, RISE = 0.24, RUN = 0.26, W = 2.0, Z0 = -1.0; // steep flight, ~43°
 export const TOP_Y = N * RISE, TOP_Z = Z0 - N * RUN, ROOF_Z = TOP_Z - 1.6, CEIL = 3.0;
 const clamp = (v: number, a = 0, b = 1) => Math.min(b, Math.max(a, v));
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
@@ -41,10 +41,20 @@ function tube(a: THREE.Vector3, b: THREE.Vector3, r: number, mat: THREE.Material
   return m;
 }
 
-function brickMat(base: { map: THREE.Texture; bump: THREE.Texture }, w: number, h: number): THREE.MeshStandardMaterial {
-  const map = base.map.clone(), bump = base.bump.clone();
-  for (const t of [map, bump]) { t.repeat.set(w / 2, h / 2); t.needsUpdate = true; }
-  return new THREE.MeshStandardMaterial({ map, bumpMap: bump, bumpScale: 3, roughness: 0.95 });
+// Real brick (Poly Haven red_brick_03, same as the street) at 1.6 m per tile; w × h in metres.
+const texLoader = new THREE.TextureLoader();
+const texCache: Record<string, THREE.Texture> = {};
+function texture(file: string, srgb: boolean, rx: number, ry: number): THREE.Texture {
+  texCache[file] ??= texLoader.load(`models/textures/${file}`, (t) => { if (srgb) t.colorSpace = THREE.SRGBColorSpace; });
+  const t = texCache[file].clone(); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 8; t.repeat.set(rx, ry);
+  if (srgb) t.colorSpace = THREE.SRGBColorSpace;
+  return t;
+}
+function brickMat(w: number, h: number): THREE.MeshStandardMaterial {
+  return new THREE.MeshStandardMaterial({
+    map: texture('red_brick_03_diff_web.jpg', true, w / 1.6, h / 1.6), normalMap: texture('red_brick_03_nor_web.jpg', false, w / 1.6, h / 1.6),
+    roughnessMap: texture('red_brick_03_rough_web.jpg', false, w / 1.6, h / 1.6), color: C('#a07a72'), roughness: 1,
+  });
 }
 
 function wordmarkGeometry(width: number): THREE.ShapeGeometry {
@@ -106,7 +116,6 @@ export function buildWorld(): World {
   const scene = new THREE.Scene();
   scene.background = C(PAL.bg);
   scene.fog = new THREE.FogExp2(C(PAL.bg), 0.012);
-  const bricks = brick();
   const pulse: { mat: THREE.MeshBasicMaterial; base: THREE.Color; k: number }[] = []; // glowing things that breathe with the kick
   const glow = (c: THREE.Color, k = 1) => { const mat = glowMat(c.clone()); pulse.push({ mat, base: c.clone(), k }); return mat; };
 
@@ -131,7 +140,7 @@ export function buildWorld(): World {
   const doorMat = new THREE.MeshStandardMaterial({ color: C('#040205'), roughness: 0.55 });
   const streetDoor = new THREE.Group(), streetLeaf = new THREE.Mesh(new THREE.BoxGeometry(1.2, 2.3, 0.05), doorMat);
   streetLeaf.position.set(0.6, 1.15, 0); streetDoor.add(streetLeaf);
-  streetDoor.position.set(-0.6, 0, -0.18);
+  streetDoor.position.set(-0.6, 0, 0.02); // hinge at the front of the reveal
   scene.add(streetDoor);
 
   // EPPING neon sign: orange and pink split layers behind a bright core, plus the light it throws on the bricks
@@ -159,12 +168,13 @@ export function buildWorld(): World {
   // everything inside starts behind the facade (back face at z = -0.4), so nothing pokes through the brick
   const IN = -0.41, L = IN - ROOF_Z + 0.1, H = TOP_Y + CEIL + 1;
   for (const side of [-1, 1]) {
-    const wall = new THREE.Mesh(new THREE.PlaneGeometry(L, H), brickMat(bricks, L, H));
+    const wall = new THREE.Mesh(new THREE.PlaneGeometry(L, H), brickMat(L, H));
     wall.rotation.y = side < 0 ? Math.PI / 2 : -Math.PI / 2;
     wall.position.set(side * W / 2, H / 2, (IN + ROOF_Z - 0.1) / 2);
     scene.add(wall);
   }
-  const floorMat = new THREE.MeshStandardMaterial({ color: C(PAL.bg).lerp(C(PAL.fg), 0.06), roughness: 0.85 });
+  // dark polished stone steps that catch the neon
+  const floorMat = new THREE.MeshStandardMaterial({ map: texture('concrete_pavement_02_diff_web.jpg', true, 1, 0.3), color: C('#3a3448'), roughness: 0.32, metalness: 0.1 });
   const landing = new THREE.Mesh(new THREE.PlaneGeometry(W, -Z0 + 0.4), floorMat); landing.rotation.x = -Math.PI / 2; landing.position.set(0, 0.001, Z0 / 2 - 0.2); scene.add(landing);
   const top = new THREE.Mesh(new THREE.PlaneGeometry(W, TOP_Z - ROOF_Z + 0.02), floorMat); top.rotation.x = -Math.PI / 2; top.position.set(0, TOP_Y, (TOP_Z + ROOF_Z) / 2); scene.add(top);
 
@@ -186,12 +196,12 @@ export function buildWorld(): World {
   const ceilPts = [IN, Z0, TOP_Z, ROOF_Z - 0.1];
   for (let k = 0; k < 3; k++) {
     const za = ceilPts[k], zb = ceilPts[k + 1];
-    const ca = C(PAL.bg).lerp(climbColor(za), 0.45), cb = C(PAL.bg).lerp(climbColor(zb), 0.45);
+    const ca = C(PAL.bg).lerp(climbColor(za), 0.3), cb = C(PAL.bg).lerp(climbColor(zb), 0.3);
     scene.add(new THREE.Mesh(quad([new THREE.Vector3(-W / 2, cy(za), za), new THREE.Vector3(W / 2, cy(za), za), new THREE.Vector3(W / 2, cy(zb), zb), new THREE.Vector3(-W / 2, cy(zb), zb)], [ca, ca, cb, cb]),
       new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.DoubleSide })));
   }
   for (let z = IN - 0.1; z > ROOF_Z + 0.6; z -= 0.9) {
-    const z2 = z - 0.7, c1 = climbColor(z).multiplyScalar(1.6), c2 = climbColor(z2).multiplyScalar(1.6);
+    const z2 = z - 0.7, c1 = climbColor(z).multiplyScalar(0.9), c2 = climbColor(z2).multiplyScalar(0.9);
     const panel = new THREE.Mesh(quad([new THREE.Vector3(-0.45, cy(z) - 0.02, z), new THREE.Vector3(0.45, cy(z) - 0.02, z), new THREE.Vector3(0.45, cy(z2) - 0.02, z2), new THREE.Vector3(-0.45, cy(z2) - 0.02, z2)], [c1, c1, c2, c2]),
       new THREE.MeshBasicMaterial({ vertexColors: true, toneMapped: false, side: THREE.DoubleSide, transparent: true, opacity: 0.9 }));
     scene.add(panel);
@@ -204,13 +214,42 @@ export function buildWorld(): World {
   };
   neonPieces(-W / 2 + 0.03, (z) => cy(z) - 0.04, 0.014);
   neonPieces(W / 2 - 0.03, (z) => cy(z) - 0.04, 0.014);
-  neonPieces(W / 2 - 0.05, (z) => (z > Z0 ? 0 : z < TOP_Z ? TOP_Y : stairY(z)) + 0.9, 0.018); // handrail
+  // balustrades like the reference photo: vertical pink neon tubes on every other step, a dark metal handrail on top
+  const railMat = new THREE.MeshStandardMaterial({ color: C('#16121c'), metalness: 0.8, roughness: 0.35 });
+  const tubeMat = glow(C(PAL.b).multiplyScalar(2.8));
+  const balusters = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.016, 0.016, 0.82, 8), tubeMat, N + 2);
+  let bi0 = 0;
+  for (let i = 0; i < N; i += 2) for (const side of [-1, 1]) {
+    const z = Z0 - i * RUN - RUN / 2;
+    balusters.setMatrixAt(bi0++, new THREE.Matrix4().makeTranslation(side * (W / 2 - 0.14), (i + 1) * RISE + 0.45, z));
+  }
+  balusters.count = bi0; scene.add(balusters);
+  for (const side of [-1, 1]) {
+    const x = side * (W / 2 - 0.14), h = (z: number) => (z > Z0 ? 0 : z < TOP_Z ? TOP_Y : stairY(z)) + 0.9;
+    scene.add(tube(new THREE.Vector3(x, h(Z0), Z0), new THREE.Vector3(x, h(TOP_Z), TOP_Z), 0.024, railMat));
+  }
 
   // coloured light along the climb
   const stairLights: { l: THREE.PointLight; base: number }[] = [];
   for (let k = 0; k <= 5; k++) {
     const z = lerp(-0.3, ROOF_Z + 0.5, k / 5), l = new THREE.PointLight(climbColor(z), 6, 5, 2);
     l.position.set(0, cy(z) - 0.5, z); scene.add(l); stairLights.push({ l, base: 6 });
+  }
+
+  // light at the foot of the stairs, so stepping through the door isn't into a black hole
+  const foot = new THREE.PointLight(C(PAL.b), 8, 4, 2); foot.position.set(0, 2.2, Z0 + 0.1); scene.add(foot);
+  // cool blue fill from above: the contrast colour from the reference, so the pink reads as neon
+  for (let k = 0; k < 3; k++) {
+    const z = lerp(Z0 - 1, TOP_Z + 1, k / 2), l = new THREE.PointLight(C('#3d4dff'), 5, 7, 2);
+    l.position.set(0, cy(z) - 0.3, z); scene.add(l);
+  }
+  // haze: big soft additive sprites hanging in the stairwell (fog itself switches to a blue-violet haze inside, see update)
+  const hazeTex = puff();
+  for (let k = 0; k < 16; k++) {
+    const z = lerp(Z0 + 0.3, TOP_Z - 0.6, k / 15), pink = k % 3 === 0;
+    const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: hazeTex, color: C(pink ? PAL.b : '#4a52ff'), transparent: true, opacity: pink ? 0.07 : 0.06, depthWrite: false, blending: THREE.AdditiveBlending, fog: false }));
+    sp.position.set(Math.sin(k * 2.1) * 0.4, (z > Z0 ? 0 : stairY(z)) + 1.6 + Math.cos(k * 1.3) * 0.5, z); sp.scale.setScalar(2.6);
+    scene.add(sp);
   }
 
   // posters: album covers hung high on both walls
@@ -222,20 +261,24 @@ export function buildWorld(): World {
     const art = new THREE.Mesh(new THREE.PlaneGeometry(0.62, 0.62), new THREE.MeshStandardMaterial({ map: tex, roughness: 0.45 }));
     for (const [m, off] of [[frame, 0.005], [art, 0.008]] as const) {
       m.rotation.y = side < 0 ? Math.PI / 2 : -Math.PI / 2;
-      m.position.set(side * (W / 2 - off), stairY(z) + 1.95, z);
+      m.position.set(side * (W / 2 - off), stairY(z) + 1.95, z); // high, above the balustrade
       scene.add(m);
     }
   });
 
   // top wall with the roof door
   const topShape = new THREE.Shape([V(-W / 2, TOP_Y), V(-0.55, TOP_Y), V(-0.55, TOP_Y + 2.2), V(0.55, TOP_Y + 2.2), V(0.55, TOP_Y), V(W / 2, TOP_Y), V(W / 2, TOP_Y + CEIL + 0.2), V(-W / 2, TOP_Y + CEIL + 0.2)]);
-  const topWall = new THREE.Mesh(new THREE.ShapeGeometry(topShape), brickMat(bricks, 1, 1));
-  (topWall.material as THREE.MeshStandardMaterial).map!.repeat.set(0.5, 0.5); (topWall.material as THREE.MeshStandardMaterial).bumpMap!.repeat.set(0.5, 0.5);
+  const topWall = new THREE.Mesh(new THREE.ShapeGeometry(topShape), brickMat(1, 1)); // shape UVs are in metres
   topWall.position.z = ROOF_Z; scene.add(topWall);
   const frameMat = glow(C(PAL.b).multiplyScalar(2.6));
   const fz = ROOF_Z + 0.02;
   for (const [a, b] of [[[-0.57, 0], [-0.57, 2.22]], [[0.57, 0], [0.57, 2.22]], [[-0.57, 2.22], [0.57, 2.22]]] as const)
     scene.add(tube(new THREE.Vector3(a[0], TOP_Y + a[1], fz), new THREE.Vector3(b[0], TOP_Y + b[1], fz), 0.016, frameMat));
+  // three glowing panels above the roof door, like the lit panels at the top of the reference stairs
+  for (const px of [-0.45, 0, 0.45]) {
+    const panel = new THREE.Mesh(new THREE.PlaneGeometry(0.3, 0.62), glowMat(C('#9fb4ff').multiplyScalar(1.5)));
+    panel.position.set(px, TOP_Y + 2.62, ROOF_Z + 0.015); scene.add(panel);
+  }
   const roofDoor = new THREE.Group(), roofLeaf = new THREE.Mesh(new THREE.BoxGeometry(1.1, 2.2, 0.05), new THREE.MeshStandardMaterial({ color: C(PAL.bg).lerp(C(PAL.fg), 0.1), roughness: 0.5 }));
   roofLeaf.position.set(0.55, 1.1, 0); roofDoor.add(roofLeaf);
   roofDoor.position.set(-0.55, TOP_Y, ROOF_Z - 0.03); scene.add(roofDoor);
@@ -294,10 +337,17 @@ export function buildWorld(): World {
   }
 
   // ---------- behaviour ----------
-  const setDoors = (street: number, roof: number) => { streetDoor.rotation.y = street * 1.85; roofDoor.rotation.y = roof * 1.85; };
+  // the street door opens outward (toward you) so the stairwell stays clear; the roof door opens onto the roof
+  const setDoors = (street: number, roof: number) => { streetDoor.rotation.y = -street * 1.85; roofDoor.rotation.y = roof * 1.85; };
   const tmp = new THREE.Color();
+  // fog: thin night air outside, a blue-violet haze inside the stairwell
+  const fog = scene.fog as THREE.FogExp2, outFog = C(PAL.bg), inFog = C('#17123f');
+  let haze = 0;
   function update(t: number, kick: number, camera: THREE.Camera) {
     sky.position.copy(camera.position);
+    const inside = camera.position.z < -0.3 && camera.position.z > ROOF_Z - 0.2 ? 1 : 0;
+    haze += (inside - haze) * 0.05;
+    fog.color.copy(outFog).lerp(inFog, haze); fog.density = lerp(0.012, 0.075, haze);
     const k = 0.6 + 0.4 * kick;
     for (const p of pulse) p.mat.color.copy(p.base).multiplyScalar(lerp(1, k, p.k));
     for (let i = 0; i < N; i++) noses.setColorAt(i, tmp.copy(noseBase[i]).multiplyScalar(k));
