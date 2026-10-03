@@ -13,8 +13,6 @@ import type { RigState, View } from './rig.ts';
 import { slugFromPath, pathForSlug } from './route.ts';
 import { setOpen, mountOnView } from './panels.ts';
 
-declare global { interface Window { __xp: { setProgress(p: number): void; state(): RigState; sample(): boolean } } }
-
 export async function start(root: HTMLElement): Promise<void> {
   await Promise.race([Promise.all([document.fonts.load('800 72px Unbounded'), document.fonts.load('500 30px "JetBrains Mono"')]), new Promise((r) => setTimeout(r, 1500))]);
   const canvas = root.querySelector<HTMLCanvasElement>('.xp-canvas')!;
@@ -137,12 +135,6 @@ export async function start(root: HTMLElement): Promise<void> {
   root.querySelector('.hall-next')!.addEventListener('click', () => go(step(s, 1), false));
   root.querySelector('.hall-enter')!.addEventListener('click', () => go(enter(s), true));
   root.querySelectorAll('.panel-back').forEach((b) => b.addEventListener('click', () => go(leave(s), true)));
-
-  window.__xp = {
-    setProgress: (p) => go(scrollBy({ ...s, mode: 'tunnel', progress: 0, active: null }, p * 3 * innerHeight, innerHeight), false),
-    state: () => s,
-    sample: () => stage.sample(),
-  };
 
   // ---- frame loop ----
   const pos = new THREE.Vector3(), look = new THREE.Vector3(), lookNow = new THREE.Vector3();

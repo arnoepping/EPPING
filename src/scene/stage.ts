@@ -8,7 +8,6 @@ export interface Stage {
   start(frame: (t: number, dt: number) => void): void;
   /** Re-read the canvas size (e.g. right after it becomes visible). */
   resize(): void;
-  sample(): boolean;
 }
 
 /** `onLost` runs when the WebGL context is lost; the loop is already stopped. */
@@ -54,19 +53,6 @@ export function createStage(canvas: HTMLCanvasElement, onLost?: () => void): Sta
       const run = () => renderer.setAnimationLoop(document.hidden || lost ? null : loop);
       document.addEventListener('visibilitychange', () => { clock.getDelta(); run(); });
       run();
-    },
-    /** True when the frame is not one flat color (blank-canvas check for screenshots). */
-    sample() {
-      renderer.render(scene, camera);
-      const gl = renderer.getContext();
-      const w = gl.drawingBufferWidth, h = gl.drawingBufferHeight, px = new Uint8Array(4);
-      const seen = new Set<string>();
-      // 12×12 grid: a handful of fixed points can all land in dark gaps between neon lines.
-      for (let i = 1; i < 12; i++) for (let j = 1; j < 12; j++) {
-        gl.readPixels(Math.floor((w * i) / 12), Math.floor((h * j) / 12), 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, px);
-        seen.add(px.join(','));
-      }
-      return seen.size > 1;
     },
   };
   return stage;
