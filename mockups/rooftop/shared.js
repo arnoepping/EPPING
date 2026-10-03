@@ -149,7 +149,7 @@
         <div class="grain"></div>
         <div class="hud top"><span class="tag">EPPING · rooftop entrance</span>
           <div class="group"><span class="group" id="pals"></span><button id="snd" aria-pressed="false">Sound off</button><button id="skip">Skip ↓</button></div></div>
-        <div class="hud bottom"><div class="stage"><span><span class="n" id="sn">01</span> / 03</span><b id="sl"></b><div class="bar"><i id="bar"></i></div></div></div>
+        <div class="hud bottom"><div class="stage"><span><span class="n" id="sn">01</span> / 03</span><b id="sl"></b><div class="bar"><i id="bar"></i></div></div><span class="hint" id="hint">Scroll to get in</span></div>
       </div><div class="spacer"></div>`);
     const $ = (id) => document.getElementById(id);
     const cv = document.querySelector('.ent canvas'), ctx = cv.getContext('2d');
@@ -172,6 +172,16 @@
     addEventListener('wheel', block, { passive: false }); addEventListener('touchmove', block, { passive: false });
     addEventListener('keydown', (e) => { if (autoStart !== null && ['ArrowDown', 'ArrowUp', 'PageDown', 'PageUp', ' ', 'End', 'Home'].includes(e.key)) e.preventDefault(); });
     const lock = (on) => { document.documentElement.style.overflow = on ? 'hidden' : ''; document.body.style.overflow = on ? 'hidden' : ''; };
+    // clickable doors: a draw function registers hit areas each frame with S.hit(x, y, w, h, toP)
+    let hits = [], anim = null;
+    const pad = 24, hitAt = (x, y) => hits.find((r) => x > r.x - pad && x < r.x + r.w + pad && y > r.y - pad && y < r.y + r.h + pad);
+    function goTo(toP) {
+      const max = document.documentElement.scrollHeight - innerHeight, from = scrollY, to = clamp(toP / autoFrom) * max;
+      anim = { from, to, t0: performance.now(), dur: 1000 + Math.abs(toP - p) * 6000 };
+    }
+    cv.addEventListener('click', (e) => { const r = autoStart === null && hitAt(e.clientX, e.clientY); if (r) goTo(r.toP); });
+    cv.addEventListener('mousemove', (e) => { cv.style.cursor = autoStart === null && hitAt(e.clientX, e.clientY) ? 'pointer' : ''; });
+    for (const ev of ['wheel', 'touchstart', 'keydown']) addEventListener(ev, () => { anim = null; }, { passive: true });
     $('again').onclick = () => { autoStart = null; lock(false); p = 0; scrollTo(0, 0); };
     for (const a of document.querySelectorAll('.floors a')) a.onclick = (e) => e.preventDefault();
     setPal(pal);
@@ -182,6 +192,11 @@
       const dpr = Math.min(devicePixelRatio || 1, 2), w = cv.clientWidth, h = cv.clientHeight;
       if (cv.width !== Math.round(w * dpr) || cv.height !== Math.round(h * dpr)) { cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr); }
       const max = document.documentElement.scrollHeight - innerHeight;
+      if (anim) { // door-click auto walk
+        const k = clamp((ms - anim.t0) / anim.dur), e2 = k < 0.5 ? 2 * k * k : 1 - (-2 * k + 2) ** 2 / 2;
+        scrollTo(0, anim.from + (anim.to - anim.from) * e2);
+        if (k >= 1) anim = null;
+      }
       if (autoStart === null) {
         const target = (max > 0 ? clamp(scrollY / max) : 0) * autoFrom;
         p = reduce ? target : p + (target - p) * 0.12;
@@ -190,13 +205,15 @@
       if (autoStart !== null) p = autoFrom + (1 - autoFrom) * clamp((ms - autoStart) / 1000 / autoDur);
       const st = p < STAGES[1].from ? 0 : p < STAGES[2].from ? 1 : 2, S0 = STAGES[st], local = clamp((p - S0.from) / (S0.to - S0.from));
       const t = ms / 1000, beat = sound.beats() ?? t / SPB, kick = reduce ? 0 : Math.exp(-(beat % 1) * 5);
-      const S = { w, h, t, p, stage: st, local, beat, kick, pal: PALETTES[pal], energy: [0.25, 0.55, 1][st], dpr, util };
+      hits = [];
+      const S = { w, h, t, p, stage: st, local, beat, kick, pal: PALETTES[pal], energy: [0.25, 0.55, 1][st], dpr, util, hit: (x, y, ww, hh, toP) => hits.push({ x, y, w: ww, h: hh, toP }) };
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over'; ctx.shadowBlur = 0;
       draw(ctx, S);
       sound.update(st, local);
       $('sn').textContent = '0' + (st + 1); $('sl').textContent = S0.label; $('bar').style.width = (p * 100).toFixed(1) + '%';
       $('skip').hidden = autoStart !== null;
+      $('hint').style.opacity = p < 0.02 ? 0.8 : 0;
       const f = clamp((p - 0.86) / 0.08);
       fin.style.opacity = finale === 'circle' ? 1 : f;
       if (finale === 'circle') fin.style.clipPath = `circle(${(f * 75).toFixed(1)}% at 50% 50%)`;
