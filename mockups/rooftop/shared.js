@@ -137,14 +137,15 @@
   };
 
   // ---------- page ----------
-  function start({ draw, finale = 'fade', video = 'video/roof-dusk.mp4' }) {
+  // Scrolling only covers [0, autoFrom]; once you step onto the roof the page locks and the rest plays by itself over autoDur seconds.
+  function start({ draw, finale = 'fade', video = 'video/roof-dusk.mp4', autoFrom = 0.72, autoDur = 9 }) {
     let pal = PALETTES[location.hash.slice(1)] ? location.hash.slice(1) : 'sunset';
     document.body.insertAdjacentHTML('afterbegin', `
       <div class="ent">
         <canvas></canvas>
         <div class="finale"><video src="${video}" muted loop playsinline preload="none"></video>
           <div class="fin"><div class="fin-logo"></div><p>Rave weddings. Private parties. Our own nights.</p>
-          <nav class="floors" aria-label="Floors"><a href="#">Rave Wedding</a><a href="#">Private Events</a><a href="#">Epping Presents</a></nav></div></div>
+          <nav class="floors" aria-label="Floors"><a href="#">Rave Wedding</a><a href="#">Private Events</a><a href="#">Epping Presents</a></nav><button class="again" id="again">↺ Back to the street</button></div></div>
         <div class="grain"></div>
         <div class="hud top"><span class="tag">EPPING · rooftop entrance</span>
           <div class="group"><span class="group" id="pals"></span><button id="snd" aria-pressed="false">Sound off</button><button id="skip">Skip ↓</button></div></div>
@@ -164,7 +165,14 @@
     }
     $('pals').onclick = (e) => { const b = e.target.closest('button'); if (b) setPal(b.dataset.k); };
     $('snd').onclick = async () => { const on = await sound.toggle(); $('snd').setAttribute('aria-pressed', on); $('snd').textContent = on ? 'Sound on' : 'Sound off'; };
-    $('skip').onclick = () => scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' });
+    $('skip').onclick = () => { p = autoFrom; scrollTo(0, document.documentElement.scrollHeight); };
+    // lock / unlock scrolling once you're on the roof
+    let autoStart = null;
+    const block = (e) => { if (autoStart !== null) e.preventDefault(); };
+    addEventListener('wheel', block, { passive: false }); addEventListener('touchmove', block, { passive: false });
+    addEventListener('keydown', (e) => { if (autoStart !== null && ['ArrowDown', 'ArrowUp', 'PageDown', 'PageUp', ' ', 'End', 'Home'].includes(e.key)) e.preventDefault(); });
+    const lock = (on) => { document.documentElement.style.overflow = on ? 'hidden' : ''; document.body.style.overflow = on ? 'hidden' : ''; };
+    $('again').onclick = () => { autoStart = null; lock(false); p = 0; scrollTo(0, 0); };
     for (const a of document.querySelectorAll('.floors a')) a.onclick = (e) => e.preventDefault();
     setPal(pal);
 
@@ -174,8 +182,12 @@
       const dpr = Math.min(devicePixelRatio || 1, 2), w = cv.clientWidth, h = cv.clientHeight;
       if (cv.width !== Math.round(w * dpr) || cv.height !== Math.round(h * dpr)) { cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr); }
       const max = document.documentElement.scrollHeight - innerHeight;
-      const target = max > 0 ? clamp(scrollY / max) : 0;
-      p = reduce ? target : p + (target - p) * 0.12;
+      if (autoStart === null) {
+        const target = (max > 0 ? clamp(scrollY / max) : 0) * autoFrom;
+        p = reduce ? target : p + (target - p) * 0.12;
+        if (p >= autoFrom - 0.003) { autoStart = ms; lock(true); }
+      }
+      if (autoStart !== null) p = autoFrom + (1 - autoFrom) * clamp((ms - autoStart) / 1000 / autoDur);
       const st = p < STAGES[1].from ? 0 : p < STAGES[2].from ? 1 : 2, S0 = STAGES[st], local = clamp((p - S0.from) / (S0.to - S0.from));
       const t = ms / 1000, beat = sound.beats() ?? t / SPB, kick = reduce ? 0 : Math.exp(-(beat % 1) * 5);
       const S = { w, h, t, p, stage: st, local, beat, kick, pal: PALETTES[pal], energy: [0.25, 0.55, 1][st], dpr, util };
@@ -185,7 +197,8 @@
       sound.update(st, local);
       $('sn').textContent = '0' + (st + 1); $('sl').textContent = S0.label; $('bar').style.width = (p * 100).toFixed(1) + '%';
       $('hint').style.opacity = p < 0.02 ? 0.7 : 0;
-      const f = clamp((p - 0.84) / 0.12);
+      $('skip').hidden = autoStart !== null;
+      const f = clamp((p - 0.86) / 0.08);
       fin.style.opacity = finale === 'circle' ? 1 : f;
       if (finale === 'circle') fin.style.clipPath = `circle(${(f * 75).toFixed(1)}% at 50% 50%)`;
       fin.classList.toggle('on', f > 0.6);

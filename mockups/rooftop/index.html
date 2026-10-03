@@ -40,9 +40,6 @@ function outside(ctx, S) {
   const g = ctx.createRadialGradient(cx, dy + dh, 0, cx, dy + dh, dw * 1.6);
   g.addColorStop(0, rgba(pal.b, 0.25 + 0.2 * kick)); g.addColorStop(1, rgba(pal.b, 0));
   ctx.fillStyle = g; ctx.fillRect(0, dy + dh - dw, w, dw * 2);
-  // small sign on the door: the party is upstairs
-  ctx.fillStyle = rgba(pal.fg, 0.7); ctx.font = `600 ${Math.max(9, 11 * z)}px "Space Grotesk", system-ui, sans-serif`; ctx.textAlign = 'center';
-  ctx.fillText('ROOFTOP ↑', cx, dy + dh * 0.3); ctx.textAlign = 'start';
   drawLogo(ctx, pal, cx, dy - dh * 0.16, dw * 1.5, { glow: 30 * z, alpha: Math.sin(t * 13) > 0.92 ? 0.35 : 1, split: 2 });
   ctx.strokeStyle = pal.a; ctx.lineWidth = 5 * z; ctx.beginPath();
   ctx.moveTo(dx - dw * 0.9, dy + dh * 0.82); ctx.quadraticCurveTo(dx - dw * 0.45, dy + dh * 0.95, dx - dw * 0.05, dy + dh * 0.82); ctx.stroke();
@@ -57,10 +54,34 @@ function stairs(ctx, S) {
   const climb = ease(clamp((local - 0.1) / 0.78)) * (N - 7);
   const zc = climb * DEPTH - 0.9, yc = climb * RISE + 1.55 + Math.sin(climb * Math.PI * 2) * 0.025;
   const cs = Math.cos(PITCH), sn = Math.sin(PITCH);
-  const P = (x, y, z) => { const dy = y - yc, dz = z - zc, Z = dy * sn + dz * cs, Y = dy * cs - dz * sn; return Z < 0.05 ? null : [cx + (x * F) / Z, cy - (Y * F) / Z, Z]; };
-  const quad = (pts, fill) => { const q = pts.map((p) => P(...p)); if (q.some((v) => !v)) return null; ctx.beginPath(); q.forEach(([x, y], i) => (i ? ctx.lineTo(x, y) : ctx.moveTo(x, y))); ctx.closePath(); ctx.fillStyle = fill; ctx.fill(); return q; };
-  const zT = N * DEPTH, yT = N * RISE, zn = zc + 0.15;
-  ctx.fillStyle = mix(pal.bg, '#000000', 0.45); ctx.fillRect(0, 0, w, h);
+  // camera space (pitched up the stairs), clipped against a near plane so walls can run past the camera
+  const NEAR = 0.05;
+  const cam = (x, y, z) => { const dy = y - yc, dz = z - zc; return [x, dy * cs - dz * sn, dy * sn + dz * cs]; };
+  const proj = ([x, Y, Z]) => [cx + (x * F) / Z, cy - (Y * F) / Z, Z];
+  const P = (x, y, z) => { const c = cam(x, y, z); return c[2] < NEAR ? null : proj(c); };
+  const cut = (a, b) => { const t = (NEAR - a[2]) / (b[2] - a[2]); return a.map((v, i) => v + (b[i] - v) * t); };
+  function quad(pts, fill) {
+    const c = pts.map((p) => cam(...p)), out = [];
+    c.forEach((a, i) => { const b = c[(i + 1) % c.length]; if (a[2] >= NEAR) out.push(a); if ((a[2] >= NEAR) !== (b[2] >= NEAR)) out.push(cut(a, b)); });
+    if (out.length < 3) return null;
+    const q = out.map(proj);
+    ctx.beginPath(); q.forEach(([x, y], i) => (i ? ctx.lineTo(x, y) : ctx.moveTo(x, y))); ctx.closePath(); ctx.fillStyle = fill; ctx.fill();
+    return q;
+  }
+  // adds a clipped 3D segment to the current path
+  function seg(p1, p2) {
+    let a = cam(...p1), b = cam(...p2);
+    if (a[2] < NEAR && b[2] < NEAR) return false;
+    if (a[2] < NEAR) a = cut(a, b); else if (b[2] < NEAR) b = cut(b, a);
+    const A = proj(a), B = proj(b); ctx.moveTo(A[0], A[1]); ctx.lineTo(B[0], B[1]); return true;
+  }
+  const zT = N * DEPTH, yT = N * RISE, zn = zc - 0.6;
+  ctx.fillStyle = mix(pal.bg, pal.a, 0.12); ctx.fillRect(0, 0, w, h);
+  const brick = mix(pal.bg, pal.a, 0.2), mortar = rgba(mix(pal.bg, '#000000', 0.3), 0.75);
+  // ceiling
+  quad([[-HW, zn * SLOPE + 3.2, zn], [HW, zn * SLOPE + 3.2, zn], [HW, yT + 3.2, zT], [-HW, yT + 3.2, zT]], mix(pal.bg, pal.fg, 0.07));
+  // far wall around the roof door, in brick
+  quad([[-HW, yT, zT], [HW, yT, zT], [HW, yT + 3.2, zT], [-HW, yT + 3.2, zT]], brick);
   // the door at the top: dusk light
   const doorOpen = clamp((local - 0.82) / 0.18);
   const dq = quad([[-0.5, yT, zT], [0.5, yT, zT], [0.5, yT + 2.1, zT], [-0.5, yT + 2.1, zT]], rgba(pal.a, 0.9));
@@ -76,44 +97,57 @@ function stairs(ctx, S) {
   // side walls with brick courses, clipped to each wall
   for (const side of [-1, 1]) {
     const X = side * HW, pts = [[X, zn * SLOPE - 0.3, zn], [X, yT, zT], [X, yT + 3.2, zT], [X, zn * SLOPE + 3.2, zn]];
-    const q = quad(pts, mix(pal.bg, pal.a, 0.07));
+    const q = quad(pts, brick);
     if (!q) continue;
     ctx.save(); ctx.clip();
-    ctx.strokeStyle = rgba(pal.bg, 0.55); ctx.lineWidth = 1;
-    for (let yy = Math.floor(yc - 4); yy < yT + 4; yy += 0.14) {
-      const a = P(X, yy, zn), b = P(X, yy, zT);
-      if (a && b) { ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.stroke(); }
+    // brick courses (horizontal) and staggered head joints
+    const BH = 0.085, BL = 0.23, zFar = Math.min(zT, zc + 6);
+    ctx.strokeStyle = mortar; ctx.lineWidth = 1; ctx.beginPath();
+    for (let r = Math.floor(Math.max(zn * SLOPE - 0.4, yc - 3) / BH); r * BH < Math.min(yT + 3.3, yc + 4.5); r++) { // visible rows only
+      const yy = r * BH; seg([X, yy, zn], [X, yy, zT]);
+      for (let zz = zn - ((zn % BL) + BL) + (r % 2) * BL / 2; zz < zFar; zz += BL) {
+        if (zz < zn) continue;
+        seg([X, yy, zz], [X, yy + BH, zz]);
+      }
+    }
+    ctx.stroke();
+    // wall lamps: warm pools of light on the brick
+    for (let lz = 1; lz < zT; lz += 2.4) {
+      const L = P(X * 0.97, lz * SLOPE + 1.95, lz);
+      if (!L) continue;
+      const r = (1.1 * F) / L[2], g = ctx.createRadialGradient(L[0], L[1], 0, L[0], L[1], r);
+      g.addColorStop(0, rgba(pal.a, 0.42)); g.addColorStop(1, rgba(pal.a, 0));
+      ctx.fillStyle = g; ctx.fillRect(L[0] - r, L[1] - r, r * 2, r * 2);
+      ctx.fillStyle = rgba(pal.fg, 0.9); ctx.fillRect(L[0] - (0.04 * F) / L[2], L[1] - (0.06 * F) / L[2], (0.08 * F) / L[2], (0.12 * F) / L[2]);
     }
     // gig posters on the left wall
     if (side < 0) for (const [pz, col] of [[2.2, pal.b], [4.6, pal.a], [6.8, pal.b]]) {
       const py = pz * SLOPE + 1.1;
       const pq = quad([[X, py, pz], [X, py, pz + 0.55], [X, py + 0.75, pz + 0.55], [X, py + 0.75, pz]], rgba(col, 0.75));
-      if (pq) { ctx.fillStyle = rgba(pal.fg, 0.8); const [a, , , d] = pq; ctx.fillRect(Math.min(a[0], d[0]), lerp(a[1], d[1], 0.25), Math.abs(a[0] - d[0]) * 0.6 + 2, 2); }
+      if (pq && pq.length === 4) { ctx.fillStyle = rgba(pal.fg, 0.8); const [a, , , d] = pq; ctx.fillRect(Math.min(a[0], d[0]), lerp(a[1], d[1], 0.25), Math.abs(a[0] - d[0]) * 0.6 + 2, 2); }
     }
     ctx.restore();
   }
   // neon handrail on the right wall
-  const r0 = P(HW - 0.02, zn * SLOPE + 0.9, zn), r1 = P(HW - 0.02, yT + 0.9, zT);
-  if (r0 && r1) { ctx.strokeStyle = pal.b; ctx.lineWidth = 4; ctx.shadowColor = pal.b; ctx.shadowBlur = 18; ctx.beginPath(); ctx.moveTo(r0[0], r0[1]); ctx.lineTo(r1[0], r1[1]); ctx.stroke(); ctx.shadowBlur = 0; }
+  ctx.strokeStyle = pal.b; ctx.lineWidth = 4; ctx.shadowColor = pal.b; ctx.shadowBlur = 18; ctx.beginPath();
+  if (seg([HW - 0.02, zn * SLOPE + 0.9, zn], [HW - 0.02, yT + 0.9, zT])) ctx.stroke();
+  ctx.shadowBlur = 0;
   // steps, far to near, with an LED strip on each nose
   for (let i = N - 1; i >= 0; i--) {
     const z0 = i * DEPTH, y0 = i * RISE;
     if (z0 + DEPTH < zn) continue;
     const fog = clamp(1 - (z0 - zc) / 9);
-    quad([[-HW, y0 + RISE, z0], [HW, y0 + RISE, z0], [HW, y0 + RISE, z0 + DEPTH], [-HW, y0 + RISE, z0 + DEPTH]], mix(pal.bg, pal.fg, 0.04 + 0.1 * fog));
-    if (z0 > zn) quad([[-HW, y0, z0], [HW, y0, z0], [HW, y0 + RISE, z0], [-HW, y0 + RISE, z0]], mix(pal.bg, pal.fg, 0.02 + 0.04 * fog));
-    const a = P(-HW, y0 + RISE, z0), b = P(HW, y0 + RISE, z0);
-    if (a && b && z0 > zn) {
-      ctx.strokeStyle = rgba(pal.a, (0.35 + 0.5 * fog) * (0.75 + 0.25 * kick)); ctx.lineWidth = Math.max(1, 3 * fog);
-      ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.stroke();
-    }
+    quad([[-HW, y0 + RISE, z0], [HW, y0 + RISE, z0], [HW, y0 + RISE, z0 + DEPTH], [-HW, y0 + RISE, z0 + DEPTH]], mix(mix(pal.bg, pal.a, 0.1), pal.fg, 0.06 + 0.12 * fog));
+    if (z0 > zn) quad([[-HW, y0, z0], [HW, y0, z0], [HW, y0 + RISE, z0], [-HW, y0 + RISE, z0]], mix(mix(pal.bg, pal.a, 0.08), pal.fg, 0.03 + 0.05 * fog));
+    ctx.strokeStyle = rgba(pal.a, (0.35 + 0.5 * fog) * (0.75 + 0.25 * kick)); ctx.lineWidth = Math.max(1, 3 * fog);
+    ctx.beginPath(); if (seg([-HW, y0 + RISE, z0], [HW, y0 + RISE, z0])) ctx.stroke();
   }
   // the street door closing behind you (opening at the start of this stage)
   if (local < 0.12) {
     const o = ease(local / 0.12), half = w / 2;
     ctx.fillStyle = mix(pal.bg, '#000000', 0.4); ctx.fillRect(-o * half, 0, half, h); ctx.fillRect(half + o * half, 0, half, h);
   }
-  // stepping out into the light
+  // stepping out into the light (from here the page stops scrolling and the roof plays by itself)
   if (doorOpen > 0) { ctx.fillStyle = rgba(pal.fg, doorOpen * doorOpen * 0.9); ctx.fillRect(0, 0, w, h); }
 }
 
