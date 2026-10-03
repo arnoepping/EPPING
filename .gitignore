@@ -29,3 +29,6 @@ pnpm-debug.log*
 # raw photos/videos from the user (large, private; repo is public)
 /media/
 
+
+# Poly Haven originals (web/ copies are committed)
+blender/textures/*_1k.jpg

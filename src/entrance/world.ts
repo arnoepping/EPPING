@@ -1,9 +1,11 @@
 import * as THREE from 'three';
 import { SVGLoader } from 'three/addons/loaders/SVGLoader.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 import wordmark from '../components/wordmark.json';
 import { POSTERS } from '../content/posters.ts';
 import { PAL } from './palette.ts';
-import { brick, pavement, puff } from './textures.ts';
+import { brick, puff } from './textures.ts';
 
 // One continuous world (metres, y up). The street is at z > 0, the facade at z = 0 with the door,
 // the stairwell climbs toward -z inside the building, and the roof starts behind the top door.
@@ -16,6 +18,7 @@ const ease = (t: number) => t * t * (3 - 2 * t);
 export const stairY = (z: number) => clamp((Z0 - z) / RUN, 0, N) * RISE;
 
 const C = (hex: string) => new THREE.Color(hex);
+const V = (x: number, y: number) => new THREE.Vector2(x, y);
 const glowMat = (c: THREE.Color) => new THREE.MeshBasicMaterial({ color: c, toneMapped: false, side: THREE.DoubleSide });
 /** Neon colour along the climb: pink at the bottom, orange at the top. */
 const climbColor = (z: number) => C(PAL.b).lerp(C(PAL.a), clamp((Z0 - z) / (Z0 - ROOF_Z)));
@@ -56,10 +59,35 @@ function wordmarkGeometry(width: number): THREE.ShapeGeometry {
 
 export interface World {
   scene: THREE.Scene;
+  /** resolves once the baked street model is in the scene */
+  ready: Promise<void>;
   streetDoor: THREE.Object3D; roofDoor: THREE.Object3D;
   setDoors(street: number, roof: number): void;
   update(t: number, kick: number, camera: THREE.Camera): void;
   cameraAt(stage: number, local: number, t: number): { pos: THREE.Vector3; look: THREE.Vector3 };
+}
+
+// Baked lightmaps per material (blender/street.py writes them next to the model).
+const LIGHTMAPS = ['brick', 'pavement', 'road', 'trim', 'kerb', 'dark', 'bollard', 'bark', 'leaf'];
+async function loadStreet(scene: THREE.Scene): Promise<void> {
+  const loader = new GLTFLoader().setDRACOLoader(new DRACOLoader().setDecoderPath('draco/'));
+  // the private preview page can't serve .glb files, so it hands the model over inline (see scripts/preview-artifact.sh)
+  const inline = (window as Window & { __STREET_GLB__?: ArrayBuffer }).__STREET_GLB__;
+  const gltf = inline ? await loader.parseAsync(inline, '') : await loader.loadAsync('models/street.glb');
+  const tl = new THREE.TextureLoader(), jobs: Promise<void>[] = [];
+  // night levels for the emissive parts (Blender's strengths are tuned for the bake, not for bloom)
+  const GLOW: Record<string, number> = { window_lit: 0.42, window_dim: 0.3, shop_lit: 0.06, lamp_head: 2.5 };
+  gltf.scene.traverse((o) => {
+    const m = (o as THREE.Mesh).material as THREE.MeshStandardMaterial | undefined;
+    if (m && m.name in GLOW) { m.emissiveIntensity = GLOW[m.name]; if (m.name !== 'shop_lit') m.color.set(0x000000); }
+    if (!m || !LIGHTMAPS.includes(m.name)) return;
+    jobs.push(tl.loadAsync(`models/lightmaps/${m.name}.jpg`).then((t) => {
+      t.flipY = false; t.channel = 1; t.colorSpace = THREE.SRGBColorSpace;
+      m.lightMap = t; m.lightMapIntensity = 1.0; m.envMapIntensity = 0; m.needsUpdate = true;
+    }));
+  });
+  await Promise.all(jobs);
+  scene.add(gltf.scene);
 }
 
 export function buildWorld(): World {
@@ -79,25 +107,11 @@ export function buildWorld(): World {
   }));
   sky.renderOrder = -1;
   scene.add(sky);
-  scene.add(new THREE.HemisphereLight(C(PAL.b).lerp(C(PAL.fg), 0.4).multiplyScalar(0.6), C('#0a0510'), 1.1));
+  scene.add(new THREE.HemisphereLight(C(PAL.b).lerp(C(PAL.fg), 0.4).multiplyScalar(0.6), C('#0a0510'), 0.35)); // low: the street's light is baked
 
   // ---------- 1 · the street ----------
-  // the doorway is a notch in the outline (a hole touching the edge breaks the triangulation)
-  const V = (x: number, y: number) => new THREE.Vector2(x, y);
-  const facadeShape = new THREE.Shape([V(-9, 0), V(-0.6, 0), V(-0.6, 2.3), V(0.6, 2.3), V(0.6, 0), V(9, 0), V(9, 11), V(-9, 11)]);
-  const facade = new THREE.Mesh(new THREE.ExtrudeGeometry(facadeShape, { depth: 0.35, bevelEnabled: false }), brickMat(bricks, 1, 1));
-  facade.position.z = -0.35;
-  scene.add(facade);
-  // brick UVs on the extrusion are in metres: one texture tile per 2 m
-  (facade.material as THREE.MeshStandardMaterial).map!.repeat.set(0.5, 0.5);
-  (facade.material as THREE.MeshStandardMaterial).bumpMap!.repeat.set(0.5, 0.5);
-
-  const pave = pavement(); pave.repeat.set(15, 11);
-  const street = new THREE.Mesh(new THREE.PlaneGeometry(30, 22), new THREE.MeshStandardMaterial({ map: pave, roughness: 0.55, metalness: 0.15 }));
-  street.rotation.x = -Math.PI / 2; street.position.set(0, 0, 11);
-  scene.add(street);
-  const kerb = new THREE.Mesh(new THREE.BoxGeometry(30, 0.12, 0.25), new THREE.MeshStandardMaterial({ color: C('#1b151d'), roughness: 0.8 }));
-  kerb.position.set(0, 0.06, 7.5); scene.add(kerb);
+  // Building, pavement, road, bikes, trees and the street lamp come from Blender (blender/street.py) with baked light.
+  const ready = loadStreet(scene);
 
   // the door: plain black leaf, hinged on the left, swings inward
   const doorMat = new THREE.MeshStandardMaterial({ color: C('#040205'), roughness: 0.55 });
@@ -114,11 +128,7 @@ export function buildWorld(): World {
   const signCore = new THREE.Mesh(wm, glow(C(PAL.fg).lerp(C(PAL.b), 0.45).multiplyScalar(1.05)));
   signCore.position.set(0, signY, 0.05); scene.add(signCore);
   const signLight = new THREE.PointLight(C(PAL.b), 14, 9, 2); signLight.position.set(0, signY, 0.8); scene.add(signLight);
-  const leak = new THREE.PointLight(C(PAL.b), 0.5, 1.4, 2); leak.position.set(0, 0.03, 0.7); // only washes the pavement in front of the door scene.add(leak); // light from under the door
-  const lamp = new THREE.PointLight(C('#ff9a4a'), 60, 16, 2); lamp.position.set(-5.5, 4.2, 3.5); scene.add(lamp);
-  const lampHead = new THREE.Mesh(new THREE.SphereGeometry(0.12, 12, 8), glowMat(C('#ffb36b').multiplyScalar(3)));
-  lampHead.position.copy(lamp.position); scene.add(lampHead);
-  scene.add(tube(new THREE.Vector3(-5.5, 0, 3.5), new THREE.Vector3(-5.5, 4.1, 3.5), 0.05, new THREE.MeshStandardMaterial({ color: C('#151017'), roughness: 0.6 })));
+  const leak = new THREE.PointLight(C(PAL.b), 0.5, 1.4, 2); leak.position.set(0, 0.03, 0.7); scene.add(leak); // light from under the door: only washes the pavement in front of it
 
   // velvet rope on two brass posts
   const brass = new THREE.MeshStandardMaterial({ color: C(PAL.a).lerp(C('#ffd28a'), 0.5), metalness: 0.85, roughness: 0.3 });
@@ -132,8 +142,8 @@ export function buildWorld(): World {
   scene.add(new THREE.Mesh(new THREE.TubeGeometry(rope, 24, 0.022, 8), new THREE.MeshStandardMaterial({ color: C(PAL.b).multiplyScalar(0.55), roughness: 0.7 })));
 
   // ---------- 2 · the stairwell ----------
-  // everything inside starts behind the facade (back face at z = -0.35), so nothing pokes through the brick
-  const IN = -0.36, L = IN - ROOF_Z + 0.1, H = TOP_Y + CEIL + 1;
+  // everything inside starts behind the facade (back face at z = -0.4), so nothing pokes through the brick
+  const IN = -0.41, L = IN - ROOF_Z + 0.1, H = TOP_Y + CEIL + 1;
   for (const side of [-1, 1]) {
     const wall = new THREE.Mesh(new THREE.PlaneGeometry(L, H), brickMat(bricks, L, H));
     wall.rotation.y = side < 0 ? Math.PI / 2 : -Math.PI / 2;
@@ -317,5 +327,5 @@ export function buildWorld(): World {
     return { pos, look };
   }
 
-  return { scene, streetDoor: streetLeaf, roofDoor: roofLeaf, setDoors, update, cameraAt };
+  return { scene, ready, streetDoor: streetLeaf, roofDoor: roofLeaf, setDoors, update, cameraAt };
 }

@@ -33,7 +33,8 @@ export function start(root: HTMLElement): void {
     bloom.resolution.set(w / 2, h / 2);
     camera.aspect = w / h; camera.fov = w < h ? 74 : 58; camera.updateProjectionMatrix();
   };
-  html.classList.add('ent-3d');
+  // show the 3D stage only once the street model is in (until then the static page stays)
+  world.ready.then(() => { html.classList.add('ent-3d'); resize(); }).catch((e) => console.error('street model failed', e));
   new ResizeObserver(resize).observe(canvas);
   resize();
 
