@@ -49,7 +49,7 @@ export const FLOORS: Floor[] = [
       'A few times a year we take over a rooftop, a basement or a place nobody expected and throw the party we want to go to ourselves.',
       'Locations are announced to the list first. Get on it and you hear about the next one before anyone else.',
     ],
-    event: { date: 'Sat 14 November', place: 'Amsterdam, secret location', note: 'Vol. 03 · 22:00 – 05:00' },
+    // event: { date: '', place: '', note: '' }, // add the next night here to show the 'Next night' block
     includes: ['Announcements via WhatsApp and Instagram', 'Early-bird tickets for the list', 'Guest DJs from the Amsterdam scene'],
     mix: { title: 'ADE House Mix', length: 'Mix', url: 'https://soundcloud.com/arno-epping/ade-house-mix' },
     cta: 'Get on the list',
