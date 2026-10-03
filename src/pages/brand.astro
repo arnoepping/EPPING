@@ -2,13 +2,13 @@
 import Base from '../layouts/Base.astro';
 import Wordmark from '../components/Wordmark.astro';
 const colors = [
-  ['Black', '--bg', '#0A0A10', 'Background, always'],
+  ['Night', '--bg', '#12061A', 'Background, always'],
   ['Pink', '--pink', '#FF2BD6', 'Primary accent: CTAs, highlights, quotes'],
-  ['Cyan', '--cyan', '#00E5FF', 'Secondary: links, focus, hover'],
-  ['Text', '--text', '#EDEDF3', 'Body and headings'],
-  ['Muted', '--muted', '#9494A8', 'Secondary text, labels'],
-  ['Surface', '--surface', '#13131C', 'Cards, inputs'],
-  ['Line', '--line', '#262634', 'Borders, dividers'],
+  ['Orange', '--orange', '#FF4D00', 'Secondary: links, focus, hover'],
+  ['Text', '--text', '#FFF4E8', 'Body and headings'],
+  ['Muted', '--muted', '#A894A8', 'Secondary text, labels'],
+  ['Surface', '--surface', '#1C0E26', 'Cards, inputs'],
+  ['Line', '--line', '#33203F', 'Borders, dividers'],
 ];
 const files = [['epping-logo.svg', 'RGB split'], ['epping-white.svg', 'White'], ['epping-pink.svg', 'Pink']];
 ---
@@ -39,7 +39,7 @@ const files = [['epping-logo.svg', 'RGB split'], ['epping-white.svg', 'White'], 
         ))}
       </div>
       <div class="gradbar" aria-hidden="true"></div>
-      <p class="label">Gradient: cyan → pink, for meters and accents only</p>
+      <p class="label">Gradient: orange → pink, for meters and accents only</p>
     </section>
 
     <section>

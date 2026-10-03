@@ -1,52 +1,60 @@
+// Floor pages: copy and links. Edit freely; the same content feeds the overlay on / and the /<slug>/ routes.
 export type Slug = 'rave-wedding' | 'private-events' | 'presents';
-export interface PresentsEvent { date: string; venue: string; ticketUrl: string }
 export interface Floor {
-  slug: Slug; name: string; tagline: string; headline: string; lines: string[];
-  color: string; accent: string; bpm: number; soundcloudUrl: string;
-  booking?: { subject: string; whatsappText: string };
-  presents?: { event: PresentsEvent | null; vibe: string };
+  slug: Slug; n: string; name: string; tagline: string; headline: string; intro: string; body: string[]; includes: string[];
+  event?: { date: string; place: string; note: string };
+  mix: { title: string; length: string; url: string };
+  cta: string; mail: { subject: string; body: string }; whatsapp: string;
 }
 
-export const CONTACT = { email: 'bookings@eppingmusic.com', whatsapp: '31640187865', instagram: 'epping.music', soundcloud: 'https://soundcloud.com/arno-epping' };
+export const CONTACT = {
+  email: 'bookings@eppingmusic.com', whatsapp: '31640187865', whatsappLabel: '+31 6 4018 7865',
+  instagram: 'https://www.instagram.com/epping.music/', instagramLabel: '@epping.music', soundcloud: 'https://soundcloud.com/arno-epping',
+};
 
 export const FLOORS: Floor[] = [
   {
-    slug: 'rave-wedding', name: 'Rave Wedding', tagline: 'ABBA to acid',
+    slug: 'rave-wedding', n: '01', name: 'Rave Wedding', tagline: 'ABBA to acid',
     headline: 'Your wedding. Our rave.',
-    lines: [
-      'We start with the songs your aunt knows. We end with the ones she never forgets.',
-      'One dancefloor, no exit, mirrorball overhead.',
-      'Only for couples who want the night to end in a proper rave.',
+    intro: 'We start with the songs your aunt knows and end with the ones she never forgets. One DJ who reads the room from the first dance to the last track, so the night quietly turns into a proper rave.',
+    body: [
+      'Before the day we sit down together: your must-plays, your never-plays, the moment the dancefloor should explode. On the night it is one continuous set, built around your crowd.',
+      'From drinks after the ceremony to the afterparty, with light and smoke that turn any venue into a club for a few hours.',
     ],
-    color: '#FF2BD6', accent: '#EDEDF3', bpm: 126,
-    soundcloudUrl: 'https://soundcloud.com/arno-epping/sets/marta-donalds-wedding',
-    booking: { subject: 'Rave Wedding booking', whatsappText: 'Hi EPPING! We want a rave wedding.' },
+    includes: ['Planning call and a shared playlist', 'DJ set from first dance to last song', 'Club sound and light show, smoke on request', 'Room for 50 to 250 guests'],
+    mix: { title: 'Marta & Donald’s wedding', length: 'Set', url: 'https://soundcloud.com/arno-epping/sets/marta-donalds-wedding' },
+    cta: 'Book your date',
+    mail: { subject: 'Rave Wedding booking', body: 'Hi Epping,\n\nWe are getting married on [date] at [venue] and would love a rave wedding.\n\n' },
+    whatsapp: 'Hi Epping! We are getting married on [date] and want a rave wedding.',
   },
   {
-    slug: 'private-events', name: 'Private Events', tagline: 'Club night, private list',
+    slug: 'private-events', n: '02', name: 'Private Events', tagline: 'Club night, private list',
     headline: 'Your party. Club-grade.',
-    lines: [
-      'Birthdays, company nights, rooftops, living rooms.',
-      'Club sound, club lights, no awkward first hour.',
-      'You bring the people. We bring the peak.',
+    intro: 'Birthdays, company nights, rooftops, living rooms. Club sound, club lights and no awkward first hour. You bring the people, I bring the peak.',
+    body: [
+      'Every crowd is different, so every set is too: disco and house while people arrive, then building toward the moment nobody wants to go home.',
+      'I bring the gear and set up and break down myself, so all you have to do is send the invites.',
     ],
-    color: '#00E5FF', accent: '#EDEDF3', bpm: 124,
-    soundcloudUrl: 'https://soundcloud.com/arno-epping/ade-house-mix',
-    booking: { subject: 'Private event booking', whatsappText: 'Hi EPPING! I have a private event.' },
+    includes: ['DJ set of 3 to 6 hours', 'Sound system and lights', 'Indoor, outdoor or rooftop', 'Set-up and break-down included'],
+    mix: { title: 'ADE House Mix', length: 'Mix', url: 'https://soundcloud.com/arno-epping/ade-house-mix' },
+    cta: 'Plan your party',
+    mail: { subject: 'Private event booking', body: 'Hi Epping,\n\nI am planning a [type of party] on [date] for about [number] guests.\n\n' },
+    whatsapp: 'Hi Epping! I am planning a party on [date] and would like to book you.',
   },
   {
-    slug: 'presents', name: 'Epping Presents', tagline: 'Our own nights',
+    slug: 'presents', n: '03', name: 'Epping Presents', tagline: 'Our own nights',
     headline: 'Not a party. A ritual.',
-    lines: [
-      'Our own nights. Public, loud, a little unhinged.',
-      'One room, one sound system, everybody welcome.',
+    intro: 'Our own nights. Public, loud and a little unhinged. One room, one sound system, everybody welcome.',
+    body: [
+      'A few times a year we take over a rooftop, a basement or a place nobody expected and throw the party we want to go to ourselves.',
+      'Locations are announced to the list first. Get on it and you hear about the next one before anyone else.',
     ],
-    color: '#FF2BD6', accent: '#00E5FF', bpm: 138,
-    soundcloudUrl: 'https://soundcloud.com/arno-epping/ade-house-mix',
-    presents: {
-      event: { date: '2026-12-12', venue: 'TBA, Amsterdam', ticketUrl: 'https://www.instagram.com/epping.music/' },
-      vibe: 'Strobes, sweat, and the best Saturday of your month.',
-    },
+    event: { date: 'Sat 14 November', place: 'Amsterdam, secret location', note: 'Vol. 03 · 22:00 – 05:00' },
+    includes: ['Announcements via WhatsApp and Instagram', 'Early-bird tickets for the list', 'Guest DJs from the Amsterdam scene'],
+    mix: { title: 'ADE House Mix', length: 'Mix', url: 'https://soundcloud.com/arno-epping/ade-house-mix' },
+    cta: 'Get on the list',
+    mail: { subject: 'Epping Presents: put me on the list', body: 'Hi Epping,\n\nPlease put me on the list for the next Epping Presents.\n\n' },
+    whatsapp: 'Hi Epping! Put me on the list for the next Epping Presents.',
   },
 ];
 

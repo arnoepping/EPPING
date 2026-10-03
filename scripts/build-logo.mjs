@@ -2,7 +2,7 @@
 import opentype from 'opentype.js';
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 
-const C = { text: '#EDEDF3', pink: '#FF2BD6', cyan: '#00E5FF', bg: '#0A0A10' };
+const C = { text: '#FFF4E8', pink: '#FF2BD6', orange: '#FF4D00', bg: '#12061A' }; // Sunset rave
 const buf = readFileSync('node_modules/@fontsource/unbounded/files/unbounded-latin-800-normal.woff');
 const font = opentype.parse(buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength));
 
@@ -39,11 +39,11 @@ function favicon() {
   const size = 46;
   const b = outline('E', size).box;
   const { d } = outline('E', size, r(32 - (b.x1 + b.x2) / 2), r(32 - (b.y1 + b.y2) / 2));
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="12" fill="${C.bg}"/>${layer(d, C.cyan, -2, true)}${layer(d, C.pink, 2, true)}${layer(d, C.text)}</svg>\n`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="12" fill="${C.bg}"/>${layer(d, C.orange, -2, true)}${layer(d, C.pink, 2, true)}${layer(d, C.text)}</svg>\n`;
 }
 
 mkdirSync('public/brand', { recursive: true });
-writeFileSync('public/brand/epping-logo.svg', wordmark((d, o) => layer(d, C.cyan, -o, true) + layer(d, C.pink, o, true) + layer(d, C.text)));
+writeFileSync('public/brand/epping-logo.svg', wordmark((d, o) => layer(d, C.orange, -o, true) + layer(d, C.pink, o, true) + layer(d, C.text)));
 writeFileSync('public/brand/epping-white.svg', wordmark((d) => layer(d, C.text)));
 writeFileSync('public/brand/epping-pink.svg', wordmark((d) => layer(d, C.pink)));
 writeFileSync('public/favicon.svg', favicon());

@@ -1,0 +1,40 @@
+---
+// The rooftop entrance: street → stairs → roof → floor pages. Without WebGL (or with reduced motion) the static hero shows instead.
+import Wordmark from './Wordmark.astro';
+import FloorPage from './FloorPage.astro';
+import { FLOORS, CONTACT } from '../content/floors.ts';
+---
+<main class="ent">
+  <canvas class="ent-canvas" aria-hidden="true"></canvas>
+
+  <section class="ent-static">
+    <Wordmark tag="h1" />
+    <p class="ent-tag">Rave weddings. Private parties. Our own nights.</p>
+    <nav class="floors" aria-label="Floors">{FLOORS.map((f) => <a href={`/${f.slug}/`}>{f.name}</a>)}</nav>
+    <p class="ent-contact"><a href={`mailto:${CONTACT.email}`}>{CONTACT.email}</a> · <a href={CONTACT.instagram}>{CONTACT.instagramLabel}</a></p>
+  </section>
+
+  <div class="finale" aria-live="polite">
+    <video src="media/roof-dusk.mp4" muted loop playsinline preload="none"></video>
+    <div class="fin">
+      <Wordmark tag="div" size="clamp(56px,13vw,150px)" />
+      <p>Rave weddings. Private parties. Our own nights.</p>
+      <nav class="floors" aria-label="Floors">{FLOORS.map((f) => <a href={`/${f.slug}/`} data-floor={f.slug}>{f.name}</a>)}</nav>
+      <button class="again" type="button" data-again>↺ Back to the street</button>
+    </div>
+  </div>
+  <section class="floor-page" hidden></section>
+  {FLOORS.map((f) => <template data-floor-tpl={f.slug}><FloorPage f={f} /></template>)}
+
+  <div class="hud top">
+    <button type="button" data-sound aria-pressed="false">Sound off</button>
+    <button type="button" data-skip>Skip ↓</button>
+  </div>
+  <p class="ent-hint">Scroll to get in</p>
+</main>
+<div class="ent-spacer"></div>
+
+<script>
+  import { boot } from '../entrance/boot.ts';
+  boot();
+</script>

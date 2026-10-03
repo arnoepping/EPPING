@@ -1,0 +1,66 @@
+/* Entrance: static by default; html.ent-3d switches to the fixed WebGL stage with a tall scroll spacer. */
+.ent-canvas, .ent .hud, .ent-hint, .ent .finale, .ent-spacer { display: none; }
+.ent-static { min-height: 100svh; display: grid; place-content: center; justify-items: center; gap: 22px; padding: 24px 16px; text-align: center; }
+.ent-tag { margin: 0; font: 800 clamp(18px, 3vw, 28px)/1.2 var(--display); text-wrap: balance; }
+.ent-contact { margin: 0; color: var(--muted); }
+
+.ent-3d .ent-static { display: none; }
+.ent-3d .ent-canvas { display: block; position: fixed; inset: 0; width: 100%; height: 100%; }
+.ent-3d .ent .hud, .ent-3d .ent-hint { display: flex; }
+.ent-3d .ent .finale { display: grid; }
+.ent-3d .ent-spacer { display: block; height: 600vh; }
+.ent-locked, .ent-locked body { overflow: hidden; }
+
+.ent .hud { position: fixed; top: env(safe-area-inset-top, 0px); right: 0; z-index: 4; gap: 6px; padding: 14px 16px; }
+.ent .hud button, .ent .again { font: 500 12px var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--text); cursor: pointer;
+  background: color-mix(in srgb, var(--bg) 65%, transparent); border: 1px solid color-mix(in srgb, var(--text) 25%, transparent); border-radius: 999px; padding: 8px 12px; backdrop-filter: blur(6px); }
+.ent .hud button[aria-pressed="true"] { background: var(--pink); border-color: var(--pink); color: var(--bg); }
+.ent .hud button[hidden] { display: none; }
+.ent-hint { position: fixed; right: 16px; bottom: calc(env(safe-area-inset-bottom, 0px) + 16px); z-index: 3; margin: 0; font: 500 12px var(--mono); letter-spacing: .14em; text-transform: uppercase; opacity: .8; transition: opacity .4s; }
+
+.ent .finale { position: fixed; inset: 0; z-index: 2; opacity: 0; pointer-events: none; place-items: center; background: var(--bg); }
+.ent .finale.on { pointer-events: auto; }
+.ent .finale video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.ent .finale::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, color-mix(in srgb, var(--bg) 55%, transparent), transparent 35%, transparent 55%, var(--bg)); }
+.fin { position: relative; z-index: 1; display: grid; justify-items: center; gap: 18px; padding-inline: 16px; text-align: center; }
+.fin p { margin: 0; font: 800 clamp(16px, 2.6vw, 26px)/1.2 var(--display); text-wrap: balance; }
+.ent .again { background: none; border: 0; opacity: .75; }
+.floors { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+.floors a { font: 500 14px var(--mono); letter-spacing: .08em; text-transform: uppercase; text-decoration: none; color: var(--text); padding: 12px 16px; border-radius: 999px;
+  border: 1.5px solid var(--orange); background: color-mix(in srgb, var(--bg) 60%, transparent); }
+.floors a:hover, .floors a:focus-visible { background: var(--pink); border-color: var(--pink); color: var(--bg); }
+
+/* floor pages: plain black so the text reads; palette only in accents */
+.floor-page { position: fixed; inset: 0; z-index: 3; overflow-y: auto; overscroll-behavior: contain; background: #000; }
+.ent.reading .ent-hint { display: none; }
+.ent.reading .hud { background: linear-gradient(#000 70%, transparent); left: 0; justify-content: flex-end; }
+.fp-standalone { background: #000; min-height: 100svh; }
+.fp-in { max-width: 760px; margin: 0 auto; padding-inline: 20px; padding-block: calc(env(safe-area-inset-top, 0px) + 76px) 80px; display: grid; gap: 22px; }
+.fp-back { justify-self: start; font: 500 13px var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--text); text-decoration: none; border: 1px solid color-mix(in srgb, var(--text) 25%, transparent); border-radius: 999px; padding: 8px 14px; }
+.fp-k { margin: 0; font: 500 12px var(--mono); letter-spacing: .18em; text-transform: uppercase; color: var(--orange); }
+.fp-h { margin: -8px 0 0; font: 800 clamp(40px, 9vw, 88px)/.95 var(--display); letter-spacing: -.02em; text-shadow: -.03em 0 var(--orange), .03em 0 var(--pink); text-wrap: balance; outline: none; }
+.fp-head { margin: 0; font: 800 clamp(20px, 3.4vw, 30px)/1.15 var(--display); }
+.fp-intro { margin: 0; font-size: clamp(17px, 2.2vw, 20px); line-height: 1.55; max-width: 60ch; }
+.fp-event { display: grid; gap: 4px; padding: 16px 18px; border-left: 3px solid var(--pink); background: color-mix(in srgb, var(--pink) 10%, #000); }
+.fp-event span { font-size: 13px; opacity: .75; }
+.fp-event b { font: 800 22px var(--display); }
+.fp-cols { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 28px; }
+.fp-body p { margin: 0 0 14px; opacity: .85; }
+.fp-list { margin: 0; padding: 0; list-style: none; display: grid; gap: 10px; align-content: start; }
+.fp-list li { padding-left: 22px; position: relative; line-height: 1.4; }
+.fp-list li::before { content: ""; position: absolute; left: 0; top: .45em; width: 10px; height: 10px; border-radius: 50%; background: linear-gradient(135deg, var(--pink), var(--orange)); }
+.fp-sc { width: 100%; height: 166px; border: 0; border-radius: 12px; background: #0e0e10; }
+.fp-contact { display: grid; gap: 14px; padding-top: 10px; border-top: 1px solid #222; }
+.fp-contact h2 { margin: 0; font: 800 clamp(22px, 4vw, 34px)/1.1 var(--display); }
+.fp-btns { display: flex; flex-wrap: wrap; gap: 10px; }
+.fp-btns a { font: 500 16px var(--mono); letter-spacing: .06em; text-transform: uppercase; text-decoration: none; padding: 16px 24px; border-radius: 999px; min-width: 150px; text-align: center; }
+.btn-wa { background: var(--pink); color: #000; }
+.btn-mail { border: 1.5px solid var(--orange); color: var(--text); }
+.fp-addr { margin: 0; font-size: 14px; opacity: .8; }
+.fp-addr button { font: inherit; color: var(--orange); background: none; border: 0; cursor: pointer; padding: 0 4px; text-decoration: underline; }
+.fp-social { margin: 0; display: flex; flex-wrap: wrap; gap: 18px; }
+.fp-social a { color: var(--orange); text-decoration: none; font: 500 14px var(--mono); }
+.fp-others { display: flex; flex-wrap: wrap; gap: 18px; padding-top: 6px; }
+.fp-others a { color: var(--text); opacity: .7; text-decoration: none; font: 500 14px var(--mono); letter-spacing: .06em; text-transform: uppercase; }
+.fp-others a:hover, .fp-others a:focus-visible, .fp-social a:hover { opacity: 1; color: var(--orange); }
+@media (max-width: 640px) { .fp-cols { grid-template-columns: 1fr; gap: 12px; } .fp-btns a { flex: 1; } }

@@ -1,13 +1,11 @@
 ---
 import Base from '../layouts/Base.astro';
-import Experience from '../components/Experience.astro';
-import { FLOORS } from '../content/floors.ts';
-import type { Floor } from '../content/floors.ts';
-export function getStaticPaths() {
-  return FLOORS.map((floor) => ({ params: { floor: floor.slug }, props: { floor } }));
-}
-const { floor } = Astro.props as { floor: Floor };
+import FloorPage from '../components/FloorPage.astro';
+import { FLOORS, type Floor } from '../content/floors.ts';
+import '../styles/entrance.css';
+export function getStaticPaths() { return FLOORS.map((f) => ({ params: { floor: f.slug }, props: { f } })); }
+const { f } = Astro.props as { f: Floor };
 ---
-<Base title={`${floor.name} | EPPING`} description={`${floor.headline} ${floor.lines[0]}`}>
-  <Experience initial={floor.slug} />
+<Base title={`${f.name} | EPPING`} description={`${f.headline} ${f.intro}`}>
+  <main class="fp-standalone"><FloorPage f={f} standalone /></main>
 </Base>

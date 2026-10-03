@@ -11,7 +11,7 @@ const { tag: Tag = 'div', size = 'clamp(64px,17vw,200px)' } = Astro.props;
   .wm svg{display:block;height:calc(var(--wm-size) * .86);width:auto;overflow:visible}
   .wm-t{fill:var(--text)}
   .wm-a,.wm-b{mix-blend-mode:screen}
-  .wm-a{fill:var(--cyan);transform:translate(-2px,0);animation:wm-glitch-a 4.2s infinite steps(1)}
+  .wm-a{fill:var(--orange);transform:translate(-2px,0);animation:wm-glitch-a 4.2s infinite steps(1)}
   .wm-b{fill:var(--pink);transform:translate(2px,0);animation:wm-glitch-b 4.2s infinite steps(1)}
   @keyframes wm-glitch-a{0%,86%,100%{transform:translate(-2px,0);clip-path:none}88%{transform:translate(-5px,1px);clip-path:inset(12% 0 55% 0)}91%{transform:translate(3px,-1px);clip-path:inset(60% 0 8% 0)}94%{transform:translate(-2px,0);clip-path:none}}
   @keyframes wm-glitch-b{0%,86%,100%{transform:translate(2px,0);clip-path:none}88%{transform:translate(5px,-1px);clip-path:inset(48% 0 20% 0)}91%{transform:translate(-3px,1px);clip-path:inset(5% 0 70% 0)}94%{transform:translate(2px,0);clip-path:none}}
