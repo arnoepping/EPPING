@@ -26,6 +26,7 @@ Website for Epping: DJ and party organizer. (`CLAUDE.md` is a symlink to this fi
   - **Next:** wait for the HTTPS certificate, then tick Enforce HTTPS (repo Settings → Pages). After that, cancel the Squarespace *website* subscription (keep the domain).
   - Never touch MX, SPF or `google._domainkey`: email runs on Google Workspace.
   - DNS snapshot from before the switch: `.superpowers/sdd/2026-10-02-deploy-pipeline/dns-before.txt` (git-ignored, local only).
+- **Logo lab (current focus):** separate repo `~/Documents/GitHub/epping-lab` (→ github.com/arnoepping/epping-lab, Pages at arnoepping.github.io/epping-lab/). Gallery with variant IDs (P/S/F/W) plus an editor with share links and SVG/PNG export. Once the logo is final, port it to `scripts/build-logo.mjs` + tokens here.
 - **Brand:** spec approved (`docs/superpowers/specs/2026-10-02-brand-identity-design.md`): logo A (Unbounded 800, RGB split), black/pink/cyan palette. Built (commits 3373c00..8d50901, not pushed): logo SVGs in `public/brand/`, favicon, `tokens.css`/`ui.css`, `Base.astro`, `Wordmark.astro`, `/brand/` page. Regenerate logos with `npm run logo`.
 - **Website:** built and pushed (spec `docs/superpowers/specs/2026-10-02-festival-site-design.md`, plan `docs/superpowers/plans/2026-10-02-festival-site.md`). Three.js tunnel → hall with 3 floors (Rave Wedding, Private Events, Epping Presents); static fallback for no-JS/reduced motion.
   - Local phone test: `npm run build && npx astro preview --host`.
