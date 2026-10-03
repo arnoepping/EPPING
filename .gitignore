@@ -25,3 +25,6 @@ pnpm-debug.log*
 
 # brainstorm/screenshots/local notes
 .superpowers/
+
+# raw photos/videos from the user (large, private; repo is public)
+media/

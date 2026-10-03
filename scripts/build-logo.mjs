@@ -6,8 +6,21 @@ const C = { text: '#EDEDF3', pink: '#FF2BD6', cyan: '#00E5FF', bg: '#0A0A10' };
 const buf = readFileSync('node_modules/@fontsource/unbounded/files/unbounded-latin-800-normal.woff');
 const font = opentype.parse(buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength));
 
+// G3: the font's G without its spur (generated in the epping-lab repo). Font units, y down, baseline 0.
+const G3 = JSON.parse(readFileSync('scripts/g3.json', 'utf8'));
+
 const outline = (text, size, x = 0, y = 0) => {
-  const p = font.getPath(text, x, y, size, { letterSpacing: -0.02 });
+  const p = new opentype.Path();
+  font.forEachGlyph(text, x, y, size, { letterSpacing: -0.02 }, (glyph, gx, gy, gs) => {
+    if (glyph.unicode !== 71) return p.extend(glyph.getPath(gx, gy, gs));
+    const k = gs / font.unitsPerEm, X = (v) => gx + v * k, Y = (v) => gy + v * k;
+    for (const [t, ...v] of G3) {
+      if (t === 'M') p.moveTo(X(v[0]), Y(v[1]));
+      else if (t === 'L') p.lineTo(X(v[0]), Y(v[1]));
+      else if (t === 'C') p.curveTo(X(v[0]), Y(v[1]), X(v[2]), Y(v[3]), X(v[4]), Y(v[5]));
+      else p.close();
+    }
+  });
   return { d: p.toPathData(2), box: p.getBoundingBox() };
 };
 const layer = (d, fill, dx = 0, blend = false) =>
@@ -34,4 +47,7 @@ writeFileSync('public/brand/epping-logo.svg', wordmark((d, o) => layer(d, C.cyan
 writeFileSync('public/brand/epping-white.svg', wordmark((d) => layer(d, C.text)));
 writeFileSync('public/brand/epping-pink.svg', wordmark((d) => layer(d, C.pink)));
 writeFileSync('public/favicon.svg', favicon());
-console.log('logo: wrote public/brand/*.svg and public/favicon.svg');
+// Path data for the site's animated <Wordmark> component.
+const wm = outline('EPPING', 100), pad = 6;
+writeFileSync('src/components/wordmark.json', JSON.stringify({ d: wm.d, viewBox: [wm.box.x1 - pad, wm.box.y1 - pad, wm.box.x2 - wm.box.x1 + 2 * pad, wm.box.y2 - wm.box.y1 + 2 * pad].map(r).join(' ') }) + '\n');
+console.log('logo: wrote public/brand/*.svg, public/favicon.svg and src/components/wordmark.json');
