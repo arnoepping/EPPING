@@ -41,10 +41,36 @@ function outside(ctx, S) {
   g.addColorStop(0, rgba(pal.b, 0.25 + 0.2 * kick)); g.addColorStop(1, rgba(pal.b, 0));
   ctx.fillStyle = g; ctx.fillRect(0, dy + dh - dw, w, dw * 2);
   drawLogo(ctx, pal, cx, dy - dh * 0.16, dw * 1.5, { glow: 30 * z, alpha: Math.sin(t * 13) > 0.92 ? 0.35 : 1, split: 2 });
+  streetSign(ctx, S, dx + dw * 1.22, dy + dh * 0.16, dw * 0.95, z);
   ctx.strokeStyle = pal.a; ctx.lineWidth = 5 * z; ctx.beginPath();
   ctx.moveTo(dx - dw * 0.9, dy + dh * 0.82); ctx.quadraticCurveTo(dx - dw * 0.45, dy + dh * 0.95, dx - dw * 0.05, dy + dh * 0.82); ctx.stroke();
   ctx.fillStyle = mix(pal.fg, pal.a, 0.4);
   for (const px of [dx - dw * 0.9, dx - dw * 0.05]) ctx.fillRect(px - 3 * z, dy + dh * 0.78, 6 * z, dh * 0.22);
+}
+
+// Enamel street-name sign on the brick next to the door: the scroll hint, as part of the street.
+function streetSign(ctx, S, x, y, sw, z) {
+  const { pal, t } = S, sh = sw * 0.36, r = sh * 0.14;
+  ctx.save();
+  ctx.shadowColor = 'rgba(0,0,0,.5)'; ctx.shadowBlur = 10 * z; ctx.shadowOffsetY = 3 * z;
+  ctx.fillStyle = pal.fg; ctx.beginPath(); ctx.roundRect(x, y, sw, sh, r); ctx.fill();
+  ctx.shadowColor = 'transparent';
+  ctx.strokeStyle = pal.b; ctx.lineWidth = Math.max(1.5, sh * 0.05);
+  ctx.beginPath(); ctx.roundRect(x + sh * 0.08, y + sh * 0.08, sw - sh * 0.16, sh - sh * 0.16, r * 0.7); ctx.stroke();
+  // screws
+  ctx.fillStyle = Entrance.util.mix(pal.fg, pal.bg, 0.4);
+  for (const sx of [x + sh * 0.2, x + sw - sh * 0.2]) { ctx.beginPath(); ctx.arc(sx, y + sh / 2, sh * 0.045, 0, Math.PI * 2); ctx.fill(); }
+  // text, fitted between the screws
+  const label = 'SCROLL TO GET IN', maxW = sw - sh * 0.8;
+  let fs = sh * 0.34;
+  ctx.font = `800 ${fs}px Unbounded, "Arial Black", system-ui, sans-serif`;
+  const tw = ctx.measureText(label).width; if (tw > maxW) { fs *= maxW / tw; ctx.font = `800 ${fs}px Unbounded, "Arial Black", system-ui, sans-serif`; }
+  ctx.fillStyle = pal.bg; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText(label, x + sw / 2, y + sh * 0.44);
+  // small arrow underneath, bobbing
+  ctx.font = `600 ${fs * 0.7}px "Space Grotesk", system-ui, sans-serif`; ctx.fillStyle = pal.b;
+  ctx.fillText('↓', x + sw / 2, y + sh * 0.78 + Math.sin(t * 4) * sh * 0.03);
+  ctx.restore();
 }
 
 // ---------- 2 · up the stairs ----------

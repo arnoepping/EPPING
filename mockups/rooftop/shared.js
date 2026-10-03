@@ -149,7 +149,7 @@
         <div class="grain"></div>
         <div class="hud top"><span class="tag">EPPING · rooftop entrance</span>
           <div class="group"><span class="group" id="pals"></span><button id="snd" aria-pressed="false">Sound off</button><button id="skip">Skip ↓</button></div></div>
-        <div class="hud bottom"><div class="stage"><span><span class="n" id="sn">01</span> / 03</span><b id="sl"></b><div class="bar"><i id="bar"></i></div></div><span class="hint" id="hint">Scroll to get in</span></div>
+        <div class="hud bottom"><div class="stage"><span><span class="n" id="sn">01</span> / 03</span><b id="sl"></b><div class="bar"><i id="bar"></i></div></div></div>
       </div><div class="spacer"></div>`);
     const $ = (id) => document.getElementById(id);
     const cv = document.querySelector('.ent canvas'), ctx = cv.getContext('2d');
@@ -196,7 +196,6 @@
       draw(ctx, S);
       sound.update(st, local);
       $('sn').textContent = '0' + (st + 1); $('sl').textContent = S0.label; $('bar').style.width = (p * 100).toFixed(1) + '%';
-      $('hint').style.opacity = p < 0.02 ? 0.7 : 0;
       $('skip').hidden = autoStart !== null;
       const f = clamp((p - 0.86) / 0.08);
       fin.style.opacity = finale === 'circle' ? 1 : f;
