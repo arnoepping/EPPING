@@ -27,5 +27,5 @@ pnpm-debug.log*
 .superpowers/
 
 # raw photos/videos from the user (large, private; repo is public)
-media/
+/media/
 
