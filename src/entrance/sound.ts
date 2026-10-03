@@ -1,4 +1,4 @@
-// One track (Epping's ADE House Mix, from 26:00) through a low-pass: bass only outside, opening up while you climb, the full track on the roof.
+// One track (Epping's ADE House Mix, from 18:30) through a low-pass: bass only outside, opening up while you climb, the full track on the roof.
 // An analyser on the unfiltered song gives the kick that drives the neon.
 const BPM = 126, SPB = 60 / BPM;
 const clamp = (v: number, a = 0, b = 1) => Math.min(b, Math.max(a, v));
