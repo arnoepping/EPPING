@@ -21,11 +21,11 @@ const others = FLOORS.filter((o) => o.slug !== f.slug);
   <div class="fp-contact">
     <h2>{f.cta}</h2>
     <div class="fp-btns">
-      <a class="btn-wa" href={whatsappHref(CONTACT.whatsapp, f.whatsapp)} target="_blank" rel="noopener">WhatsApp</a>
-      <a class="btn-mail" href={mailtoHref(CONTACT.email, f.mail.subject, f.mail.body)}>Email</a>
+      <a class="btn-wa" data-umami-event="contact" data-umami-event-type="whatsapp" data-umami-event-floor={f.slug} href={whatsappHref(CONTACT.whatsapp, f.whatsapp)} target="_blank" rel="noopener">WhatsApp</a>
+      <a class="btn-mail" data-umami-event="contact" data-umami-event-type="email" data-umami-event-floor={f.slug} href={mailtoHref(CONTACT.email, f.mail.subject, f.mail.body)}>Email</a>
     </div>
-    <p class="fp-addr"><span>{CONTACT.email}</span><button type="button" data-copy={CONTACT.email}>Copy</button> · <span>{CONTACT.whatsappLabel}</span></p>
-    <p class="fp-social"><a href={CONTACT.instagram} target="_blank" rel="noopener">Instagram {CONTACT.instagramLabel} ↗</a><a href={CONTACT.soundcloud} target="_blank" rel="noopener">All mixes on SoundCloud ↗</a></p>
+    <p class="fp-addr"><span>{CONTACT.email}</span><button type="button" data-copy={CONTACT.email} data-floor-slug={f.slug}>Copy</button> · <span>{CONTACT.whatsappLabel}</span></p>
+    <p class="fp-social"><a href={CONTACT.instagram} data-umami-event="contact" data-umami-event-type="instagram" data-umami-event-floor={f.slug} target="_blank" rel="noopener">Instagram {CONTACT.instagramLabel} ↗</a><a href={CONTACT.soundcloud} data-umami-event="contact" data-umami-event-type="soundcloud" data-umami-event-floor={f.slug} target="_blank" rel="noopener">All mixes on SoundCloud ↗</a></p>
   </div>
   <nav class="fp-others" aria-label="Other floors">{others.map((o) => <a href={`/${o.slug}/`} data-floor={standalone ? undefined : o.slug}>{o.name} →</a>)}</nav>
 </div>

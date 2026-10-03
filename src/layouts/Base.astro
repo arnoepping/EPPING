@@ -1,6 +1,7 @@
 ---
 import '../styles/tokens.css';
 import '../styles/ui.css';
+import { UMAMI_ID } from '../lib/track.ts';
 interface Props { title: string; description?: string; noindex?: boolean; ogImage?: string }
 const { title, description = 'EPPING: rave weddings, private events and our own parties.', noindex = false, ogImage } = Astro.props;
 ---
@@ -20,6 +21,7 @@ const { title, description = 'EPPING: rave weddings, private events and our own 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;800&family=Archivo:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" />
+    {import.meta.env.PROD && UMAMI_ID && <script is:inline defer src="https://cloud.umami.is/script.js" data-website-id={UMAMI_ID} data-domains="eppingmusic.com" data-do-not-track="true"></script>}
     <slot name="head" />
   </head>
   <body>

@@ -8,4 +8,13 @@ const { f } = Astro.props as { f: Floor };
 ---
 <Base title={`${f.name} | EPPING`} description={`${f.headline} ${f.intro}`}>
   <main class="fp-standalone"><FloorPage f={f} standalone /></main>
+  <script>
+    import { track } from '../lib/track.ts';
+    document.addEventListener('click', (e) => {
+      const cp = (e.target as Element).closest<HTMLElement>('[data-copy]');
+      if (!cp) return;
+      track('contact', { type: 'copy-email', floor: cp.dataset.floorSlug ?? '' });
+      navigator.clipboard.writeText(cp.dataset.copy!).then(() => (cp.textContent = 'Copied'), () => {});
+    });
+  </script>
 </Base>

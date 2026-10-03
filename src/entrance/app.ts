@@ -5,6 +5,7 @@ import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js'
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { buildWorld } from './world.ts';
 import { Sound } from './sound.ts';
+import { track } from '../lib/track.ts';
 
 // Scroll covers [0, AUTO_FROM]: the street and the stairs. Stepping onto the roof locks the page and the rest plays by itself.
 const STAGES = [0, 0.3, 0.72, 1], AUTO_FROM = STAGES[2], AUTO_DUR = 9;
@@ -56,23 +57,24 @@ export function start(root: HTMLElement): void {
     if (p > 0.3 && p < 0.66 && ray.intersectObject(world.roofDoor).length) return AUTO_FROM;
     return null;
   };
-  canvas.addEventListener('click', (e) => { const to = doorUnder(e); if (to !== null) goTo(to); });
+  canvas.addEventListener('click', (e) => { const to = doorUnder(e); if (to !== null) { track('entrance-door', { door: to === AUTO_FROM ? 'top' : 'street' }); goTo(to); } });
   canvas.addEventListener('mousemove', (e) => { canvas.style.cursor = doorUnder(e) !== null ? 'pointer' : ''; });
 
   // ---------- sound + HUD ----------
   const sound = new Sound('media/ade-house-mix.mp3', 18 * 60 + 30); // Epping – ADE House Mix, from 18:30
   const snd = $<HTMLButtonElement>('[data-sound]');
-  snd.addEventListener('click', async () => { const on = await sound.toggle(); snd.setAttribute('aria-pressed', String(on)); snd.textContent = on ? 'Sound on' : 'Sound off'; });
+  snd.addEventListener('click', async () => { const on = await sound.toggle(); if (on) track('sound-on'); snd.setAttribute('aria-pressed', String(on)); snd.textContent = on ? 'Sound on' : 'Sound off'; });
   const skip = $<HTMLButtonElement>('[data-skip]');
-  skip.addEventListener('click', () => { p = AUTO_FROM; scrollTo(0, maxScroll()); });
+  skip.addEventListener('click', () => { track('skip'); p = AUTO_FROM; scrollTo(0, maxScroll()); });
   const hint = $('.ent-hint');
 
   // ---------- finale + floor pages ----------
   const fin = $('.finale'), vid = fin.querySelector('video')!, fp = $<HTMLElement>('.floor-page');
-  $('[data-again]').addEventListener('click', () => { autoStart = null; lock(false); p = 0; scrollTo(0, 0); });
+  $('[data-again]').addEventListener('click', () => { track('replay'); autoStart = null; lock(false); p = 0; scrollTo(0, 0); });
   function openFloor(slug: string, push = true) {
     const tpl = root.querySelector<HTMLTemplateElement>(`template[data-floor-tpl="${slug}"]`);
     if (!tpl) return;
+    track('floor-open', { floor: slug });
     fp.innerHTML = tpl.innerHTML; fp.hidden = false; fp.scrollTop = 0;
     root.classList.add('reading'); vid.pause();
     if (push) history.pushState({ floor: slug }, '', `/${slug}/`);
@@ -87,12 +89,13 @@ export function start(root: HTMLElement): void {
     const t = e.target as Element, fl = t.closest<HTMLElement>('[data-floor]'), back = t.closest('[data-back]'), cp = t.closest<HTMLElement>('[data-copy]');
     if (fl) { e.preventDefault(); openFloor(fl.dataset.floor!); }
     if (back) { e.preventDefault(); closeFloor(); }
-    if (cp) navigator.clipboard.writeText(cp.dataset.copy!).then(() => (cp.textContent = 'Copied'), () => {});
+    if (cp) { track('contact', { type: 'copy-email', floor: cp.dataset.floorSlug ?? '' }); navigator.clipboard.writeText(cp.dataset.copy!).then(() => (cp.textContent = 'Copied'), () => {}); }
   });
   addEventListener('popstate', () => closeFloor(false));
   addEventListener('keydown', (e) => { if (e.key === 'Escape') closeFloor(); });
 
   // ---------- loop ----------
+  const STAGE_NAMES = ['street', 'stairs', 'roof'], seen = new Set<number>();
   const look = new THREE.Vector3(), clock = new THREE.Clock();
   renderer.setAnimationLoop(() => {
     const t = clock.getElapsedTime(), ms = performance.now();
@@ -108,6 +111,7 @@ export function start(root: HTMLElement): void {
     }
     if (autoStart !== null) p = AUTO_FROM + (1 - AUTO_FROM) * clamp((ms - autoStart) / 1000 / AUTO_DUR);
     const stage = p < STAGES[1] ? 0 : p < STAGES[2] ? 1 : 2, local = clamp((p - STAGES[stage]) / (STAGES[stage + 1] - STAGES[stage]));
+    if (!seen.has(stage)) { seen.add(stage); track('entrance-stage', { stage: STAGE_NAMES[stage] }); }
 
     const kick = reduce ? 0 : sound.kick(t);
     world.setDoors(stage === 0 ? 0 : stage === 1 ? ease(clamp(local / 0.12)) : 1, stage === 2 ? 1 : stage === 1 ? ease(clamp((local - 0.9) / 0.1)) : 0);
