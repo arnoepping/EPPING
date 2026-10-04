@@ -15,18 +15,18 @@ export const CONTACT = {
 
 export const FLOORS: Floor[] = [
   {
-    slug: 'rave-wedding', n: '01', name: 'Rave Wedding', tagline: 'ABBA to acid',
-    headline: 'Your wedding. Our rave.',
-    intro: 'We start with the songs your aunt knows and end with the ones she never forgets. One DJ who reads the room from the first dance to the last track, so the night quietly turns into a proper rave.',
+    slug: 'rave-wedding', n: '01', name: 'Rave Wedding', tagline: 'From grandma’s favourite to your favourite club',
+    headline: 'Your wedding. Let’s rave.',
+    intro: 'They say it’s the most important day of your life, so the party should be the best one too. I start where everyone can dance, grandma included, and slowly build towards the club and festival nights you love.',
     body: [
-      'Before the day we sit down together: your must-plays, your never-plays, the moment the dancefloor should explode. On the night it is one continuous set, built around your crowd.',
-      'From drinks after the ceremony to the afterparty, with light and smoke that turn any venue into a club for a few hours.',
+      'Before the wedding, we go through the music you love together, so the second half of the night sounds like your favourite night out. Whether it’s house, techno, trance or something in between.',
+      'Club sound and light come with it, so for a few hours your venue feels like the place you’d normally go out to.',
     ],
-    includes: ['Planning call and a shared playlist', 'DJ set from first dance to last song', 'Club sound and light show, smoke on request', 'Room for 50 to 250 guests'],
+    includes: ['Planning call and a shared playlist', 'One set, from first dance to final track', 'Club sound and lights, smoke on request'],
     mix: { title: 'Marta & Donald’s wedding', length: 'Set', url: 'https://soundcloud.com/arno-epping/sets/marta-donalds-wedding', embed: 'https://api.soundcloud.com/playlists/2277399272' },
-    cta: 'Book your date',
-    mail: { subject: 'Rave Wedding booking', body: 'Hi Epping,\n\nWe are getting married on [date] at [venue] and would love a rave wedding.\n\n' },
-    whatsapp: 'Hi Epping! We are getting married on [date] and want a rave wedding.',
+    cta: 'Check your date',
+    mail: { subject: 'Rave Wedding booking', body: 'Hi Epping,\n\nWe are getting married on [date] and are interested in booking you as our DJ!\n\n' },
+    whatsapp: 'Hi Epping, we are getting married on [date] and are interested in booking you as our DJ!',
   },
   {
     slug: 'private-events', n: '02', name: 'Private Events', tagline: 'Club night, private list',
