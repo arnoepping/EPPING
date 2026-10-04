@@ -5,6 +5,7 @@ import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 import wordmark from '../components/wordmark.json';
 import { POSTERS } from '../content/posters.ts';
 import { PAL } from './palette.ts';
+import { FLOORS } from '../content/floors.ts';
 import { puff } from './textures.ts';
 
 // One continuous world (metres, y up). The street is at z > 0, the facade at z = 0 with the door,
@@ -74,21 +75,25 @@ export interface World {
   streetDoor: THREE.Object3D; roofDoor: THREE.Object3D;
   setDoors(street: number, roof: number): void;
   update(t: number, kick: number, camera: THREE.Camera): void;
+  /** once the street is in: render what the shop glass reflects (one cube capture, not per frame) */
+  reflect(renderer: THREE.WebGLRenderer): void;
   cameraAt(stage: number, local: number, t: number): { pos: THREE.Vector3; look: THREE.Vector3 };
 }
 
 // The street model carries geometry, UVs and baked lightmaps; textures are applied here by material name
 // (keeps the .glb small and avoids browsers that fail on embedded images).
-const LIGHTMAPS = ['brick', 'pavement', 'road', 'kerb', 'trim', 'tile', 'dark', 'bollard', 'bark'];
+const LIGHTMAPS = ['brick', 'pavement', 'road', 'kerb', 'trim', 'tile', 'dark', 'bollard', 'bark', 'cafe_wall', 'cafe_panel', 'cafe_floor', 'cafe_wood', 'cafe_shade'];
+// glass that reflects the street (env map rendered once the street is in, see World.reflect)
+const GLASS: Record<string, { opacity: number; metal: number }> = { glass: { opacity: 1, metal: 0.85 }, shop_glass: { opacity: 1, metal: 1 }, cafe_glass: { opacity: 0.32, metal: 0.6 } };
 const TEXTURES: Record<string, { map: string; normal?: string; rough?: string; tint: string }> = {
   brick: { map: 'red_brick_03_diff_web.jpg', normal: 'red_brick_03_nor_web.jpg', rough: 'red_brick_03_rough_web.jpg', tint: '#ffb08a' }, // orange-red Amsterdam School brick
   pavement: { map: 'concrete_pavement_02_diff_web.jpg', normal: 'concrete_pavement_02_nor_web.jpg', tint: '#55525a' },
   road: { map: 'asphalt_02_diff_web.jpg', normal: 'asphalt_02_nor_web.jpg', tint: '#3a383e' },
 };
 // night levels for the emissive parts (Blender's strengths are tuned for the bake, not for bloom)
-const GLOW: Record<string, number> = { window_lit: 0.5, shop_lit: 0.06 };
+const GLOW: Record<string, number> = { window_lit: 0.5, lamp: 4 };
 
-async function loadStreet(scene: THREE.Scene): Promise<void> {
+async function loadStreet(scene: THREE.Scene, glass: THREE.MeshStandardMaterial[]): Promise<void> {
   const loader = new GLTFLoader().setDRACOLoader(new DRACOLoader().setDecoderPath('draco/'));
   // the private preview page can't serve .glb files, so it hands the model over inline (see scripts/preview-artifact.sh)
   const inline = (window as Window & { __STREET_GLB__?: ArrayBuffer }).__STREET_GLB__;
@@ -98,7 +103,7 @@ async function loadStreet(scene: THREE.Scene): Promise<void> {
   gltf.scene.traverse((o) => {
     const m = (o as THREE.Mesh).material as THREE.MeshStandardMaterial | undefined;
     if (!m) return;
-    if (m.name in GLOW) { m.emissiveIntensity = GLOW[m.name]; if (m.name !== 'shop_lit') m.color.set(0x000000); }
+    if (m.name in GLOW) { m.emissiveIntensity = GLOW[m.name]; m.color.set(0x000000); }
     const t = TEXTURES[m.name];
     if (t) { m.map = tex(t.map, true); m.color.set(t.tint); if (t.normal) m.normalMap = tex(t.normal, false); if (t.rough) m.roughnessMap = tex(t.rough, false); }
     if (m.name === 'leaf') { m.map = tex('leaves.png', true); m.alphaTest = 0.5; m.side = THREE.DoubleSide; m.color.set('#6f8a62'); }
@@ -106,7 +111,13 @@ async function loadStreet(scene: THREE.Scene): Promise<void> {
       lm.flipY = false; lm.channel = 1; lm.colorSpace = THREE.SRGBColorSpace;
       m.lightMap = lm; m.lightMapIntensity = 0.85;
     }));
-    m.envMapIntensity = 0; m.needsUpdate = true;
+    m.envMapIntensity = 0;
+    const g = GLASS[m.name];
+    if (g) {
+      m.color.set('#a8a2b0'); m.roughness = 0.04; m.metalness = g.metal; m.envMapIntensity = 0.45; glass.push(m);
+      if (g.opacity < 1) { m.transparent = true; m.opacity = g.opacity; m.depthWrite = false; (o as THREE.Mesh).renderOrder = 2; }
+    }
+    m.needsUpdate = true;
   });
   await Promise.all(jobs);
   scene.add(gltf.scene);
@@ -134,7 +145,54 @@ export function buildWorld(): World {
   // faint cool moonlight for the parts without baked light (leaves, bikes), so they read as silhouettes
   const moon = new THREE.DirectionalLight(C('#8fa0ff'), 0.35); moon.position.set(-6, 12, 10); scene.add(moon);
   // Building, pavement, road, bikes, trees and the street lamp come from Blender (blender/street.py) with baked light.
-  const ready = loadStreet(scene);
+  const glassMats: THREE.MeshStandardMaterial[] = [];
+  const ready = loadStreet(scene, glassMats);
+  function reflect(renderer: THREE.WebGLRenderer) {
+    const rt = new THREE.WebGLCubeRenderTarget(256, { type: THREE.HalfFloatType });
+    const cam = new THREE.CubeCamera(0.1, 400, rt); cam.position.set(0, 1.6, 4); scene.add(cam);
+    // the houses across the street (behind the camera, so only ever seen in the glass): dark facades, a few lit rooms, a street lamp
+    const oc = document.createElement('canvas'); oc.width = 1024; oc.height = 256;
+    { const g = oc.getContext('2d')!; g.fillStyle = '#0c0910'; g.fillRect(0, 0, 1024, 256);
+      for (let x = 0; x < 1024; x += 12) for (let y = 50; y < 240; y += 38) {
+        const r = Math.random(); g.fillStyle = r < 0.16 ? '#ffb46a' : r < 0.2 ? '#ff8a4c' : '#17131c'; g.fillRect(x + 3, y, 6, 18);
+      } }
+    const ot = new THREE.CanvasTexture(oc); ot.colorSpace = THREE.SRGBColorSpace;
+    const opposite = new THREE.Group();
+    const facade = new THREE.Mesh(new THREE.PlaneGeometry(90, 17), new THREE.MeshBasicMaterial({ map: ot, fog: false }));
+    facade.position.set(0, 5.5, 28); facade.rotation.y = Math.PI; opposite.add(facade);
+    const lamp = new THREE.Mesh(new THREE.SphereGeometry(0.35), new THREE.MeshBasicMaterial({ color: C('#ffc890'), fog: false }));
+    lamp.position.set(6, 5, 15); opposite.add(lamp);
+    scene.add(opposite);
+    sky.position.copy(cam.position); cam.update(renderer, scene); scene.remove(cam, opposite);
+    for (const m of glassMats) { m.envMap = rt.texture; m.needsUpdate = true; }
+  }
+
+  // Epping Presents flyer taped inside the left shop window, next to the door
+  const presents = FLOORS.find((f) => f.slug === 'presents');
+  const fc = document.createElement('canvas'); fc.width = 512; fc.height = 724;
+  const flyerTex = new THREE.CanvasTexture(fc); flyerTex.colorSpace = THREE.SRGBColorSpace; flyerTex.anisotropy = 8;
+  const drawFlyer = () => {
+    const g = fc.getContext('2d')!, W = fc.width, H = fc.height;
+    const bg = g.createLinearGradient(0, 0, 0, H); bg.addColorStop(0, PAL.b); bg.addColorStop(1, PAL.a);
+    g.fillStyle = bg; g.fillRect(0, 0, W, H);
+    g.fillStyle = PAL.bg; g.fillRect(28, 28, W - 56, H - 56);
+    g.fillStyle = PAL.fg; g.textAlign = 'center';
+    g.font = '800 92px Unbounded, Arial Black, sans-serif'; g.fillText('EPPING', W / 2, 170);
+    g.font = '500 30px "JetBrains Mono", monospace'; g.fillStyle = PAL.b; g.fillText('P R E S E N T S', W / 2, 220);
+    const ev = presents?.event;
+    const [what, when] = ev ? ev.note.split(' · ') : ['Our own nights', ''];
+    g.fillStyle = PAL.fg; g.font = '800 52px Unbounded, Arial Black, sans-serif';
+    (ev ? what.replace(/ during .*/, '') : 'Get on the list').toUpperCase().split(' ').reduce<string[]>((ls, w) => { const l = ls.at(-1); if (l && (l + ' ' + w).length <= 9) ls[ls.length - 1] = l + ' ' + w; else ls.push(w); return ls; }, [])
+      .forEach((l, i) => g.fillText(l, W / 2, 350 + i * 62));
+    g.font = '500 28px "JetBrains Mono", monospace'; g.fillStyle = PAL.a;
+    if (ev) { g.fillText(ev.date.replace(/ \d{4}$/, '').toUpperCase(), W / 2, 540); g.fillText(when, W / 2, 582); g.fillStyle = PAL.fg; g.fillText(ev.place.split(',')[0].toUpperCase(), W / 2, 640); }
+    else { g.fillStyle = PAL.fg; g.fillText('@EPPING.MUSIC', W / 2, 600); }
+    flyerTex.needsUpdate = true;
+  };
+  drawFlyer();
+  document.fonts?.load('800 52px Unbounded').then(() => document.fonts.load('500 28px "JetBrains Mono"')).then(drawFlyer).catch(() => {});
+  const flyer = new THREE.Mesh(new THREE.PlaneGeometry(0.6, 0.85), new THREE.MeshStandardMaterial({ map: flyerTex, emissiveMap: flyerTex, emissive: C('#ffffff'), emissiveIntensity: 0.18, roughness: 0.85 }));
+  flyer.position.set(-2.5, 1.6, 0.037); flyer.rotation.z = 0.025; scene.add(flyer);
 
   // the door: plain black leaf, hinged on the left, swings inward
   const doorMat = new THREE.MeshStandardMaterial({ color: C('#040205'), roughness: 0.55 });
@@ -463,5 +521,5 @@ export function buildWorld(): World {
     return { pos, look };
   }
 
-  return { scene, ready, streetDoor: streetLeaf, roofDoor: roofLeaf, setDoors, update, cameraAt };
+  return { scene, ready, streetDoor: streetLeaf, roofDoor: roofLeaf, setDoors, update, reflect, cameraAt };
 }

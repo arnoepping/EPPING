@@ -43,7 +43,15 @@ BARK = mat('bark', (0.05, 0.04, 0.03), 0.9)
 LEAF = mat('leaf', (0.03, 0.06, 0.03), 0.8)                 # alpha leaf cards (texture applied in three.js)
 GLASS = mat('glass', (0.008, 0.009, 0.014), 0.06, 0.7)
 LIT = mat('window_lit', (0, 0, 0), 0.3, 0, emit=(1.0, 0.55, 0.25), strength=2.5)
-SHOP = mat('shop_lit', (0.008, 0.008, 0.01), 0.1, 0.6, emit=(1.0, 0.65, 0.4), strength=0.35)
+SHOP = mat('shop_glass', (0.006, 0.006, 0.008), 0.05, 0.8)    # dark reflective glass (env reflection in three.js)
+CAFE_GLASS = mat('cafe_glass', (0.01, 0.01, 0.012), 0.05, 0.5)   # see-through; ignored by the bake so the café light gets out
+CAFE_WALL = mat('cafe_wall', (0.42, 0.26, 0.13), 0.9)        # warm ochre plaster
+CAFE_PANEL = mat('cafe_panel', (0.07, 0.035, 0.018), 0.5)    # dark wood: wainscot, bar top, table tops
+CAFE_FLOOR = mat('cafe_floor', (0.13, 0.075, 0.04), 0.6)
+CAFE_WOOD = mat('cafe_wood', (0.2, 0.1, 0.045), 0.6)         # bar, chairs, shelves
+CAFE_SHADE = mat('cafe_shade', (0.35, 0.25, 0.12), 0.35, 0.8)  # brass lamp shades
+CAFE_BOTTLE = mat('cafe_bottle', (0.06, 0.12, 0.05), 0.15)
+LAMP = mat('lamp', (0, 0, 0), 0.3, 0, emit=(1.0, 0.62, 0.3), strength=8)
 TIRE = mat('tire', (0.015, 0.015, 0.015), 0.7)
 STEEL = mat('steel', (0.5, 0.5, 0.52), 0.3, 1.0)
 BIKES = [mat('bike_black', (0.02, 0.02, 0.022), 0.35, 0.4), mat('bike_white', (0.75, 0.74, 0.72), 0.35, 0.2), mat('bike_red', (0.4, 0.04, 0.05), 0.35, 0.4)]
@@ -78,7 +86,11 @@ H0, HF, FLOORS = 4.0, 3.1, 3
 TOP = H0 + HF * FLOORS
 X0, X1, D = -13.0, 9.0, 0.4
 box('facade_l', BRICK, X0, -0.6, 0, D, 0, TOP)
-box('facade_r', BRICK, 0.6, X1, 0, D, 0, TOP)
+# right of the door the wall opens up for the café window (x 1.9..8.2, z 0.55..2.55; see the shopfronts)
+box('facade_r', BRICK, 0.6, 1.9, 0, D, 0, TOP)
+box('facade_r', BRICK, 8.2, X1, 0, D, 0, TOP)
+box('facade_r', BRICK, 1.9, 8.2, 0, D, 0, 0.55)
+box('facade_r', BRICK, 1.9, 8.2, 0, D, 2.55, TOP)
 box('facade_top', BRICK, -0.6, 0.6, 0, D, 2.3, TOP)
 # rounded corner, turning into the side street
 bpy.ops.mesh.primitive_cylinder_add(vertices=40, radius=2.6, depth=TOP, location=(X1, 2.6, TOP / 2))
@@ -131,15 +143,64 @@ for f in range(FLOORS):
     for i, (x, w) in enumerate([(-9.6, 2.6), (-2.2, 2.0), (2.2, 2.6)]):
         window(x, z, w, 1.45, (f, i) in lit_plan)
 
-# ground floor: one dark shopfront each side (closed for the night, faint light inside)
-for sx0, sx1 in [(-11.6, -3.0), (2.6, 8.2)]:
-    box('shop_glass', SHOP, sx0, sx1, -0.03, 0.0, 0.55, 2.9)
-    n = max(2, int((sx1 - sx0) / 2.2))
+# ground floor: Amsterdam School shopfronts. Brick plinth with a tiled cap, big panes in dark wooden frames,
+# a band of small-paned transom lights in cream frames above (like the upper windows).
+# Left: a closed shop, dark reflective glass (flyer on it, three.js). Right: a closed café you can look into.
+G0, G1, T0, T1 = 0.55, 2.55, 2.68, 3.42   # main glass z, transom z
+SHOPS = [(-11.6, -1.9), (1.9, 8.2)]
+for si, (sx0, sx1) in enumerate(SHOPS):
+    box('shop_glass' if si == 0 else 'cafe_glass', SHOP if si == 0 else CAFE_GLASS, sx0, sx1, -0.03, 0.0, G0, G1)
+    n = max(2, round((sx1 - sx0) / 2.1))
     for k in range(n + 1):
         x = sx0 + k * (sx1 - sx0) / n
-        box('shop_frame', DARK, x - 0.05, x + 0.05, -0.08, 0.0, 0.5, 2.95)
-    box('shop_frame', DARK, sx0, sx1, -0.08, 0.0, 0.45, 0.58)
-    box('shop_frame', DARK, sx0, sx1, -0.08, 0.0, 2.88, 2.98)
+        box('shop_frame', DARK, x - 0.06, x + 0.06, -0.1, 0.0, G0 - 0.05, G1 + 0.05)
+    box('shop_frame', DARK, sx0 - 0.06, sx1 + 0.06, -0.1, 0.0, G0 - 0.07, G0 + 0.03)
+    box('shop_frame', DARK, sx0 - 0.06, sx1 + 0.06, -0.1, 0.0, G1 - 0.03, G1 + 0.07)
+    box('plinth_cap', TILE, sx0 - 0.15, sx1 + 0.15, -0.2, 0.0, G0 - 0.17, G0 - 0.07)
+    # transom: cream frame, many small panes
+    box('transom_glass', SHOP, sx0, sx1, -0.03, 0.0, T0, T1)
+    t, d = 0.07, -0.08
+    box('frame', TRIM, sx0 - t, sx1 + t, d, -0.01, T0 - t, T0)
+    box('frame', TRIM, sx0 - t, sx1 + t, d, -0.01, T1, T1 + t)
+    for x in (sx0 - t, sx1): box('frame', TRIM, x, x + t, d, -0.01, T0, T1)
+    m = round((sx1 - sx0) / 0.32)
+    for k in range(1, m): x = sx0 + k * (sx1 - sx0) / m; box('frame', TRIM, x - 0.018, x + 0.018, d, -0.01, T0, T1)
+    box('frame', TRIM, sx0, sx1, d, -0.01, (T0 + T1) / 2 - 0.015, (T0 + T1) / 2 + 0.015)
+
+# the café behind the right shopfront: closed for the night, chairs up on the tables, one pendant lamp left on
+CX0, CX1, CY0, CY1, CZ = SHOPS[1][0] - 0.2, SHOPS[1][1] + 0.2, D, 4.4, 3.1
+box('cafe_floor', CAFE_FLOOR, CX0, CX1, CY0, CY1, -0.02, 0.2)
+box('ceiling', CAFE_WALL, CX0, CX1, CY0, CY1, CZ, CZ + 0.1)
+box('back_wall', CAFE_WALL, CX0, CX1, CY1, CY1 + 0.1, 0.2, CZ)
+for x in (CX0 - 0.1, CX1): box('side_wall', CAFE_WALL, x, x + 0.1, CY0, CY1, 0.2, CZ)
+box('wainscot', CAFE_PANEL, CX0, CX1, CY1 - 0.03, CY1, 0.2, 1.3)     # dark wood panelling, brown-café style
+for x in (CX0, CX1 - 0.03): box('wainscot', CAFE_PANEL, x, x + 0.03, CY0, CY1, 0.2, 1.3)
+box('bar', CAFE_WOOD, CX0 + 0.8, CX1 - 1.4, CY1 - 1.1, CY1 - 0.5, 0.2, 1.3)  # the bar along the back
+box('bar_top', CAFE_PANEL, CX0 + 0.75, CX1 - 1.35, CY1 - 1.15, CY1 - 0.45, 1.3, 1.36)
+for z in (1.7, 2.2): box('shelf', CAFE_WOOD, CX0 + 0.8, CX1 - 1.4, CY1 - 0.25, CY1, z, z + 0.04)
+for k in range(18):  # bottles on the back-bar shelves
+    bx = CX0 + 1.0 + k * (CX1 - CX0 - 2.6) / 17
+    for z in (1.74, 2.24):
+        if random.random() < 0.75: cyl('bottle', CAFE_BOTTLE, bx + random.uniform(-0.05, 0.05), CY1 - 0.12, z, z + random.uniform(0.24, 0.32), 0.035, 8)
+def table(x, y):
+    cyl('table', CAFE_WOOD, x, y, 0.2, 0.92, 0.04, 8)
+    cyl('table', CAFE_WOOD, x, y, 0.2, 0.24, 0.22, 12)
+    cyl('table', CAFE_PANEL, x, y, 0.92, 0.96, 0.38, 20)
+    for s in (-1, 1):  # chairs upside down on the table: seat on the top, legs in the air, backrest hanging over the edge
+        cx = x + s * 0.17
+        box('chair', CAFE_WOOD, cx - 0.2, cx + 0.2, y - 0.2, y + 0.2, 0.96, 1.0)
+        for lx in (-0.17, 0.17):
+            for ly in (-0.17, 0.17): box('chair', CAFE_WOOD, cx + lx - 0.017, cx + lx + 0.017, y + ly - 0.017, y + ly + 0.017, 1.0, 1.44)
+        bx = cx + s * 0.2
+        box('chair', CAFE_WOOD, bx - 0.02, bx + 0.02, y - 0.19, y + 0.19, 0.55, 1.0)
+for x, y in [(CX0 + 1.3, 1.3), (CX0 + 3.1, 1.6), (CX0 + 4.9, 1.25)]: table(x, y)
+LAMP_X, LAMP_Y, LAMP_Z = CX0 + 3.1, 1.6, 2.15
+tube('cord', DARK, (LAMP_X, LAMP_Y, CZ), (LAMP_X, LAMP_Y, LAMP_Z + 0.2), 0.008, 4)
+cyl('shade', CAFE_SHADE, LAMP_X, LAMP_Y, LAMP_Z, LAMP_Z + 0.22, 0.24, 20, r_top=0.06)
+sphere('bulb', LAMP, LAMP_X, LAMP_Y, LAMP_Z + 0.02, 0.06)
+for lx in (CX0 + 1.3, CX0 + 4.9):  # the other pendants: off
+    tube('cord', DARK, (lx, 1.3, CZ), (lx, 1.3, LAMP_Z + 0.2), 0.008, 4)
+    cyl('shade', CAFE_SHADE, lx, 1.3, LAMP_Z, LAMP_Z + 0.22, 0.24, 20, r_top=0.06)
 
 # ---------------------------------------------------------------- the street: dark, plain
 box('sidewalk', PAVE, -30, 30, -4.6, 0.0, -0.05, 0.0)
@@ -220,8 +281,8 @@ def light(name, kind, loc, energy, color, size=0.3, rot=None):
     return ob
 light('neon_sign', 'AREA', (0, -0.6, 2.95), 130, (1.0, 0.17, 0.84), 2.4, rot=(math.radians(90), 0, 0))
 light('door_leak', 'POINT', (0, -0.3, 0.05), 15, (1.0, 0.17, 0.84), 0.2)
-light('shop_l', 'AREA', (-7.3, -0.5, 1.8), 30, (1.0, 0.7, 0.45), 3, rot=(math.radians(90), 0, 0))
-light('shop_r', 'AREA', (5.4, -0.5, 1.8), 30, (1.0, 0.7, 0.45), 3, rot=(math.radians(90), 0, 0))
+light('cafe_lamp', 'POINT', (LAMP_X, LAMP_Y, LAMP_Z - 0.05), 260, (1.0, 0.6, 0.3), 0.05)   # the one pendant still on
+light('cafe_fill', 'AREA', (LAMP_X, 2.5, CZ - 0.05), 70, (1.0, 0.55, 0.28), 4.0)          # its bounce off the ceiling / back-bar glow
 light('offscreen_lamp', 'POINT', (16, -6, 5), 220, (1.0, 0.7, 0.45), 0.3)   # far down the street, out of frame
 w = bpy.data.worlds.new('night'); scene.world = w; w.use_nodes = True
 bg = w.node_tree.nodes['Background']; bg.inputs['Color'].default_value = (0.03, 0.025, 0.06, 1); bg.inputs['Strength'].default_value = 0.35
@@ -254,7 +315,10 @@ def uv_world(ob, tile):
             l[uv].uv = (u / tile, v / tile)
     bm.to_mesh(me); bm.free()
 
-BAKE = {'brick': 2048, 'pavement': 1024, 'road': 1024, 'kerb': 512, 'trim': 1024, 'tile': 1024, 'dark': 512, 'bollard': 256, 'bark': 512}
+BAKE = {'brick': 2048, 'pavement': 1024, 'road': 1024, 'kerb': 512, 'trim': 1024, 'tile': 1024, 'dark': 512, 'bollard': 256, 'bark': 512,
+        'cafe_wall': 1024, 'cafe_panel': 512, 'cafe_floor': 512, 'cafe_wood': 1024, 'cafe_shade': 256}
+# the café window must not block the café's light (nor the street's) in the bake
+for prop in ('visible_shadow', 'visible_diffuse', 'visible_glossy', 'visible_transmission'): setattr(merged['cafe_glass'], prop, False)
 scene.render.engine = 'CYCLES'; scene.cycles.samples = 8 if QUICK else 128; scene.cycles.device = 'CPU'
 scene.view_settings.view_transform = 'Standard'  # lightmaps must not be tone-mapped
 scene.render.image_settings.file_format = 'JPEG'; scene.render.image_settings.quality = 82
