@@ -471,12 +471,13 @@ export function buildWorld(): World {
   async function loadRoof() {
     const dark = () => new THREE.MeshStandardMaterial({ color: C('#141216'), roughness: 0.45 });
     await loadBaked('roof', 'roof.glb', '__ROOF_GLB__', {
-      deck: () => new THREE.MeshStandardMaterial({ map: tex('plank_flooring_04_diff_web.jpg', true), normalMap: tex('plank_flooring_04_nor_web.jpg', false), roughnessMap: tex('plank_flooring_04_rough_web.jpg', false), color: C('#8a6a58'), roughness: 1 }),
+      deck: () => new THREE.MeshStandardMaterial({ map: tex('plank_flooring_04_diff_web.jpg', true), normalMap: tex('plank_flooring_04_nor_web.jpg', false), roughnessMap: tex('plank_flooring_04_rough_web.jpg', false), color: C('#c09078'), roughness: 1 }),
       plaster: () => new THREE.MeshStandardMaterial({ map: tex('white_plaster_rough_01_diff_web.jpg', true), normalMap: tex('white_plaster_rough_01_nor_web.jpg', false), color: C('#d8d2cc'), roughness: 0.95 }),
       brick: () => new THREE.MeshStandardMaterial({ map: tex('red_brick_03_diff_web.jpg', true), normalMap: tex('red_brick_03_nor_web.jpg', false), color: C('#a07a72'), roughness: 1 }),
       tiles: () => new THREE.MeshStandardMaterial({ color: C('#b8502a'), roughness: 0.5 }),
       booth_body: () => new THREE.MeshStandardMaterial({ color: C('#9a6a44'), roughness: 0.55 }),
-      booth_top: dark, gear: dark, speaker: dark,
+      booth_top: dark, gear: dark,
+      speaker: () => new THREE.MeshStandardMaterial({ color: C('#4a4852'), roughness: 0.35, metalness: 0.2 }), // black, but catches the light enough to read
     }, ROOF_GAIN, 0.4);
     for (const o of [deck, parapet, plank, deckBox, ...legs]) o.visible = false;
     roofLight.visible = false; boothLed.visible = true;
