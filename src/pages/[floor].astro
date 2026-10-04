@@ -6,7 +6,7 @@ import '../styles/entrance.css';
 export function getStaticPaths() { return FLOORS.map((f) => ({ params: { floor: f.slug }, props: { f } })); }
 const { f } = Astro.props as { f: Floor };
 ---
-<Base title={`${f.name} | EPPING`} description={`${f.headline} ${f.intro}`}>
+<Base title={`${f.name} | EPPING`} description={f.intro}>
   <main class="fp-standalone"><FloorPage f={f} standalone /></main>
   <script>
     import { track } from '../lib/track.ts';

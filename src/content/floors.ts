@@ -1,7 +1,7 @@
 // Floor pages: copy and links. Edit freely; the same content feeds the overlay on / and the /<slug>/ routes.
 export type Slug = 'rave-wedding' | 'private-events' | 'presents';
 export interface Floor {
-  slug: Slug; n: string; name: string; tagline: string; headline: string; intro: string; body: string[]; includes: string[];
+  slug: Slug; n: string; name: string; tagline: string; intro: string; body: string[]; includes: string[];
   event?: { date: string; place: string; note: string };
   /** url: public SoundCloud page; embed: optional player URL (SoundCloud's own api URL works best for sets) */
   mix: { title: string; length: string; url: string; embed?: string };
@@ -16,7 +16,6 @@ export const CONTACT = {
 export const FLOORS: Floor[] = [
   {
     slug: 'rave-wedding', n: '01', name: 'Rave Wedding', tagline: 'From grandma’s favourite to your favourite club',
-    headline: 'Your wedding. Let’s rave.',
     intro: 'They say it’s the most important day of your life, so the party should be the best one too. I start where everyone can dance, grandma included, and slowly build towards the club and festival nights you love.',
     body: [
       'Before the wedding, we go through the music you love together, so the second half of the night sounds like your favourite night out. Whether it’s house, techno, trance or something in between.',
@@ -31,7 +30,6 @@ export const FLOORS: Floor[] = [
   },
   {
     slug: 'private-events', n: '02', name: 'Private Events', tagline: 'Club energy at any venue',
-    headline: 'Your party. Let’s dance.',
     intro: 'Birthdays, house parties, company events. Club sound and club lights, at any venue. You bring the people, I bring the peak.',
     body: [
       'Want to level up your party? It comes down to three things: good sound, good lights and music that keeps the dancefloor moving. I take care of all three.',
@@ -45,7 +43,6 @@ export const FLOORS: Floor[] = [
   },
   {
     slug: 'presents', n: '03', name: 'EPPING Presents', tagline: 'Join our next events',
-    headline: 'Not a party. A ritual.',
     intro: 'Our own nights. Public, loud and a little unhinged. One room, one sound system, everybody welcome.',
     body: [
       'Check out below if there are any upcoming events.',

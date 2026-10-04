@@ -10,7 +10,6 @@ const others = FLOORS.filter((o) => o.slug !== f.slug);
   {standalone ? <a class="fp-back" href="/">← Back to the street</a> : <a class="fp-back" href="/" data-back>← Back to the roof</a>}
   <p class="fp-k">{f.tagline}</p>
   <h1 class="fp-h" tabindex="-1">{f.name}</h1>
-  <p class="fp-head">{f.headline}</p>
   <p class="fp-intro">{f.intro}</p>
   <div class:list={['fp-cols', { 'fp-cols-one': f.includes.length === 0 }]}>
     <div class="fp-body">{f.body.map((b) => <p>{b}</p>)}</div>
