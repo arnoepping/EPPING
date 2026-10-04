@@ -134,7 +134,7 @@ export function buildWorld(): World {
   // ---------- sky (follows the camera so the horizon stays at eye level) ----------
   const sky = new THREE.Mesh(new THREE.SphereGeometry(300, 32, 16), new THREE.ShaderMaterial({
     side: THREE.BackSide, depthWrite: false, fog: false,
-    uniforms: { top: { value: C('#070b2a') }, mid: { value: C('#4a2a8a') }, low: { value: C('#ff6b5e') } }, // blue hour: deep blue → purple → warm horizon
+    uniforms: { top: { value: C(PAL.bg) }, mid: { value: C(PAL.b).multiplyScalar(0.55) }, low: { value: C(PAL.a) } },
     vertexShader: 'varying vec3 v; void main(){ v = normalize(position); gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.); }',
     fragmentShader: 'uniform vec3 top, mid, low; varying vec3 v; void main(){ float h = v.y; vec3 c = h > .18 ? mix(mid, top, smoothstep(.18,.75,h)) : mix(low, mid, smoothstep(-.02,.18,h)); gl_FragColor = vec4(c,1.); }',
   }));
@@ -166,6 +166,7 @@ export function buildWorld(): World {
     scene.add(opposite);
     sky.position.copy(cam.position); cam.update(renderer, scene); scene.remove(cam, opposite);
     for (const m of glassMats) { m.envMap = rt.texture; m.needsUpdate = true; }
+    rendererRef = renderer; if (stairsIn) captureStairs(renderer);
   }
 
   // Epping Presents flyer taped inside the left shop window, next to the door
@@ -226,16 +227,17 @@ export function buildWorld(): World {
   // ---------- 2 · the stairwell ----------
   // everything inside starts behind the facade (back face at z = -0.4), so nothing pokes through the brick
   const IN = -0.41, L = IN - ROOF_Z + 0.1, H = TOP_Y + CEIL + 1;
+  const unbaked: THREE.Object3D[] = []; // shown until the baked stairwell (blender/stairwell.py) has loaded
   for (const side of [-1, 1]) {
     const wall = new THREE.Mesh(new THREE.PlaneGeometry(L, H), brickMat(L, H));
     wall.rotation.y = side < 0 ? Math.PI / 2 : -Math.PI / 2;
     wall.position.set(side * W / 2, H / 2, (IN + ROOF_Z - 0.1) / 2);
-    scene.add(wall);
+    scene.add(wall); unbaked.push(wall);
   }
   // dark polished stone steps that catch the neon
   const floorMat = new THREE.MeshStandardMaterial({ map: texture('concrete_pavement_02_diff_web.jpg', true, 1, 0.3), color: C('#3a3448'), roughness: 0.32, metalness: 0.1 });
-  const landing = new THREE.Mesh(new THREE.PlaneGeometry(W, -Z0 + 0.4), floorMat); landing.rotation.x = -Math.PI / 2; landing.position.set(0, 0.001, Z0 / 2 - 0.2); scene.add(landing);
-  const top = new THREE.Mesh(new THREE.PlaneGeometry(W, TOP_Z - ROOF_Z + 0.02), floorMat); top.rotation.x = -Math.PI / 2; top.position.set(0, TOP_Y, (TOP_Z + ROOF_Z) / 2); scene.add(top);
+  const landing = new THREE.Mesh(new THREE.PlaneGeometry(W, -Z0 + 0.4), floorMat); landing.rotation.x = -Math.PI / 2; landing.position.set(0, 0.001, Z0 / 2 - 0.2); scene.add(landing); unbaked.push(landing);
+  const top = new THREE.Mesh(new THREE.PlaneGeometry(W, TOP_Z - ROOF_Z + 0.02), floorMat); top.rotation.x = -Math.PI / 2; top.position.set(0, TOP_Y, (TOP_Z + ROOF_Z) / 2); scene.add(top); unbaked.push(top);
 
   // steps, each with a neon strip on its nose
   const steps = new THREE.InstancedMesh(new THREE.BoxGeometry(W, RISE, RUN), floorMat, N);
@@ -248,7 +250,7 @@ export function buildWorld(): World {
     noseBase.push(climbColor(zf).multiplyScalar(2));
     noses.setColorAt(i, noseBase[i]);
   }
-  scene.add(steps, noses);
+  scene.add(steps, noses); unbaked.push(steps);
 
   // ceiling: a light ceiling (Sunset rave gradient, pink at the bottom of the stairs → orange at the top, pulsing a little
   // with the beat) behind black panels in two rows; the light shows through the gaps between them. A black border frame
@@ -290,7 +292,7 @@ export function buildWorld(): World {
     panelBoxes.forEach(({ m, z }, i) => { panels.setMatrixAt(i, m); panels.setColorAt(i, climbColor(z)); });
     const frames = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1), panelMat, frameBoxes.length);
     frameBoxes.forEach(({ m }, i) => frames.setMatrixAt(i, m));
-    scene.add(panels, frames);
+    scene.add(panels, frames); // stay in the baked version too: their glowing edges keep every light line visible
   }
   // balustrades like the reference photo: vertical pink neon tubes on every other step, a dark metal handrail on top
   const railMat = new THREE.MeshStandardMaterial({ color: C('#16121c'), metalness: 0.8, roughness: 0.35 });
@@ -333,7 +335,7 @@ export function buildWorld(): World {
       const side = s ? 1 : -1;
       const tex = loader.load(src); tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 8;
       const frame = new THREE.Mesh(new THREE.PlaneGeometry(0.68, 0.62 * aspect + 0.06), new THREE.MeshStandardMaterial({ color: C('#0b080d'), roughness: 0.6 }));
-      const art = new THREE.Mesh(new THREE.PlaneGeometry(0.62, 0.62 * aspect), new THREE.MeshStandardMaterial({ map: tex, roughness: 0.45 }));
+      const art = new THREE.Mesh(new THREE.PlaneGeometry(0.62, 0.62 * aspect), new THREE.MeshStandardMaterial({ map: tex, roughness: 0.45, emissiveMap: tex, emissive: C('#ffffff'), emissiveIntensity: 0.45 })); // backlit
       for (const [m, off] of [[frame, 0.005], [art, 0.008]] as const) {
         m.rotation.y = side < 0 ? Math.PI / 2 : -Math.PI / 2;
         m.position.set(side * (W / 2 - off), stairY(z) + 1.95, z);
@@ -345,8 +347,8 @@ export function buildWorld(): World {
   // top wall with the roof door
   const topShape = new THREE.Shape([V(-W / 2, TOP_Y), V(-0.55, TOP_Y), V(-0.55, TOP_Y + 2.2), V(0.55, TOP_Y + 2.2), V(0.55, TOP_Y), V(W / 2, TOP_Y), V(W / 2, TOP_Y + CEIL + 0.2), V(-W / 2, TOP_Y + CEIL + 0.2)]);
   const topWall = new THREE.Mesh(new THREE.ShapeGeometry(topShape), brickMat(1, 1)); // shape UVs are in metres
-  topWall.position.z = ROOF_Z; scene.add(topWall);
-  const frameMat = glow(C(PAL.b).multiplyScalar(2.6));
+  topWall.position.z = ROOF_Z; scene.add(topWall); unbaked.push(topWall);
+  const frameMat = glow(C(PAL.a).multiplyScalar(2.6)); // orange: the colour the climb ends in
   const fz = ROOF_Z + 0.02;
   for (const [a, b] of [[[-0.57, 0], [-0.57, 2.22]], [[0.57, 0], [0.57, 2.22]], [[-0.57, 2.22], [0.57, 2.22]]] as const)
     scene.add(tube(new THREE.Vector3(a[0], TOP_Y + a[1], fz), new THREE.Vector3(b[0], TOP_Y + b[1], fz), 0.016, frameMat));
@@ -354,118 +356,138 @@ export function buildWorld(): World {
   roofLeaf.position.set(0.55, 1.1, 0); roofDoor.add(roofLeaf);
   roofDoor.position.set(-0.55, TOP_Y, ROOF_Z - 0.03); scene.add(roofDoor);
 
-  // ---------- 3 · the roof ---------- (after the rooftop-party reference: blue hour, glass railing, glowing bar, crowd)
-  const RY = TOP_Y, R = (() => { let sd = 9; return () => ((sd = (sd * 16807) % 2147483647) / 2147483647); })();
-  const EDGE = ROOF_Z - 16, VIOLET = '#9a4dff';
-  const deck = new THREE.Mesh(new THREE.PlaneGeometry(24, 18), new THREE.MeshStandardMaterial({ map: texture('concrete_pavement_02_diff_web.jpg', true, 10, 8), color: C('#4a3f5c'), roughness: 0.55, metalness: 0.1 }));
-  deck.rotation.x = -Math.PI / 2; deck.position.set(0, RY - 0.001, ROOF_Z - 8); scene.add(deck);
-
-  // glass railing around the roof edge, metal top rail, a violet LED strip along the foot
-  const glass = new THREE.MeshStandardMaterial({ color: C('#9fb7ff'), transparent: true, opacity: 0.12, roughness: 0.05, metalness: 0.2, depthWrite: false });
-  const rail = new THREE.MeshStandardMaterial({ color: C('#2a2533'), metalness: 0.9, roughness: 0.3 });
-  const led = glow(C(VIOLET).multiplyScalar(2.4), 0.5);
-  for (const [x0, z0, x1, z1] of [[-12, EDGE, 12, EDGE], [-9, ROOF_Z - 1, -9, EDGE], [9, ROOF_Z - 1, 9, EDGE]]) {
-    const len = Math.hypot(x1 - x0, z1 - z0), mid = new THREE.Vector3((x0 + x1) / 2, RY + 0.55, (z0 + z1) / 2), ang = Math.atan2(z1 - z0, x1 - x0);
-    const pane = new THREE.Mesh(new THREE.BoxGeometry(len, 1.1, 0.02), glass); pane.position.copy(mid); pane.rotation.y = -ang; scene.add(pane);
-    scene.add(tube(new THREE.Vector3(x0, RY + 1.12, z0), new THREE.Vector3(x1, RY + 1.12, z1), 0.03, rail));
-    scene.add(tube(new THREE.Vector3(x0, RY + 0.03, z0), new THREE.Vector3(x1, RY + 0.03, z1), 0.02, led));
-  }
-
-  // the skyline: blocks of flats and a few towers, thousands of lit windows (one shared window texture)
-  const winCanvas = document.createElement('canvas'); winCanvas.width = 256; winCanvas.height = 512;
-  { const g = winCanvas.getContext('2d')!; g.fillStyle = '#0a0812'; g.fillRect(0, 0, 256, 512);
-    for (let y = 0; y < 512; y += 16) for (let x = 0; x < 256; x += 16) {
-      const r = R(); if (r > 0.42) continue;
-      g.fillStyle = r < 0.08 ? '#a9c4ff' : r < 0.3 ? '#ffb46a' : '#ff8a4c'; g.globalAlpha = 0.45 + R() * 0.55;
-      g.fillRect(x + 4, y + 5, 8, 8);
-    } g.globalAlpha = 1; }
-  const winTex = new THREE.CanvasTexture(winCanvas); winTex.colorSpace = THREE.SRGBColorSpace; winTex.wrapS = winTex.wrapT = THREE.RepeatWrapping;
-  for (let i = 0; i < 70; i++) {
-    const ang = -1.35 + (i / 69) * 2.7 + (R() - 0.5) * 0.04, dist = 40 + R() * 80, tower = R() < 0.07; // mostly low-rise, a few towers in the distance
-    const w = 8 + R() * 14, h = tower ? 24 + R() * 16 : 9 + R() * 11, d = 8 + R() * 8;
-    const t = winTex.clone(); t.repeat.set(w / 16, h / 32); t.offset.set(R(), R());
-    const b = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), new THREE.MeshBasicMaterial({ map: t, color: C('#b9a8c8') }));
-    b.position.set(Math.sin(ang) * dist, RY - 14 + h / 2, ROOF_Z - Math.cos(ang) * dist); b.lookAt(0, b.position.y, ROOF_Z);
-    scene.add(b);
-  }
-
-  // the bar on the left: a counter glowing violet-pink, bottles lit on the back wall
-  const barZ0 = ROOF_Z - 3.2, barZ1 = ROOF_Z - 10.5, barX = -6.2;
-  const front = new THREE.Mesh(new THREE.PlaneGeometry(barZ0 - barZ1, 1.05), glow(C(PAL.b).lerp(C(VIOLET), 0.5).multiplyScalar(1.6), 0.4));
-  front.rotation.y = Math.PI / 2; front.position.set(barX + 0.36, RY + 0.53, (barZ0 + barZ1) / 2); scene.add(front);
-  const counter = new THREE.Mesh(new THREE.BoxGeometry(0.75, 0.06, barZ0 - barZ1 + 0.1), new THREE.MeshStandardMaterial({ color: C('#d9d2e6'), roughness: 0.25 }));
-  counter.position.set(barX, RY + 1.08, (barZ0 + barZ1) / 2); scene.add(counter);
-  const back = new THREE.Mesh(new THREE.BoxGeometry(0.3, 2.4, barZ0 - barZ1), new THREE.MeshStandardMaterial({ color: C('#1a1424'), roughness: 0.6 }));
-  back.position.set(barX - 1.5, RY + 1.2, (barZ0 + barZ1) / 2); scene.add(back);
-  const bottles = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.04, 0.045, 0.3, 8), glowMat(C('#ffb36b').multiplyScalar(1.6)), 40);
-  for (let k = 0; k < 40; k++) bottles.setMatrixAt(k, m4.makeTranslation(barX - 1.3, RY + 1.3 + (k % 2) * 0.5, barZ0 - 0.2 - (k / 40) * (barZ0 - barZ1 - 0.4)));
-  scene.add(bottles);
-  const barLight = new THREE.PointLight(C(PAL.b), 18, 8, 2); barLight.position.set(barX + 1.2, RY + 0.5, (barZ0 + barZ1) / 2); scene.add(barLight);
-
-  // DJ at the far end: the plank table from the photos, decks with blinking lights, two speakers
-  const wood = new THREE.MeshStandardMaterial({ color: C('#4a3424'), roughness: 0.8 });
-  const DJZ = ROOF_Z - 12.5;
-  const plank = new THREE.Mesh(new THREE.BoxGeometry(1.9, 0.05, 0.7), wood); plank.position.set(0, RY + 1.0, DJZ); scene.add(plank);
-  const deckBox = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.07, 0.45), new THREE.MeshStandardMaterial({ color: C('#0b0a0c'), roughness: 0.4 }));
-  deckBox.position.set(0, RY + 1.06, DJZ); scene.add(deckBox);
-  const leds: THREE.Mesh[] = [];
-  for (let i = 0; i < 10; i++) { const l = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.01, 0.03), glow(C(i % 3 ? PAL.b : PAL.a).multiplyScalar(2.5))); l.position.set(-0.4 + i * 0.09, RY + 1.1, DJZ + 0.1); scene.add(l); leds.push(l); }
-  scene.add(tube(new THREE.Vector3(-0.8, RY, DJZ), new THREE.Vector3(-0.8, RY + 1, DJZ), 0.03, wood), tube(new THREE.Vector3(0.8, RY, DJZ), new THREE.Vector3(0.8, RY + 1, DJZ), 0.03, wood));
-  for (const sx of [-1.8, 1.8]) {
-    const spk = new THREE.Mesh(new THREE.BoxGeometry(0.55, 1.3, 0.5), new THREE.MeshStandardMaterial({ color: C('#0c0b10'), roughness: 0.7 }));
-    spk.position.set(sx, RY + 0.65, DJZ); scene.add(spk);
-  }
-  const dj = new THREE.Group();
-  dj.add(new THREE.Mesh(new THREE.CapsuleGeometry(0.21, 0.75, 4, 10), new THREE.MeshStandardMaterial({ color: C('#16141c'), roughness: 0.8 })));
-  const djHead = new THREE.Mesh(new THREE.SphereGeometry(0.12, 12, 10), new THREE.MeshStandardMaterial({ color: C('#d8c2b6'), roughness: 0.7 })); djHead.position.y = 0.62; dj.add(djHead);
-  dj.position.set(0, RY + 0.6, DJZ - 0.55); scene.add(dj);
-
-  // the crowd: people standing and moving to the beat between the door and the DJ (kept clear of the walk-out path)
-  const crowdN = 46, bodies = new THREE.InstancedMesh(new THREE.CapsuleGeometry(0.2, 0.8, 4, 10), new THREE.MeshStandardMaterial({ roughness: 0.8 }), crowdN);
-  const heads = new THREE.InstancedMesh(new THREE.SphereGeometry(0.11, 12, 10), new THREE.MeshStandardMaterial({ roughness: 0.7 }), crowdN);
-  const shoulders = new THREE.InstancedMesh(new THREE.CapsuleGeometry(0.075, 0.36, 4, 8), new THREE.MeshStandardMaterial({ roughness: 0.8 }), crowdN);
-  const arms = new THREE.InstancedMesh(new THREE.CapsuleGeometry(0.045, 0.55, 4, 8), new THREE.MeshStandardMaterial({ roughness: 0.8 }), crowdN);
-  const people: { x: number; z: number; h: number; ph: number; up: boolean }[] = [];
-  const shirts = ['#141218', '#1d1a26', '#2a2236', '#d9d4e2', '#3a1d2e', '#101418', '#4a4458'], skin = ['#e0c3b0', '#b88a6e', '#7a5440', '#f0d6c4'];
-  while (people.length < crowdN) {
-    const x = (R() - 0.5) * 9, z = ROOF_Z - 4 - R() * 8;
-    if (Math.abs(x) < 1.1 && z > ROOF_Z - 6) continue;              // keep the view from the door open
-    if (x < barX + 1.4) continue;                                   // not inside the bar
-    const pp = { x, z, h: 0.92 + R() * 0.2, ph: R() * 6, up: R() < 0.35 }; people.push(pp);
-    const shirt = C(shirts[Math.floor(R() * shirts.length)]);
-    bodies.setColorAt(people.length - 1, shirt); shoulders.setColorAt(people.length - 1, shirt); arms.setColorAt(people.length - 1, shirt);
-    heads.setColorAt(people.length - 1, C(skin[Math.floor(R() * skin.length)]));
-  }
-  // pose one person: body, head, shoulders (a bar across), and for some an arm in the air
-  const rotZ = new THREE.Matrix4().makeRotationZ(Math.PI / 2), mm = new THREE.Matrix4();
-  const pose = (p: (typeof people)[number], i: number, bob: number, sway: number) => {
-    bodies.setMatrixAt(i, mm.makeTranslation(p.x + sway, RY + 0.6 * p.h + bob, p.z).multiply(new THREE.Matrix4().makeScale(1, p.h, 1)));
-    heads.setMatrixAt(i, mm.makeTranslation(p.x + sway * 1.3, RY + 1.33 * p.h + bob, p.z));
-    shoulders.setMatrixAt(i, mm.makeTranslation(p.x + sway * 1.2, RY + 1.1 * p.h + bob, p.z).multiply(rotZ));
-    const ay = p.up ? RY + 1.55 * p.h + bob * 2 : RY + 0.85 * p.h + bob;
-    arms.setMatrixAt(i, mm.makeTranslation(p.x + sway * 1.4 + 0.22, ay, p.z).multiply(new THREE.Matrix4().makeRotationZ(p.up ? -0.25 : 0.12)));
+  // The baked stairwell (blender/stairwell.py): streams in while the visitor is still outside, then replaces the live-lit
+  // walls, steps, ceiling panels and roof door. Its light pulses with the beat through lightMapIntensity.
+  const LM_GAIN = 16, ROOF_GAIN = 8; // overall brightness of the baked light (three.js divides light maps by π, and the textures are dark)
+  const bakedMats: { m: THREE.MeshStandardMaterial; base: number; pulse: number }[] = [];
+  const reflective: THREE.MeshStandardMaterial[] = [];
+  let stairsIn = false, rendererRef: THREE.WebGLRenderer | null = null;
+  const captureStairs = (renderer: THREE.WebGLRenderer) => { // what the polished steps and the door handle reflect
+    const rt = new THREE.WebGLCubeRenderTarget(256, { type: THREE.HalfFloatType });
+    const cam = new THREE.CubeCamera(0.05, 30, rt); cam.position.set(0, stairY(-5) + 1.4, -5); scene.add(cam);
+    cam.update(renderer, scene); scene.remove(cam);
+    for (const m of reflective) { m.envMap = rt.texture; m.needsUpdate = true; }
   };
-  people.forEach((p, i) => pose(p, i, 0, 0)); // start in place (they only animate once you're on the roof)
-  scene.add(bodies, heads, shoulders, arms);
-  const crowdLights = [new THREE.PointLight(C(VIOLET), 22, 10, 2), new THREE.PointLight(C(PAL.b), 14, 9, 2), new THREE.PointLight(C('#3d6bff'), 14, 10, 2)];
-  crowdLights[0].position.set(-2, RY + 0.4, ROOF_Z - 7); crowdLights[1].position.set(2.5, RY + 2.5, ROOF_Z - 9); crowdLights[2].position.set(0, RY + 3, DJZ - 1);
-  crowdLights.forEach((l) => scene.add(l));
+  const tl = new THREE.TextureLoader();
+  const tex = (file: string, srgb: boolean) => { const t = tl.load(`models/textures/${file}`); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 8; t.flipY = false; if (srgb) t.colorSpace = THREE.SRGBColorSpace; return t; };
+  /** Loads a baked Blender model (blender/<name>.py): each mesh gets its material from `look` and its lightmap
+   *  models/lightmaps/<name>_<mesh>.jpg, scaled back by the exposure the bake wrote to <name>.json. */
+  async function loadBaked(name: string, glb: string, inlineVar: string, look: Record<string, () => THREE.MeshStandardMaterial>, gain: number, pulse: number) {
+    const gl = new GLTFLoader().setDRACOLoader(new DRACOLoader().setDecoderPath('draco/'));
+    const inline = (window as unknown as Record<string, ArrayBuffer | undefined>)[inlineVar];
+    const [gltf, exposure] = await Promise.all([
+      inline ? gl.parseAsync(inline, '') : gl.loadAsync(`models/${glb}`),
+      fetch(`models/lightmaps/${name}.json`).then((r) => r.json() as Promise<Record<string, number>>),
+    ]);
+    const meshes: THREE.Mesh[] = [];
+    gltf.scene.traverse((o) => { if ((o as THREE.Mesh).isMesh && look[o.name]) meshes.push(o as THREE.Mesh); });
+    await Promise.all(meshes.map(async (mesh) => {
+      const m = look[mesh.name](), lm = await tl.loadAsync(`models/lightmaps/${name}_${mesh.name}.jpg`);
+      lm.flipY = false; lm.channel = 1; lm.colorSpace = THREE.SRGBColorSpace;
+      m.lightMap = lm; m.side = THREE.DoubleSide;
+      const base = gain / (exposure[mesh.name] ?? 1); m.lightMapIntensity = base; bakedMats.push({ m, base, pulse });
+      mesh.material = m;
+    }));
+    scene.add(gltf.scene);
+    return meshes;
+  }
+  async function loadStairwell() {
+    const meshes = await loadBaked('stair', 'stairwell.glb', '__STAIR_GLB__', {
+      walls: () => new THREE.MeshStandardMaterial({ map: tex('red_brick_03_diff_web.jpg', true), normalMap: tex('red_brick_03_nor_web.jpg', false), roughnessMap: tex('red_brick_03_rough_web.jpg', false), color: C('#a07a72'), roughness: 1 }),
+      floor: () => { const m = new THREE.MeshStandardMaterial({ map: tex('concrete_pavement_02_diff_web.jpg', true), color: C('#6a5f78'), roughness: 0.28, metalness: 0.1, envMapIntensity: 0.7 }); reflective.push(m); return m; },
+      ceiling: () => new THREE.MeshStandardMaterial({ color: C('#0b080d'), roughness: 0.8 }),
+      roof_leaf: () => new THREE.MeshStandardMaterial({ color: C('#59607a'), roughness: 0.45 }),
+      roof_handle: () => { const m = new THREE.MeshStandardMaterial({ color: C('#d6d6dc'), roughness: 0.25, metalness: 0.9 }); reflective.push(m); return m; },
+    }, LM_GAIN, 0.5);
+    for (const mesh of meshes) if (mesh.name.startsWith('roof_')) roofDoor.attach(mesh); // swings with the door
+    for (const mesh of meshes) if (mesh.name === 'ceiling') mesh.visible = false;      // the live panels (lit edges) read better
+    (roofLeaf.material as THREE.Material).visible = false;                               // stays as the click target
+    for (const o of unbaked) o.visible = false;
+    for (const c of ceilLights) c.l.visible = false;
+    stairsIn = true;
+    if (rendererRef) captureStairs(rendererRef);
+  }
+  const stairsBaked = ready.then(loadStairwell).catch((e) => console.error('baked stairwell failed', e));
 
-  // festoon lights over the crowd
+  // ---------- 3 · the roof ----------
+  const RY = TOP_Y;
+  const deck = new THREE.Mesh(new THREE.PlaneGeometry(40, 40), new THREE.MeshStandardMaterial({ color: C('#140c16'), roughness: 0.95 }));
+  deck.rotation.x = -Math.PI / 2; deck.position.set(0, RY - 0.001, ROOF_Z - 20); scene.add(deck);
+  const parapet = new THREE.Mesh(new THREE.BoxGeometry(40, 0.6, 0.3), new THREE.MeshStandardMaterial({ color: C('#1a1119'), roughness: 0.9 }));
+  parapet.position.set(0, RY + 0.3, ROOF_Z - 16); scene.add(parapet);
+  // Amsterdam skyline: gabled silhouettes with a few lit windows
+  const R = (() => { let s = 9; return () => ((s = (s * 16807) % 2147483647) / 2147483647); })();
+  const silhouette = new THREE.MeshBasicMaterial({ color: C(PAL.bg).lerp(C('#000000'), 0.35) });
+  const windowMat = glowMat(C(PAL.a).multiplyScalar(1.4));
+  for (let i = 0; i < 46; i++) {
+    const ang = -1.25 + (i / 45) * 2.5, dist = 45 + R() * 35, bw = 5 + R() * 6, bh = 4 + R() * 9, gable = R() > 0.35;
+    const s = new THREE.Shape();
+    s.moveTo(-bw / 2, -14); s.lineTo(-bw / 2, bh);
+    if (gable) { s.lineTo(-bw / 4, bh); s.lineTo(-bw / 4, bh + 2.2); s.lineTo(bw / 4, bh + 2.2); s.lineTo(bw / 4, bh); }
+    s.lineTo(bw / 2, bh); s.lineTo(bw / 2, -14);
+    const b = new THREE.Mesh(new THREE.ShapeGeometry(s), silhouette);
+    b.position.set(Math.sin(ang) * dist, RY - 6, ROOF_Z - Math.cos(ang) * dist);
+    b.lookAt(0, RY - 6, ROOF_Z);
+    scene.add(b);
+    for (let k = 0; k < 4; k++) if (R() > 0.5) {
+      const win = new THREE.Mesh(new THREE.PlaneGeometry(0.7, 1), windowMat);
+      win.position.set(-bw / 3 + R() * bw * 0.66, bh - 2 - R() * 6, 0.05); b.add(win);
+    }
+  }
+  const sun = new THREE.Mesh(new THREE.CircleGeometry(9, 48), glowMat(C(PAL.fg).lerp(C(PAL.a), 0.35).multiplyScalar(1.8)));
+  sun.position.set(30, RY + 1, ROOF_Z - 160); sun.lookAt(0, RY + 1, ROOF_Z); scene.add(sun);
+  // DJ table (the plank from the photos) with decks and blinking lights
+  const wood = new THREE.MeshStandardMaterial({ color: C('#4a3424'), roughness: 0.8 });
+  const plank = new THREE.Mesh(new THREE.BoxGeometry(1.9, 0.05, 0.7), wood); plank.position.set(0, RY + 1.0, ROOF_Z - 6.5); scene.add(plank);
+  const deckBox = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.07, 0.45), new THREE.MeshStandardMaterial({ color: C('#0b0a0c'), roughness: 0.4 }));
+  deckBox.position.set(0, RY + 1.06, ROOF_Z - 6.5); scene.add(deckBox);
+  const leds: THREE.Mesh[] = [];
+  for (let i = 0; i < 10; i++) { const led = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.01, 0.03), glow(C(i % 3 ? PAL.b : PAL.a).multiplyScalar(2.5))); led.position.set(-0.4 + i * 0.09, RY + 1.1, ROOF_Z - 6.4); scene.add(led); leds.push(led); }
+  const legs = [tube(new THREE.Vector3(-0.8, RY, ROOF_Z - 6.5), new THREE.Vector3(-0.8, RY + 1, ROOF_Z - 6.5), 0.03, wood), tube(new THREE.Vector3(0.8, RY, ROOF_Z - 6.5), new THREE.Vector3(0.8, RY + 1, ROOF_Z - 6.5), 0.03, wood)];
+  scene.add(...legs);
+  // festoon lights
   const bulbs = new THREE.InstancedMesh(new THREE.SphereGeometry(0.055, 10, 8), glow(C(PAL.a).lerp(C(PAL.fg), 0.3).multiplyScalar(2.6)), 3 * 18);
   let bi = 0;
-  for (const z of [ROOF_Z - 4.5, ROOF_Z - 7.5, ROOF_Z - 10.5]) {
+  for (const z of [ROOF_Z - 4.5, ROOF_Z - 7, ROOF_Z - 9.5]) {
     const pts: THREE.Vector3[] = [];
-    for (let k = 0; k <= 18; k++) { const u = k / 18, x = lerp(-6, 7, u); pts.push(new THREE.Vector3(x, RY + 3.6 - Math.sin(u * Math.PI) * 0.8, z)); }
+    for (let k = 0; k <= 18; k++) { const u = k / 18, x = lerp(-6, 6, u); pts.push(new THREE.Vector3(x, RY + 3.4 - Math.sin(u * Math.PI) * 0.9, z)); }
     scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineBasicMaterial({ color: C('#050305') })));
     for (let k = 1; k < 19 && bi < bulbs.count; k++) bulbs.setMatrixAt(bi++, m4.makeTranslation(pts[k - 1].x, pts[k - 1].y - 0.08, z));
   }
   scene.add(bulbs);
+  const roofLight = new THREE.PointLight(C(PAL.a), 30, 18, 2); roofLight.position.set(0, RY + 3, ROOF_Z - 5); scene.add(roofLight);
+
+  // The baked roof (blender/roof.py, spec docs/superpowers/specs/2026-10-04-roof-v2.md): wooden deck, parapet with
+  // pantiles, the DJ booth and two column speakers. Streams in after the stairwell; until then the plain roof above shows.
+  const BZ = ROOF_Z - 6.5, BH = 1.0;
+  const boothLed = new THREE.Group(); // the warm LED strip under the booth top (its light is in the bake) + two small lights
+  const at = (m: THREE.Mesh, x: number, y: number, z: number) => { m.position.set(x, y, z); boothLed.add(m); };
+  at(new THREE.Mesh(new THREE.BoxGeometry(2.1, 0.015, 0.02), glow(C(PAL.a).multiplyScalar(2.2), 0.6)), 0, RY + BH - 0.015, BZ + 0.48);
+  for (const sx of [-1, 1]) {
+    at(new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.015, 0.9), glow(C(PAL.a).multiplyScalar(2.2), 0.6)), sx * 1.08, RY + BH - 0.015, BZ + 0.05);
+    at(new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.06, 0.04), glow(C('#ffc890').multiplyScalar(2.4), 0.2)), sx * 0.85, RY + BH + 0.09, BZ + 0.38);
+  }
+  boothLed.visible = false; scene.add(boothLed);
+  async function loadRoof() {
+    const dark = () => new THREE.MeshStandardMaterial({ color: C('#141216'), roughness: 0.45 });
+    await loadBaked('roof', 'roof.glb', '__ROOF_GLB__', {
+      deck: () => new THREE.MeshStandardMaterial({ map: tex('plank_flooring_04_diff_web.jpg', true), normalMap: tex('plank_flooring_04_nor_web.jpg', false), roughnessMap: tex('plank_flooring_04_rough_web.jpg', false), color: C('#8a6a58'), roughness: 1 }),
+      plaster: () => new THREE.MeshStandardMaterial({ map: tex('white_plaster_rough_01_diff_web.jpg', true), normalMap: tex('white_plaster_rough_01_nor_web.jpg', false), color: C('#d8d2cc'), roughness: 0.95 }),
+      brick: () => new THREE.MeshStandardMaterial({ map: tex('red_brick_03_diff_web.jpg', true), normalMap: tex('red_brick_03_nor_web.jpg', false), color: C('#a07a72'), roughness: 1 }),
+      tiles: () => new THREE.MeshStandardMaterial({ color: C('#b8502a'), roughness: 0.5 }),
+      booth_body: () => new THREE.MeshStandardMaterial({ color: C('#9a6a44'), roughness: 0.55 }),
+      booth_top: dark, gear: dark, speaker: dark,
+    }, ROOF_GAIN, 0.4);
+    for (const o of [deck, parapet, plank, deckBox, ...legs]) o.visible = false;
+    roofLight.visible = false; boothLed.visible = true;
+    leds.forEach((l, i) => l.position.set(-0.58 + i * 0.13, RY + BH + 0.165, BZ + 0.2)); // on top of the decks and mixer
+  }
+  stairsBaked.then(loadRoof).catch((e) => console.error('baked roof failed', e));
   // smoke drifting from the booth
   const puffTex = puff(), smoke: { s: THREE.Sprite; ph: number; x: number }[] = [];
   for (let i = 0; i < 12; i++) {
-    const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: puffTex, color: C(PAL.fg), transparent: true, opacity: 0.16, depthWrite: false }));
-    scene.add(sp); smoke.push({ s: sp, ph: i / 12, x: (R() - 0.5) * 2.5 });
+    const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: puffTex, color: C(PAL.fg), transparent: true, opacity: 0.18, depthWrite: false }));
+    scene.add(s); smoke.push({ s, ph: i / 12, x: (R() - 0.5) * 2.5 });
   }
 
   // ---------- behaviour ----------
@@ -479,18 +501,14 @@ export function buildWorld(): World {
     for (let i = 0; i < N; i++) noses.setColorAt(i, tmp.copy(noseBase[i]).multiplyScalar(k));
     noses.instanceColor!.needsUpdate = true;
     for (const c of ceilLights) c.l.intensity = c.base * lerp(1, k, 0.35); // same pulse as the glowing ceiling
+    for (const b of bakedMats) b.m.lightMapIntensity = b.base * lerp(1, k, b.pulse); // the baked light pulses too
     const flicker = Math.sin(t * 13) > 0.94 ? 0.35 : 1;
     signLight.intensity = 14 * k * flicker; signCore.visible = flicker > 0.5;
     leak.intensity = 0.5 * k;
     leds.forEach((l, i) => (l.visible = Math.sin(t * 8 + i * 1.7) > -0.2));
-    if (camera.position.z < ROOF_Z + 3) { // the crowd moves only when you can see it
-      people.forEach((p, i) => pose(p, i, Math.max(0, Math.sin(t * 6.6 + p.ph)) * 0.05 * (0.4 + kick), Math.sin(t * 1.7 + p.ph) * 0.04));
-      for (const im of [bodies, heads, shoulders, arms]) im.instanceMatrix.needsUpdate = true;
-      dj.position.y = RY + 0.6 + Math.max(0, Math.sin(t * 6.6)) * 0.03;
-    }
     for (const m of smoke) {
       const life = (t * 0.07 + m.ph) % 1;
-      m.s.position.set(m.x + Math.sin(t * 0.4 + m.ph * 6) * 0.6, RY + 1.2 + life * 4, DJZ - 0.3 - life * 1.5);
+      m.s.position.set(m.x + Math.sin(t * 0.4 + m.ph * 6) * 0.6, RY + 1.2 + life * 4, ROOF_Z - 6.8 - life * 1.5);
       m.s.scale.setScalar(1 + life * 4); (m.s.material as THREE.SpriteMaterial).opacity = 0.2 * (1 - life);
     }
   }
@@ -517,9 +535,7 @@ export function buildWorld(): World {
     } else { // out onto the roof, then a slow look around
       const k = ease(clamp(l / 0.4)), z = lerp(ROOF_Z + 0.9, ROOF_Z - 2.0, k), drift = clamp((l - 0.4) / 0.6);
       pos.set(drift * 0.4, TOP_Y + 1.6, z - drift * 0.6);
-      // straight out of the door, then a look left at the bar, then across the crowd to the DJ
-      const lx = l < 0.3 ? 0 : l < 0.45 ? lerp(0, -4.2, ease((l - 0.3) / 0.15)) : lerp(-4.2, 1.2, ease(clamp((l - 0.45) / 0.4)));
-      look.set(lx + Math.sin(t * 0.3) * 0.2, TOP_Y + lerp(1.6, 1.8, k), z - 10);
+      look.set(lerp(0, 2.5, ease(drift)) + Math.sin(t * 0.3) * 0.2, TOP_Y + lerp(1.6, 1.9, k), z - 10);
     }
     return { pos, look };
   }
