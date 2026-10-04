@@ -396,7 +396,7 @@ export function buildWorld(): World {
       walls: () => new THREE.MeshStandardMaterial({ map: tex('red_brick_03_diff_web.jpg', true), normalMap: tex('red_brick_03_nor_web.jpg', false), roughnessMap: tex('red_brick_03_rough_web.jpg', false), color: C('#a07a72'), roughness: 1 }),
       floor: () => { const m = new THREE.MeshStandardMaterial({ map: tex('concrete_pavement_02_diff_web.jpg', true), color: C('#6a5f78'), roughness: 0.28, metalness: 0.1, envMapIntensity: 0.7 }); reflective.push(m); return m; },
       ceiling: () => new THREE.MeshStandardMaterial({ color: C('#0b080d'), roughness: 0.8 }),
-      roof_leaf: () => new THREE.MeshStandardMaterial({ color: C('#59607a'), roughness: 0.45 }),
+      roof_leaf: () => new THREE.MeshStandardMaterial({ color: C('#1a181c'), roughness: 0.85 }), // plain matte black
       roof_handle: () => { const m = new THREE.MeshStandardMaterial({ color: C('#d6d6dc'), roughness: 0.25, metalness: 0.9 }); reflective.push(m); return m; },
     }, LM_GAIN, 0.5);
     for (const mesh of meshes) if (mesh.name.startsWith('roof_')) roofDoor.attach(mesh); // swings with the door
@@ -448,9 +448,9 @@ export function buildWorld(): World {
   // festoon lights
   const bulbs = new THREE.InstancedMesh(new THREE.SphereGeometry(0.055, 10, 8), glow(C(PAL.a).lerp(C(PAL.fg), 0.3).multiplyScalar(2.6)), 3 * 18);
   let bi = 0;
-  for (const z of [ROOF_Z - 4.5, ROOF_Z - 7, ROOF_Z - 9.5]) {
+  for (const z of [ROOF_Z - 2.2, ROOF_Z - 4.4, ROOF_Z - 6.6]) { // over the (smaller) terrace, as in blender/roof.py
     const pts: THREE.Vector3[] = [];
-    for (let k = 0; k <= 18; k++) { const u = k / 18, x = lerp(-6, 6, u); pts.push(new THREE.Vector3(x, RY + 3.4 - Math.sin(u * Math.PI) * 0.9, z)); }
+    for (let k = 0; k <= 18; k++) { const u = k / 18, x = lerp(-4, 4, u); pts.push(new THREE.Vector3(x, RY + 3.4 - Math.sin(u * Math.PI) * 0.7, z)); }
     scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineBasicMaterial({ color: C('#050305') })));
     for (let k = 1; k < 19 && bi < bulbs.count; k++) bulbs.setMatrixAt(bi++, m4.makeTranslation(pts[k - 1].x, pts[k - 1].y - 0.08, z));
   }
@@ -459,15 +459,21 @@ export function buildWorld(): World {
 
   // The baked roof (blender/roof.py, spec docs/superpowers/specs/2026-10-04-roof-v2.md): wooden deck, parapet with
   // pantiles, the DJ booth and two column speakers. Streams in after the stairwell; until then the plain roof above shows.
-  const BZ = ROOF_Z - 6.5, BH = 1.0;
+  const BZ = ROOF_Z - 7.0, BH = 1.0; // as in blender/roof.py: the booth close to the far wall
   const boothLed = new THREE.Group(); // the warm LED strip under the booth top (its light is in the bake) + two small lights
   const at = (m: THREE.Mesh, x: number, y: number, z: number) => { m.position.set(x, y, z); boothLed.add(m); };
-  at(new THREE.Mesh(new THREE.BoxGeometry(2.1, 0.015, 0.02), glow(C(PAL.a).multiplyScalar(2.2), 0.6)), 0, RY + BH - 0.015, BZ + 0.48);
+  at(new THREE.Mesh(new THREE.BoxGeometry(2.1, 0.015, 0.02), glow(C('#ff9a3a').multiplyScalar(1.4), 0.6)), 0, RY + BH - 0.015, BZ + 0.48);
   for (const sx of [-1, 1]) {
-    at(new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.015, 0.9), glow(C(PAL.a).multiplyScalar(2.2), 0.6)), sx * 1.08, RY + BH - 0.015, BZ + 0.05);
+    at(new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.015, 0.9), glow(C('#ff9a3a').multiplyScalar(1.4), 0.6)), sx * 1.08, RY + BH - 0.015, BZ + 0.05);
     at(new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.06, 0.04), glow(C('#ffc890').multiplyScalar(2.4), 0.2)), sx * 0.85, RY + BH + 0.09, BZ + 0.38);
   }
   boothLed.visible = false; scene.add(boothLed);
+  const grilleTex = () => { // small round holes, as on a speaker's metal grille (UVs are in metres)
+    const c = document.createElement('canvas'); c.width = c.height = 64; const g = c.getContext('2d')!;
+    g.fillStyle = '#ffffff'; g.fillRect(0, 0, 64, 64); g.fillStyle = '#1a1a1e';
+    for (let y = 0; y < 8; y++) for (let x = 0; x < 8; x++) { g.beginPath(); g.arc(x * 8 + 4 + (y % 2) * 4, y * 8 + 4, 2.6, 0, Math.PI * 2); g.fill(); }
+    const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(12, 12); t.colorSpace = THREE.SRGBColorSpace; return t;
+  };
   async function loadRoof() {
     const dark = () => new THREE.MeshStandardMaterial({ color: C('#141216'), roughness: 0.45 });
     await loadBaked('roof', 'roof.glb', '__ROOF_GLB__', {
@@ -475,9 +481,11 @@ export function buildWorld(): World {
       plaster: () => new THREE.MeshStandardMaterial({ map: tex('white_plaster_rough_01_diff_web.jpg', true), normalMap: tex('white_plaster_rough_01_nor_web.jpg', false), color: C('#d8d2cc'), roughness: 0.95 }),
       brick: () => new THREE.MeshStandardMaterial({ map: tex('red_brick_03_diff_web.jpg', true), normalMap: tex('red_brick_03_nor_web.jpg', false), color: C('#a07a72'), roughness: 1 }),
       tiles: () => new THREE.MeshStandardMaterial({ color: C('#b8502a'), roughness: 0.5 }),
-      booth_body: () => new THREE.MeshStandardMaterial({ color: C('#9a6a44'), roughness: 0.55 }),
+      booth_body: () => new THREE.MeshStandardMaterial({ color: C('#7a5638'), roughness: 0.55 }), // warm wood
       booth_top: dark, gear: dark,
-      speaker: () => new THREE.MeshStandardMaterial({ color: C('#4a4852'), roughness: 0.35, metalness: 0.2 }), // black, but catches the light enough to read
+      speaker: () => new THREE.MeshStandardMaterial({ color: C('#3a3840'), roughness: 0.4, metalness: 0.15 }), // satin black cabinets
+      grille: () => new THREE.MeshStandardMaterial({ map: grilleTex(), color: C('#9a98a4'), roughness: 0.5, metalness: 0.6 }), // perforated metal
+      logo: () => new THREE.MeshStandardMaterial({ color: C('#e8e6ee'), roughness: 0.4 }),
     }, ROOF_GAIN, 0.4);
     for (const o of [deck, parapet, plank, deckBox, ...legs]) o.visible = false;
     roofLight.visible = false; boothLed.visible = true;
@@ -509,7 +517,7 @@ export function buildWorld(): World {
     leds.forEach((l, i) => (l.visible = Math.sin(t * 8 + i * 1.7) > -0.2));
     for (const m of smoke) {
       const life = (t * 0.07 + m.ph) % 1;
-      m.s.position.set(m.x + Math.sin(t * 0.4 + m.ph * 6) * 0.6, RY + 1.2 + life * 4, ROOF_Z - 6.8 - life * 1.5);
+      m.s.position.set(m.x + Math.sin(t * 0.4 + m.ph * 6) * 0.6, RY + 1.2 + life * 4, ROOF_Z - 7.3 - life * 1.5);
       m.s.scale.setScalar(1 + life * 4); (m.s.material as THREE.SpriteMaterial).opacity = 0.2 * (1 - life);
     }
   }

@@ -55,7 +55,7 @@ def mat(name, rgb, rough=0.6, metal=0.0, emit=None, strength=0.0, attr_emit=Fals
 BRICK = mat('stair_brick', (0.30, 0.12, 0.08), 0.9)          # base colours only matter for bounce light
 FLOOR = mat('stair_floor', (0.06, 0.055, 0.075), 0.35)
 PANEL = mat('ceil_panel', (0.02, 0.018, 0.022), 0.8)
-DOOR = mat('roof_door', (0.09, 0.10, 0.13), 0.45)            # dark blue-grey, like the club-door reference
+DOOR = mat('roof_door', (0.025, 0.024, 0.027), 0.8)          # plain matte black
 HANDLE = mat('roof_handle', (0.6, 0.6, 0.62), 0.25)           # baked matte (metal has no diffuse light); three.js makes it metal
 GLOW = mat('glow_ceiling', (0, 0, 0), 1, 0, strength=4.0, attr_emit=True)
 NEON = mat('glow_neon', (0, 0, 0), 1, 0, strength=6.0, attr_emit=True)
@@ -156,14 +156,12 @@ for k in range(3):
     for i in range(n):
         for x in (-(G + PW) / 2, (G + PW) / 2): put(x, s0 + i * (ln + G) + ln / 2, PW, ln)
 
-# ---------------------------------------------------------------- roof door: orange neon frame (bake-only), dark door, lever on the right
+# ---------------------------------------------------------------- roof door: orange neon frame (bake-only), plain matte black door, lever on the right
 fz = ROOF_Z + 0.02
 for a, b in [((-0.57, 0), (-0.57, 2.22)), ((0.57, 0), (0.57, 2.22)), ((-0.57, 2.22), (0.57, 2.22))]:
     cylinder('frame', FRAME, (a[0], TOP_Y + a[1], fz), (b[0], TOP_Y + b[1], fz), 0.016)
 dz = ROOF_Z - 0.03
 box('door', DOOR, (0, TOP_Y + 1.1, dz), (1.1, 2.2, 0.05))
-for y0, y1 in [(0.15, 1.0), (1.2, 2.05)]:  # two raised panels, so it reads as a real door
-    box('door', DOOR, (0, TOP_Y + (y0 + y1) / 2, dz + 0.03), (0.84, y1 - y0, 0.012))
 hx, hy, hz = 0.43, TOP_Y + 1.05, dz + 0.025
 box('handle', HANDLE, (hx, hy, hz + 0.004), (0.05, 0.18, 0.008))                 # back plate
 cylinder('handle', HANDLE, (hx, hy + 0.04, hz + 0.008), (hx, hy + 0.04, hz + 0.06), 0.009)

@@ -17,9 +17,10 @@ QUICK = '--quick' in sys.argv
 
 N, RISE, RUN, Z0 = 36, 0.24, 0.26, -1.0
 RY, ROOF_Z = N * RISE, Z0 - N * RUN - 1.6
-BZ = ROOF_Z - 6.5                       # booth centre (where the live DJ table stands)
-X0, X1, ZB = -7.0, 7.0, ROOF_Z - 14.0   # terrace: x from X0 to X1, from the stair housing (ROOF_Z) to ZB
+BZ = ROOF_Z - 7.0                       # booth centre: its back 0.6 m from the far wall
+X0, X1, ZB = -4.2, 4.2, ROOF_Z - 8.0    # terrace (intimate): x from X0 to X1, from the stair housing (ROOF_Z) to ZB
 PH, PT = 1.0, 0.3                       # parapet height and thickness
+FESTOONS = (ROOF_Z - 2.2, ROOF_Z - 4.4, ROOF_Z - 6.6)   # the three strings of bulbs (same in world.ts)
 ORANGE, PINK = (1.0, 0.302, 0.0), (1.0, 0.169, 0.839)
 def srgb2lin(c): return tuple(((v + 0.055) / 1.055) ** 2.4 if v > 0.04045 else v / 12.92 for v in c)
 def T(x, y, z): return Vector((x, -z, y))
@@ -38,9 +39,11 @@ DECK = mat('roof_deck', (0.10, 0.05, 0.03), 0.7)
 PLASTER = mat('roof_plaster', (0.75, 0.73, 0.70), 0.9)
 TILE = mat('roof_tile', (0.45, 0.10, 0.04), 0.6)
 BRICK = mat('roof_brick', (0.30, 0.12, 0.08), 0.9)
-BOOTH = mat('booth_wood', (0.32, 0.16, 0.07), 0.55)
-DARK = mat('booth_dark', (0.02, 0.02, 0.022), 0.4)       # booth top, decks, mixer, speakers
-LED = mat('glow_led', (0, 0, 0), 1, srgb2lin(ORANGE), 30.0)
+BOOTH = mat('booth_wood', (0.40, 0.22, 0.10), 0.55)         # warm wood
+DARK = mat('booth_dark', (0.02, 0.02, 0.022), 0.4)       # booth top, decks, mixer, speaker cabinets
+GRILLE = mat('speaker_grille', (0.06, 0.06, 0.065), 0.5)  # perforated metal fronts
+LOGO = mat('speaker_logo', (0.8, 0.8, 0.8), 0.4)
+LED = mat('glow_led', (0, 0, 0), 1, srgb2lin((1.0, 0.58, 0.2)), 30.0)   # warm amber, like the reference booth
 CANDLE = mat('glow_candle', (0, 0, 0), 1, srgb2lin((1.0, 0.7, 0.4)), 40.0)
 
 meshes = {}
@@ -123,15 +126,17 @@ for sx in (-1, 1):
 
 # ---------------------------------------------------------------- speakers after the LD Maui 28 G3: sub + slim column, ~2 m
 def speaker(x, toe):
+    """After the LD Systems Maui 28 G3: a sub with a grille front, a coupler, two column sections with grille fronts."""
     out = Vector((math.sin(toe), 0, math.cos(toe))); right = Vector((math.cos(toe), 0, -math.sin(toe))); up = Vector((0, 1, 0))
-    base = Vector((x, RY, BZ + 0.1))
-    box('speaker', DARK, tuple(base + up * 0.36), (0.38, 0.72, 0.55), (right, up, out))                      # subwoofer
-    box('speaker', DARK, tuple(base + up * 0.36 + out * 0.276), (0.32, 0.6, 0.01), (right, up, out))         # sub grille
-    box('speaker', DARK, tuple(base + up * 0.76), (0.1, 0.08, 0.1), (right, up, out))                        # coupler
-    box('speaker', DARK, tuple(base + up * 1.39), (0.11, 1.18, 0.12), (right, up, out))                      # column
-    for k in range(14):                                                                                    # the stacked drivers
-        box('speaker', DARK, tuple(base + up * (0.86 + k * 0.08) + out * 0.062), (0.085, 0.06, 0.006), (right, up, out))
-speaker(-1.75, 0.25); speaker(1.75, -0.25)
+    base = Vector((x, RY, BZ + 0.15)); ax = (right, up, out)
+    box('speaker', DARK, tuple(base + up * 0.37), (0.38, 0.74, 0.55), ax)                       # sub cabinet
+    box('grille', GRILLE, tuple(base + up * 0.39 + out * 0.277), (0.34, 0.62, 0.006), ax)      # sub grille
+    box('logo', LOGO, tuple(base + up * 0.06 + out * 0.277), (0.08, 0.02, 0.004), ax)          # small logo plate
+    box('speaker', DARK, tuple(base + up * 0.77), (0.12, 0.06, 0.12), ax)                        # coupler
+    for y0, h in [(0.80, 0.62), (1.44, 0.62)]:                                                 # mid + top column
+        box('speaker', DARK, tuple(base + up * (y0 + h / 2)), (0.11, h, 0.11), ax)
+        box('grille', GRILLE, tuple(base + up * (y0 + h / 2) + out * 0.057), (0.095, h - 0.03, 0.004), ax)
+speaker(-1.42, 0.22); speaker(1.42, -0.22)
 
 # ---------------------------------------------------------------- objects
 objs = {}
@@ -139,7 +144,7 @@ for name, (bm, m) in meshes.items():
     me = bpy.data.meshes.new(name); bm.normal_update(); bm.to_mesh(me); bm.free(); me.materials.append(m)
     ob = bpy.data.objects.new(name, me); scene.collection.objects.link(ob); objs[name] = ob
 
-# festoon bulbs: the same three strings as world.ts (x from -6 to 6, sagging 0.9 m), as small warm lamps
+# festoon bulbs: the same three strings as world.ts (x from -4 to 4, sagging 0.7 m), as small warm lamps
 def light(name, kind, loc, energy, color, size=0.05, rot=None):
     ld = bpy.data.lights.new(name, kind); ld.energy = energy; ld.color = color
     if kind == 'POINT': ld.shadow_soft_size = size
@@ -147,10 +152,10 @@ def light(name, kind, loc, energy, color, size=0.05, rot=None):
     ob = bpy.data.objects.new(name, ld); scene.collection.objects.link(ob); ob.location = loc
     if rot: ob.rotation_euler = rot
 bulb = srgb2lin(tuple(a + (b - a) * 0.3 for a, b in zip(ORANGE, (1.0, 0.957, 0.91))))
-for z in (ROOF_Z - 4.5, ROOF_Z - 7, ROOF_Z - 9.5):
+for z in FESTOONS:
     for k in range(1, 19):
-        u = (k - 1) / 18; x = -6 + 12 * u
-        light('bulb', 'POINT', T(x, RY + 3.4 - math.sin(u * math.pi) * 0.9 - 0.08, z), 4.0, bulb)
+        u = (k - 1) / 18; x = -4 + 8 * u
+        light('bulb', 'POINT', T(x, RY + 3.4 - math.sin(u * math.pi) * 0.7 - 0.08, z), 4.0, bulb)
 # the low sun, from where world.ts draws it (x 30, far away along -z): grazing orange light over the parapet
 sd = (Vector(T(30, RY + 1, ROOF_Z - 160)) - Vector(T(0, RY, ROOF_Z))).normalized()
 sun = bpy.data.lights.new('sun', 'SUN'); sun.energy = 0.6; sun.color = srgb2lin(ORANGE); sun.angle = math.radians(3)
@@ -191,7 +196,7 @@ scene.view_settings.view_transform = 'Standard'
 scene.render.image_settings.file_format = 'JPEG'; scene.render.image_settings.quality = 90
 
 BAKE = {'deck': (2048, 1.2), 'plaster': (1024, 1.0), 'brick': (512, 1.6), 'tiles': (1024, 1.0),
-        'booth_body': (1024, 1.0), 'booth_top': (256, 1.0), 'gear': (256, 1.0), 'speaker': (512, 1.0)}
+        'booth_body': (1024, 1.0), 'booth_top': (256, 1.0), 'gear': (256, 1.0), 'speaker': (512, 1.0), 'grille': (512, 1.0), 'logo': (64, 1.0)}
 exposures = {}
 for name, (size, tile) in BAKE.items():
     ob = objs[name]; me = ob.data
