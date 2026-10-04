@@ -249,14 +249,47 @@ export function buildWorld(): World {
   }
   scene.add(steps, noses);
 
-  // ceiling: a plain brand-palette gradient (pink at the bottom of the stairs → orange at the top), no lights
+  // ceiling, after the club reference: a triangular grid of warm light lines with spots where they cross,
+  // over a brand-palette gradient (pink at the bottom of the stairs → orange at the top) instead of black
   const cy = (z: number) => (z > Z0 ? 0 : z < TOP_Z ? TOP_Y : stairY(z)) + CEIL;
   const ceilPts = [IN, Z0, TOP_Z, ROOF_Z - 0.1];
-  const baseAt = (z: number) => C(PAL.bg).lerp(climbColor(z), 0.55); // Sunset rave gradient, toned down
+  const baseAt = (z: number) => C(PAL.bg).lerp(climbColor(z), 0.55); // Sunset rave gradient, toned so the grid still reads
   for (let k = 0; k < 3; k++) {
     const za = ceilPts[k], zb = ceilPts[k + 1], ca = baseAt(za), cb = baseAt(zb);
     scene.add(new THREE.Mesh(quad([new THREE.Vector3(-W / 2, cy(za), za), new THREE.Vector3(W / 2, cy(za), za), new THREE.Vector3(W / 2, cy(zb), zb), new THREE.Vector3(-W / 2, cy(zb), zb)], [ca, ca, cb, cb]),
       new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.DoubleSide })));
+  }
+  const ceilColor = (z: number) => C(PAL.fg).lerp(climbColor(z), 0.25); // warm cream lines, a hint of the gradient
+  {
+    const S = 0.75, H3 = (S * Math.sqrt(3)) / 2, x0 = -W / 2 + 0.03, x1 = W / 2 - 0.03, zTop = IN - 0.02, zEnd = ROOF_Z + 0.05;
+    const at = (x: number, z: number) => new THREE.Vector3(x, cy(z) - 0.025, z);
+    // clip a 2D segment (x, z) to the ceiling rectangle (Liang-Barsky)
+    const clip = (ax: number, az: number, bx: number, bz: number): number[] | null => {
+      let t0 = 0, t1 = 1; const dx = bx - ax, dz = bz - az;
+      for (const [p, q] of [[-dx, ax - x0], [dx, x1 - ax], [-dz, az - zEnd], [dz, zTop - az]]) {
+        if (p === 0) { if (q < 0) return null; continue; }
+        const r = q / p; if (p < 0) { if (r > t1) return null; if (r > t0) t0 = r; } else { if (r < t0) return null; if (r < t1) t1 = r; }
+      }
+      return [ax + t0 * dx, az + t0 * dz, ax + t1 * dx, az + t1 * dz];
+    };
+    const segs: number[][] = [], spots: number[][] = [];
+    for (let i = -3; i < 30; i++) for (let j = -3; j <= 3; j++) {
+      const px = j * H3, pz = zTop - i * S + (j % 2 ? S / 2 : 0);   // lattice point
+      if (px >= x0 && px <= x1 && pz <= zTop && pz >= zEnd) spots.push([px, pz]);
+      for (const [dx, dz] of [[0, -S], [H3, -S / 2], [H3, S / 2]]) { const c = clip(px, pz, px + dx, pz + dz); if (c) segs.push(c); }
+    }
+    const strip = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.012, 0.012, 1, 6), glowMat(C('#ffffff').multiplyScalar(0.8)), segs.length); // steady (not tied to the beat), at the old pulse's average
+    const up = new THREE.Vector3(0, 1, 0), m = new THREE.Matrix4(), qt = new THREE.Quaternion();
+    segs.forEach(([ax, az, bx, bz], k) => {
+      const a = at(ax, az), b = at(bx, bz), len = a.distanceTo(b);
+      qt.setFromUnitVectors(up, b.clone().sub(a).normalize());
+      m.compose(a.clone().add(b).multiplyScalar(0.5), qt, new THREE.Vector3(1, len, 1));
+      strip.setMatrixAt(k, m); strip.setColorAt(k, ceilColor((az + bz) / 2).multiplyScalar(1.6));
+    });
+    scene.add(strip);
+    const dots = new THREE.InstancedMesh(new THREE.CircleGeometry(0.035, 12), glowMat(C('#fff1d6').multiplyScalar(2.5)), spots.length);
+    spots.forEach(([x, z], k) => { const p = at(x, z); p.y -= 0.01; m.compose(p, new THREE.Quaternion().setFromEuler(new THREE.Euler(Math.PI / 2, 0, 0)), new THREE.Vector3(1, 1, 1)); dots.setMatrixAt(k, m); });
+    scene.add(dots);
   }
   // balustrades like the reference photo: vertical pink neon tubes on every other step, a dark metal handrail on top
   const railMat = new THREE.MeshStandardMaterial({ color: C('#16121c'), metalness: 0.8, roughness: 0.35 });
