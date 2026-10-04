@@ -249,47 +249,40 @@ export function buildWorld(): World {
   }
   scene.add(steps, noses);
 
-  // ceiling, after the club reference: a triangular grid of warm light lines with spots where they cross,
-  // over a brand-palette gradient (pink at the bottom of the stairs → orange at the top) instead of black
+  // ceiling: black, with a grid of light lines that makes two rows of black squares. The lines take the
+  // Sunset rave gradient (pink at the bottom of the stairs → orange at the top), pulse a little with the beat,
+  // and stop short of the walls like real fittings would.
   const cy = (z: number) => (z > Z0 ? 0 : z < TOP_Z ? TOP_Y : stairY(z)) + CEIL;
   const ceilPts = [IN, Z0, TOP_Z, ROOF_Z - 0.1];
-  const baseAt = (z: number) => C(PAL.bg).lerp(climbColor(z), 0.55); // Sunset rave gradient, toned so the grid still reads
   for (let k = 0; k < 3; k++) {
-    const za = ceilPts[k], zb = ceilPts[k + 1], ca = baseAt(za), cb = baseAt(zb);
-    scene.add(new THREE.Mesh(quad([new THREE.Vector3(-W / 2, cy(za), za), new THREE.Vector3(W / 2, cy(za), za), new THREE.Vector3(W / 2, cy(zb), zb), new THREE.Vector3(-W / 2, cy(zb), zb)], [ca, ca, cb, cb]),
-      new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.DoubleSide })));
+    const za = ceilPts[k], zb = ceilPts[k + 1];
+    scene.add(new THREE.Mesh(quad([new THREE.Vector3(-W / 2, cy(za), za), new THREE.Vector3(W / 2, cy(za), za), new THREE.Vector3(W / 2, cy(zb), zb), new THREE.Vector3(-W / 2, cy(zb), zb)]),
+      new THREE.MeshBasicMaterial({ color: C('#0a070c'), side: THREE.DoubleSide })));
   }
-  const ceilColor = (z: number) => C(PAL.fg).lerp(climbColor(z), 0.25); // warm cream lines, a hint of the gradient
   {
-    const S = 0.75, H3 = (S * Math.sqrt(3)) / 2, x0 = -W / 2 + 0.03, x1 = W / 2 - 0.03, zTop = IN - 0.02, zEnd = ROOF_Z + 0.05;
-    const at = (x: number, z: number) => new THREE.Vector3(x, cy(z) - 0.025, z);
-    // clip a 2D segment (x, z) to the ceiling rectangle (Liang-Barsky)
-    const clip = (ax: number, az: number, bx: number, bz: number): number[] | null => {
-      let t0 = 0, t1 = 1; const dx = bx - ax, dz = bz - az;
-      for (const [p, q] of [[-dx, ax - x0], [dx, x1 - ax], [-dz, az - zEnd], [dz, zTop - az]]) {
-        if (p === 0) { if (q < 0) return null; continue; }
-        const r = q / p; if (p < 0) { if (r > t1) return null; if (r > t0) t0 = r; } else { if (r < t0) return null; if (r < t1) t1 = r; }
-      }
-      return [ax + t0 * dx, az + t0 * dz, ax + t1 * dx, az + t1 * dz];
-    };
-    const segs: number[][] = [], spots: number[][] = [];
-    for (let i = -3; i < 30; i++) for (let j = -3; j <= 3; j++) {
-      const px = j * H3, pz = zTop - i * S + (j % 2 ? S / 2 : 0);   // lattice point
-      if (px >= x0 && px <= x1 && pz <= zTop && pz >= zEnd) spots.push([px, pz]);
-      for (const [dx, dz] of [[0, -S], [H3, -S / 2], [H3, S / 2]]) { const c = clip(px, pz, px + dx, pz + dz); if (c) segs.push(c); }
+    const GAP = 0.15, XL = W / 2 - GAP, SQ = XL;                 // 15 cm of dark ceiling between the outer lines and the walls; squares XL wide
+    const zStart = IN - GAP, zEnd = ROOF_Z + GAP;
+    const at = (x: number, z: number) => new THREE.Vector3(x, cy(z) - 0.02, z);
+    // cross lines one square apart, measured along the (sloping) ceiling
+    const cross: number[] = [zStart];
+    for (let z = zStart, run = 0, dz = 0.01; z > zEnd; z -= dz) {
+      run += Math.hypot(dz, cy(z - dz) - cy(z));
+      if (run >= SQ) { cross.push(z - dz); run = 0; }
     }
-    const strip = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.007, 0.007, 1, 6), glowMat(C('#ffffff').multiplyScalar(0.55)), segs.length); // thin, steady (not tied to the beat)
+    if (zEnd - cross[cross.length - 1] < -SQ * 0.4) cross.push(zEnd); else cross[cross.length - 1] = zEnd;
+    // the long lines break at every cross line and at the two bends, so they hug the ceiling and step through the gradient
+    const breaks = [...new Set([...cross, Z0, TOP_Z])].filter((z) => z <= zStart && z >= zEnd).sort((p, q) => q - p);
+    const segs: [THREE.Vector3, THREE.Vector3, number][] = [];
+    for (const z of cross) segs.push([at(-XL, z), at(XL, z), z]);
+    for (const x of [-XL, 0, XL]) for (let k = 0; k < breaks.length - 1; k++) segs.push([at(x, breaks[k]), at(x, breaks[k + 1]), (breaks[k] + breaks[k + 1]) / 2]);
+    const strip = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.01, 0.01, 1, 6), glow(C('#ffffff').multiplyScalar(1.15), 0.35), segs.length);
     const up = new THREE.Vector3(0, 1, 0), m = new THREE.Matrix4(), qt = new THREE.Quaternion();
-    segs.forEach(([ax, az, bx, bz], k) => {
-      const a = at(ax, az), b = at(bx, bz), len = a.distanceTo(b);
+    segs.forEach(([a, b, z], k) => {
       qt.setFromUnitVectors(up, b.clone().sub(a).normalize());
-      m.compose(a.clone().add(b).multiplyScalar(0.5), qt, new THREE.Vector3(1, len, 1));
-      strip.setMatrixAt(k, m); strip.setColorAt(k, ceilColor((az + bz) / 2).multiplyScalar(1.6));
+      m.compose(a.clone().add(b).multiplyScalar(0.5), qt, new THREE.Vector3(1, a.distanceTo(b) + 0.02, 1));
+      strip.setMatrixAt(k, m); strip.setColorAt(k, climbColor(z));
     });
     scene.add(strip);
-    const dots = new THREE.InstancedMesh(new THREE.CircleGeometry(0.025, 12), glowMat(C('#fff1d6').multiplyScalar(1.7)), spots.length);
-    spots.forEach(([x, z], k) => { const p = at(x, z); p.y -= 0.01; m.compose(p, new THREE.Quaternion().setFromEuler(new THREE.Euler(Math.PI / 2, 0, 0)), new THREE.Vector3(1, 1, 1)); dots.setMatrixAt(k, m); });
-    scene.add(dots);
   }
   // balustrades like the reference photo: vertical pink neon tubes on every other step, a dark metal handrail on top
   const railMat = new THREE.MeshStandardMaterial({ color: C('#16121c'), metalness: 0.8, roughness: 0.35 });
@@ -320,18 +313,21 @@ export function buildWorld(): World {
     const z = lerp(Z0 - 1, TOP_Z + 1, k / 2), l = new THREE.PointLight(C('#3d4dff'), 5, 7, 2);
     l.position.set(0, cy(z) - 0.3, z); scene.add(l);
   }
-  // posters: album covers hung high on both walls
+  // posters: a pair at each spot, one on each wall, facing each other, hung high above the balustrade
   const loader = new THREE.TextureLoader();
-  POSTERS.forEach((src, i) => {
-    const side = i % 2 ? 1 : -1, z = lerp(Z0 - 0.9, TOP_Z + 0.6, i / Math.max(1, POSTERS.length - 1));
-    const tex = loader.load(src); tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 8;
-    const frame = new THREE.Mesh(new THREE.PlaneGeometry(0.68, 0.68), new THREE.MeshStandardMaterial({ color: C('#0b080d'), roughness: 0.6 }));
-    const art = new THREE.Mesh(new THREE.PlaneGeometry(0.62, 0.62), new THREE.MeshStandardMaterial({ map: tex, roughness: 0.45 }));
-    for (const [m, off] of [[frame, 0.005], [art, 0.008]] as const) {
-      m.rotation.y = side < 0 ? Math.PI / 2 : -Math.PI / 2;
-      m.position.set(side * (W / 2 - off), stairY(z) + 1.95, z); // high, above the balustrade
-      scene.add(m);
-    }
+  POSTERS.forEach((pair, i) => {
+    const z = lerp(Z0 - 0.9, TOP_Z + 0.6, i / Math.max(1, POSTERS.length - 1));
+    pair.forEach(({ src, aspect = 1 }, s) => {
+      const side = s ? 1 : -1;
+      const tex = loader.load(src); tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 8;
+      const frame = new THREE.Mesh(new THREE.PlaneGeometry(0.68, 0.62 * aspect + 0.06), new THREE.MeshStandardMaterial({ color: C('#0b080d'), roughness: 0.6 }));
+      const art = new THREE.Mesh(new THREE.PlaneGeometry(0.62, 0.62 * aspect), new THREE.MeshStandardMaterial({ map: tex, roughness: 0.45 }));
+      for (const [m, off] of [[frame, 0.005], [art, 0.008]] as const) {
+        m.rotation.y = side < 0 ? Math.PI / 2 : -Math.PI / 2;
+        m.position.set(side * (W / 2 - off), stairY(z) + 1.95, z);
+        scene.add(m);
+      }
+    });
   });
 
   // top wall with the roof door
