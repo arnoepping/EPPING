@@ -39,13 +39,13 @@
 .fp-back { justify-self: start; font: 500 13px var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--text); text-decoration: none; border: 1px solid color-mix(in srgb, var(--text) 25%, transparent); border-radius: 999px; padding: 8px 14px; }
 .fp-k { margin: 0; font: 500 12px var(--mono); letter-spacing: .18em; text-transform: uppercase; color: var(--orange); }
 .fp-h { margin: -8px 0 0; font: 800 clamp(40px, 9vw, 88px)/.95 var(--display); letter-spacing: -.02em; text-shadow: -.03em 0 var(--orange), .03em 0 var(--pink); text-wrap: balance; outline: none; }
-.fp-head { margin: 0; font: 800 clamp(20px, 3.4vw, 30px)/1.15 var(--display); }
 .fp-intro { margin: 0; font-size: clamp(17px, 2.2vw, 20px); line-height: 1.55; max-width: 60ch; }
 .fp-event { display: grid; gap: 4px; padding: 16px 18px; border-left: 3px solid var(--pink); background: color-mix(in srgb, var(--pink) 10%, #000); }
 .fp-event span { font-size: 13px; opacity: .75; }
 .fp-event b { font: 800 22px var(--display); }
 .fp-cols { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 28px; }
 .fp-body p { margin: 0 0 14px; opacity: .85; }
+.fp-cols-one { grid-template-columns: minmax(0, 1fr); }
 .fp-list { margin: 0; padding: 0; list-style: none; display: grid; gap: 10px; align-content: start; }
 .fp-list li { padding-left: 22px; position: relative; line-height: 1.4; }
 .fp-list li::before { content: ""; position: absolute; left: 0; top: .45em; width: 10px; height: 10px; border-radius: 50%; background: linear-gradient(135deg, var(--pink), var(--orange)); }

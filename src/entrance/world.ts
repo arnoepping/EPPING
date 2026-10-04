@@ -76,7 +76,7 @@ export interface World {
   streetDoor: THREE.Object3D; roofDoor: THREE.Object3D;
   setDoors(street: number, roof: number): void;
   update(t: number, kick: number, camera: THREE.Camera): void;
-  /** once the street is in: render what the shop glass reflects (one cube capture, not per frame) */
+  /** once the street is in: hands over the renderer for the stairwell's one-off reflection capture */
   reflect(renderer: THREE.WebGLRenderer): void;
   cameraAt(stage: number, local: number, t: number): { pos: THREE.Vector3; look: THREE.Vector3 };
 }
@@ -84,8 +84,8 @@ export interface World {
 // The street model carries geometry, UVs and baked lightmaps; textures are applied here by material name
 // (keeps the .glb small and avoids browsers that fail on embedded images).
 const LIGHTMAPS = ['brick', 'pavement', 'road', 'kerb', 'trim', 'tile', 'dark', 'bollard', 'bark', 'cafe_wall', 'cafe_panel', 'cafe_floor', 'cafe_wood', 'cafe_shade'];
-// glass that reflects the street (env map rendered once the street is in, see World.reflect)
-const GLASS: Record<string, { opacity: number; metal: number }> = { glass: { opacity: 1, metal: 0.85 }, shop_glass: { opacity: 1, metal: 1 }, cafe_glass: { opacity: 0.32, metal: 0.6 } };
+// glass: plain dark panes, no reflections (the user didn't like them); the café glass stays see-through
+const GLASS: Record<string, { opacity: number }> = { glass: { opacity: 1 }, shop_glass: { opacity: 1 }, cafe_glass: { opacity: 0.32 } };
 const TEXTURES: Record<string, { map: string; normal?: string; rough?: string; tint: string }> = {
   brick: { map: 'red_brick_03_diff_web.jpg', normal: 'red_brick_03_nor_web.jpg', rough: 'red_brick_03_rough_web.jpg', tint: '#ffb08a' }, // orange-red Amsterdam School brick
   pavement: { map: 'concrete_pavement_02_diff_web.jpg', normal: 'concrete_pavement_02_nor_web.jpg', tint: '#55525a' },
@@ -115,7 +115,7 @@ async function loadStreet(scene: THREE.Scene, glass: THREE.MeshStandardMaterial[
     m.envMapIntensity = 0;
     const g = GLASS[m.name];
     if (g) {
-      m.color.set('#a8a2b0'); m.roughness = 0.04; m.metalness = g.metal; m.envMapIntensity = 0.45; glass.push(m);
+      m.color.set('#060508'); m.roughness = 0.1; m.metalness = 0; glass.push(m);
       if (g.opacity < 1) { m.transparent = true; m.opacity = g.opacity; m.depthWrite = false; (o as THREE.Mesh).renderOrder = 2; }
     }
     m.needsUpdate = true;
@@ -149,23 +149,6 @@ export function buildWorld(): World {
   const glassMats: THREE.MeshStandardMaterial[] = [];
   const ready = loadStreet(scene, glassMats);
   function reflect(renderer: THREE.WebGLRenderer) {
-    const rt = new THREE.WebGLCubeRenderTarget(256, { type: THREE.HalfFloatType });
-    const cam = new THREE.CubeCamera(0.1, 400, rt); cam.position.set(0, 1.6, 4); scene.add(cam);
-    // the houses across the street (behind the camera, so only ever seen in the glass): dark facades, a few lit rooms, a street lamp
-    const oc = document.createElement('canvas'); oc.width = 1024; oc.height = 256;
-    { const g = oc.getContext('2d')!; g.fillStyle = '#0c0910'; g.fillRect(0, 0, 1024, 256);
-      for (let x = 0; x < 1024; x += 12) for (let y = 50; y < 240; y += 38) {
-        const r = Math.random(); g.fillStyle = r < 0.16 ? '#ffb46a' : r < 0.2 ? '#ff8a4c' : '#17131c'; g.fillRect(x + 3, y, 6, 18);
-      } }
-    const ot = new THREE.CanvasTexture(oc); ot.colorSpace = THREE.SRGBColorSpace;
-    const opposite = new THREE.Group();
-    const facade = new THREE.Mesh(new THREE.PlaneGeometry(90, 17), new THREE.MeshBasicMaterial({ map: ot, fog: false }));
-    facade.position.set(0, 5.5, 28); facade.rotation.y = Math.PI; opposite.add(facade);
-    const lamp = new THREE.Mesh(new THREE.SphereGeometry(0.35), new THREE.MeshBasicMaterial({ color: C('#ffc890'), fog: false }));
-    lamp.position.set(6, 5, 15); opposite.add(lamp);
-    scene.add(opposite);
-    sky.position.copy(cam.position); cam.update(renderer, scene); scene.remove(cam, opposite);
-    for (const m of glassMats) { m.envMap = rt.texture; m.needsUpdate = true; }
     rendererRef = renderer; if (stairsIn) captureStairs(renderer);
   }
 
@@ -196,12 +179,21 @@ export function buildWorld(): World {
   const flyer = new THREE.Mesh(new THREE.PlaneGeometry(0.6, 0.85), new THREE.MeshStandardMaterial({ map: flyerTex, emissiveMap: flyerTex, emissive: C('#ffffff'), emissiveIntensity: 0.18, roughness: 0.85 }));
   flyer.position.set(-2.5, 1.6, 0.037); flyer.rotation.z = 0.025; scene.add(flyer);
 
+  // dark ground just under the road: hairline cracks between kerb and road (seen on iPhones) showed the orange sky below the horizon
+  const under = new THREE.Mesh(new THREE.PlaneGeometry(80, 40), new THREE.MeshBasicMaterial({ color: C('#020103') }));
+  under.rotation.x = -Math.PI / 2; under.position.set(0, -0.26, 20); scene.add(under);
+
   // the door: plain black leaf, hinged on the left, swings inward
   const doorMat = new THREE.MeshStandardMaterial({ color: C('#040205'), roughness: 0.55 });
   const streetDoor = new THREE.Group(), streetLeaf = new THREE.Mesh(new THREE.BoxGeometry(1.2, 2.3, 0.05), doorMat);
   streetLeaf.position.set(0.6, 1.15, 0); streetDoor.add(streetLeaf);
   streetDoor.position.set(-0.6, 0, 0.02); // hinge at the front of the reveal
   scene.add(streetDoor);
+  // a slim brushed pull bar on the right
+  const pullMat = new THREE.MeshStandardMaterial({ color: C('#c4bfc8'), metalness: 0.7, roughness: 0.3 });
+  const pull = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.42, 12), pullMat);
+  pull.position.set(0.47, -0.1, 0.07); streetLeaf.add(pull);
+  for (const dy of [-0.17, 0.17]) { const post = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.045, 8), pullMat); post.rotation.x = Math.PI / 2; post.position.set(0.47, -0.1 + dy, 0.045); streetLeaf.add(post); }
 
   // EPPING neon sign: orange and pink split layers behind a bright core, plus the light it throws on the bricks
   const wm = wordmarkGeometry(2.4);
@@ -541,10 +533,11 @@ export function buildWorld(): World {
         const k = ease((l - 0.88) / 0.12), z = lerp(TOP_Z + 0.6, ROOF_Z + 0.9, k);
         pos.set(0, TOP_Y + 1.6, z); look.set(0, lerp(stairY(TOP_Z) + 1.5, TOP_Y + 1.5, k), z - 2.4);
       }
-    } else { // out onto the roof, then a slow look around
-      const k = ease(clamp(l / 0.4)), z = lerp(ROOF_Z + 0.9, ROOF_Z - 2.0, k), drift = clamp((l - 0.4) / 0.6);
-      pos.set(drift * 0.4, TOP_Y + 1.6, z - drift * 0.6);
-      look.set(lerp(0, 2.5, ease(drift)) + Math.sin(t * 0.3) * 0.2, TOP_Y + lerp(1.6, 1.9, k), z - 10);
+    } else { // out onto the roof and straight on to the DJ booth; the finale clip takes over right in front of it
+      const stop = lerp(ROOF_Z - 3.0, ROOF_Z - 4.6, clamp((innerWidth / innerHeight - 0.45) / 1.1)); // phones stop further back
+      const k = ease(clamp(l / 0.6)), z = lerp(ROOF_Z + 0.9, stop, k);
+      pos.set(0, TOP_Y + 1.6 - k * 0.05, z);
+      look.set(Math.sin(t * 0.3) * 0.05, TOP_Y + lerp(1.6, 1.3, k), z - 4);
     }
     return { pos, look };
   }

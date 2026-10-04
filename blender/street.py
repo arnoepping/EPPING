@@ -147,7 +147,7 @@ for f in range(FLOORS):
 # a band of small-paned transom lights in cream frames above (like the upper windows).
 # Left: a closed shop, dark reflective glass (flyer on it, three.js). Right: a closed café you can look into.
 G0, G1, T0, T1 = 0.55, 2.55, 2.68, 3.42   # main glass z, transom z
-SHOPS = [(-11.6, -1.9), (1.9, 8.2)]
+SHOPS = [(-5.0, -1.9), (1.9, 8.2)]   # left one stops early: brick on the far left
 for si, (sx0, sx1) in enumerate(SHOPS):
     box('shop_glass' if si == 0 else 'cafe_glass', SHOP if si == 0 else CAFE_GLASS, sx0, sx1, -0.03, 0.0, G0, G1)
     n = max(2, round((sx1 - sx0) / 2.1))
