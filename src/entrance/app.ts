@@ -34,7 +34,8 @@ export function start(root: HTMLElement): void {
     bloom.resolution.set(w / 2, h / 2);
     camera.aspect = w / h; camera.fov = w < h ? 74 : 58; camera.updateProjectionMatrix();
   };
-  html.classList.add('ent-3d');
+  // show the 3D stage only once the street model is in (until then the static page stays)
+  world.ready.then(() => { world.reflect(renderer); html.classList.add('ent-3d'); resize(); }).catch((e) => console.error('street model failed', e));
   new ResizeObserver(resize).observe(canvas);
   resize();
 
@@ -114,7 +115,8 @@ export function start(root: HTMLElement): void {
     if (!seen.has(stage)) { seen.add(stage); track('entrance-stage', { stage: STAGE_NAMES[stage] }); }
 
     const kick = reduce ? 0 : sound.kick(t);
-    world.setDoors(stage === 0 ? 0 : stage === 1 ? ease(clamp(local / 0.12)) : 1, stage === 2 ? 1 : stage === 1 ? ease(clamp((local - 0.9) / 0.1)) : 0);
+    // the street door swings open just before you reach it, so you walk past an open door
+    world.setDoors(stage === 0 ? ease(clamp((local - 0.8) / 0.2)) : 1, stage === 2 ? 1 : stage === 1 ? ease(clamp((local - 0.9) / 0.1)) : 0);
     const c = world.cameraAt(stage, local, t);
     camera.position.lerp(c.pos, reduce ? 1 : 0.35); look.lerp(c.look, reduce ? 1 : 0.35);
     if (camera.position.distanceTo(c.pos) > 3) { camera.position.copy(c.pos); look.copy(c.look); }
