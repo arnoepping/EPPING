@@ -278,7 +278,7 @@ export function buildWorld(): World {
       if (px >= x0 && px <= x1 && pz <= zTop && pz >= zEnd) spots.push([px, pz]);
       for (const [dx, dz] of [[0, -S], [H3, -S / 2], [H3, S / 2]]) { const c = clip(px, pz, px + dx, pz + dz); if (c) segs.push(c); }
     }
-    const strip = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.012, 0.012, 1, 6), glowMat(C('#ffffff').multiplyScalar(0.8)), segs.length); // steady (not tied to the beat), at the old pulse's average
+    const strip = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.007, 0.007, 1, 6), glowMat(C('#ffffff').multiplyScalar(0.55)), segs.length); // thin, steady (not tied to the beat)
     const up = new THREE.Vector3(0, 1, 0), m = new THREE.Matrix4(), qt = new THREE.Quaternion();
     segs.forEach(([ax, az, bx, bz], k) => {
       const a = at(ax, az), b = at(bx, bz), len = a.distanceTo(b);
@@ -287,7 +287,7 @@ export function buildWorld(): World {
       strip.setMatrixAt(k, m); strip.setColorAt(k, ceilColor((az + bz) / 2).multiplyScalar(1.6));
     });
     scene.add(strip);
-    const dots = new THREE.InstancedMesh(new THREE.CircleGeometry(0.035, 12), glowMat(C('#fff1d6').multiplyScalar(2.5)), spots.length);
+    const dots = new THREE.InstancedMesh(new THREE.CircleGeometry(0.025, 12), glowMat(C('#fff1d6').multiplyScalar(1.7)), spots.length);
     spots.forEach(([x, z], k) => { const p = at(x, z); p.y -= 0.01; m.compose(p, new THREE.Quaternion().setFromEuler(new THREE.Euler(Math.PI / 2, 0, 0)), new THREE.Vector3(1, 1, 1)); dots.setMatrixAt(k, m); });
     scene.add(dots);
   }
