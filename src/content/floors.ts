@@ -39,8 +39,8 @@ export const FLOORS: Floor[] = [
     includes: ['Planning call and a shared playlist', 'One set, from first guest to final track', 'Sound and lights matched to your venue'],
     mix: { title: 'ADE House Mix', length: 'Mix', url: 'https://soundcloud.com/arno-epping/ade-house-mix' },
     cta: 'Plan your party',
-    mail: { subject: 'Private event booking', body: 'Hi Epping,\n\nI am planning a [type of party] on [date] for about [number] guests.\n\n' },
-    whatsapp: 'Hi Epping! I am planning a party on [date] and would like to book you.',
+    mail: { subject: 'Private event booking', body: 'Hi Epping,\n\nI’m planning a [type of party] on [date] and am interested in booking you as my DJ!\n\n' },
+    whatsapp: 'Hi Epping, I’m planning a [type of party] on [date] and am interested in booking you as my DJ!',
   },
   {
     slug: 'presents', n: '03', name: 'Epping Presents', tagline: 'Our own nights',
