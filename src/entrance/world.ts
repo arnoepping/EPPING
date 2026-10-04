@@ -249,40 +249,47 @@ export function buildWorld(): World {
   }
   scene.add(steps, noses);
 
-  // ceiling: black, with a grid of light lines that makes two rows of black squares. The lines take the
-  // Sunset rave gradient (pink at the bottom of the stairs → orange at the top), pulse a little with the beat,
-  // and stop short of the walls like real fittings would.
+  // ceiling: a light ceiling (Sunset rave gradient, pink at the bottom of the stairs → orange at the top, pulsing a little
+  // with the beat) behind black panels in two rows; the light shows through the gaps between them. A black border frame
+  // runs along the walls and the ends, so the panels stop in a frame instead of running into the brick.
   const cy = (z: number) => (z > Z0 ? 0 : z < TOP_Z ? TOP_Y : stairY(z)) + CEIL;
-  const ceilPts = [IN, Z0, TOP_Z, ROOF_Z - 0.1];
+  const ceilPts = [IN, Z0, TOP_Z, ROOF_Z];
+  const lightMat = glow(C('#ffffff').multiplyScalar(1.1), 0.35); lightMat.vertexColors = true;
   for (let k = 0; k < 3; k++) {
-    const za = ceilPts[k], zb = ceilPts[k + 1];
-    scene.add(new THREE.Mesh(quad([new THREE.Vector3(-W / 2, cy(za), za), new THREE.Vector3(W / 2, cy(za), za), new THREE.Vector3(W / 2, cy(zb), zb), new THREE.Vector3(-W / 2, cy(zb), zb)]),
-      new THREE.MeshBasicMaterial({ color: C('#0a070c'), side: THREE.DoubleSide })));
+    const za = ceilPts[k], zb = ceilPts[k + 1], ca = climbColor(za), cb = climbColor(zb);
+    scene.add(new THREE.Mesh(quad([new THREE.Vector3(-W / 2, cy(za), za), new THREE.Vector3(W / 2, cy(za), za), new THREE.Vector3(W / 2, cy(zb), zb), new THREE.Vector3(-W / 2, cy(zb), zb)], [ca, ca, cb, cb]), lightMat));
   }
   {
-    const GAP = 0.15, XL = W / 2 - GAP, SQ = XL;                 // 15 cm of dark ceiling between the outer lines and the walls; squares XL wide
-    const zStart = IN - GAP, zEnd = ROOF_Z + GAP;
-    const at = (x: number, z: number) => new THREE.Vector3(x, cy(z) - 0.02, z);
-    // cross lines one square apart, measured along the (sloping) ceiling
-    const cross: number[] = [zStart];
-    for (let z = zStart, run = 0, dz = 0.01; z > zEnd; z -= dz) {
-      run += Math.hypot(dz, cy(z - dz) - cy(z));
-      if (run >= SQ) { cross.push(z - dz); run = 0; }
+    const B = 0.16, G = 0.09, DEPTH = 0.035;                          // border width, light gap, panel depth (m)
+    const PW = (W - 2 * B - 3 * G) / 2;                              // panel width: two rows across
+    const panelMat = new THREE.MeshBasicMaterial({ color: C('#060408') }); // unlit: the blue fill below would otherwise light them up
+    // panel edges catch the light from the gaps (backlit panels), so every gap reads as a light line, even at a steep angle
+    const edgeMat = glow(C('#ffffff').multiplyScalar(0.75), 0.35);
+    type Box = { m: THREE.Matrix4; z: number };
+    const panelBoxes: Box[] = [], frameBoxes: Box[] = [];
+    const xAxis = new THREE.Vector3(1, 0, 0);
+    // a box lying flat against the ceiling of one section: centred at (x, along s), w across, l along
+    const put = (into: Box[], p0: THREE.Vector3, d: THREE.Vector3, x: number, s: number, w: number, l: number) => {
+      const up = xAxis.clone().cross(d), e3 = xAxis.clone().cross(up);
+      const c = p0.clone().addScaledVector(d, s).setX(x).addScaledVector(up, -DEPTH / 2 - 0.004);
+      into.push({ m: new THREE.Matrix4().makeBasis(xAxis, up, e3).setPosition(c).multiply(new THREE.Matrix4().makeScale(w, DEPTH, l)), z: c.z });
+    };
+    for (let k = 0; k < 3; k++) {
+      const p0 = new THREE.Vector3(0, cy(ceilPts[k]), ceilPts[k]), p1 = new THREE.Vector3(0, cy(ceilPts[k + 1]), ceilPts[k + 1]);
+      const d = p1.clone().sub(p0), L = d.length(); d.normalize();
+      for (const x of [-(W - B) / 2, (W - B) / 2]) put(frameBoxes, p0, d, x, L / 2, B, L);  // side frames, unbroken
+      if (k === 0) put(frameBoxes, p0, d, 0, B / 2, W - 2 * B, B);
+      if (k === 2) put(frameBoxes, p0, d, 0, L - B / 2, W - 2 * B, B);
+      const s0 = k === 0 ? B + G : G / 2, s1 = k === 2 ? B + G : G / 2;  // ends: frame + gap at the walls, half a gap at the bends
+      const n = Math.max(1, Math.round((L - s0 - s1 + G) / (PW + G))), len = (L - s0 - s1 - (n - 1) * G) / n;
+      for (let i = 0; i < n; i++) for (const x of [-(G + PW) / 2, (G + PW) / 2]) put(panelBoxes, p0, d, x, s0 + i * (len + G) + len / 2, PW, len);
     }
-    if (zEnd - cross[cross.length - 1] < -SQ * 0.4) cross.push(zEnd); else cross[cross.length - 1] = zEnd;
-    // the long lines break at every cross line and at the two bends, so they hug the ceiling and step through the gradient
-    const breaks = [...new Set([...cross, Z0, TOP_Z])].filter((z) => z <= zStart && z >= zEnd).sort((p, q) => q - p);
-    const segs: [THREE.Vector3, THREE.Vector3, number][] = [];
-    for (const z of cross) segs.push([at(-XL, z), at(XL, z), z]);
-    for (const x of [-XL, 0, XL]) for (let k = 0; k < breaks.length - 1; k++) segs.push([at(x, breaks[k]), at(x, breaks[k + 1]), (breaks[k] + breaks[k + 1]) / 2]);
-    const strip = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.01, 0.01, 1, 6), glow(C('#ffffff').multiplyScalar(1.15), 0.35), segs.length);
-    const up = new THREE.Vector3(0, 1, 0), m = new THREE.Matrix4(), qt = new THREE.Quaternion();
-    segs.forEach(([a, b, z], k) => {
-      qt.setFromUnitVectors(up, b.clone().sub(a).normalize());
-      m.compose(a.clone().add(b).multiplyScalar(0.5), qt, new THREE.Vector3(1, a.distanceTo(b) + 0.02, 1));
-      strip.setMatrixAt(k, m); strip.setColorAt(k, climbColor(z));
-    });
-    scene.add(strip);
+    // BoxGeometry faces: ±x, ±y (top, bottom), ±z; the bottom stays black, the sides glow
+    const panels = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1), [edgeMat, edgeMat, panelMat, panelMat, edgeMat, edgeMat], panelBoxes.length);
+    panelBoxes.forEach(({ m, z }, i) => { panels.setMatrixAt(i, m); panels.setColorAt(i, climbColor(z)); });
+    const frames = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1), panelMat, frameBoxes.length);
+    frameBoxes.forEach(({ m }, i) => frames.setMatrixAt(i, m));
+    scene.add(panels, frames);
   }
   // balustrades like the reference photo: vertical pink neon tubes on every other step, a dark metal handrail on top
   const railMat = new THREE.MeshStandardMaterial({ color: C('#16121c'), metalness: 0.8, roughness: 0.35 });
@@ -338,11 +345,6 @@ export function buildWorld(): World {
   const fz = ROOF_Z + 0.02;
   for (const [a, b] of [[[-0.57, 0], [-0.57, 2.22]], [[0.57, 0], [0.57, 2.22]], [[-0.57, 2.22], [0.57, 2.22]]] as const)
     scene.add(tube(new THREE.Vector3(a[0], TOP_Y + a[1], fz), new THREE.Vector3(b[0], TOP_Y + b[1], fz), 0.016, frameMat));
-  // three glowing panels above the roof door, like the lit panels at the top of the reference stairs
-  for (const px of [-0.45, 0, 0.45]) {
-    const panel = new THREE.Mesh(new THREE.PlaneGeometry(0.3, 0.62), glowMat(C('#9fb4ff').multiplyScalar(1.5)));
-    panel.position.set(px, TOP_Y + 2.62, ROOF_Z + 0.015); scene.add(panel);
-  }
   const roofDoor = new THREE.Group(), roofLeaf = new THREE.Mesh(new THREE.BoxGeometry(1.1, 2.2, 0.05), new THREE.MeshStandardMaterial({ color: C(PAL.bg).lerp(C(PAL.fg), 0.1), roughness: 0.5 }));
   roofLeaf.position.set(0.55, 1.1, 0); roofDoor.add(roofLeaf);
   roofDoor.position.set(-0.55, TOP_Y, ROOF_Z - 0.03); scene.add(roofDoor);
