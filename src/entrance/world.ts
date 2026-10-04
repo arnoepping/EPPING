@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { SVGLoader } from 'three/addons/loaders/SVGLoader.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
+import { RectAreaLightUniformsLib } from 'three/addons/lights/RectAreaLightUniformsLib.js';
 import wordmark from '../components/wordmark.json';
 import { POSTERS } from '../content/posters.ts';
 import { PAL } from './palette.ts';
@@ -306,20 +307,24 @@ export function buildWorld(): World {
     scene.add(tube(new THREE.Vector3(x, h(Z0), Z0), new THREE.Vector3(x, h(TOP_Z), TOP_Z), 0.024, railMat));
   }
 
-  // coloured light along the climb
-  const stairLights: { l: THREE.PointLight; base: number }[] = [];
-  for (let k = 0; k <= 5; k++) {
-    const z = lerp(-0.3, ROOF_Z + 0.5, k / 5), l = new THREE.PointLight(climbColor(z), 6, 5, 2);
-    l.position.set(0, cy(z) - 0.5, z); scene.add(l); stairLights.push({ l, base: 6 });
+  // The stairwell is lit by what you can see glowing: the ceiling (soft area lights just under it, one per stretch, in the
+  // gradient, pulsing with the ceiling). The neon balusters and step edges only glow.
+  RectAreaLightUniformsLib.init();
+  const ceilLights: { l: THREE.RectAreaLight; base: number }[] = [];
+  {
+    const pieces: [number, number][] = [[IN, Z0]];
+    for (let k = 0; k < 4; k++) pieces.push([lerp(Z0, TOP_Z, k / 4), lerp(Z0, TOP_Z, (k + 1) / 4)]);
+    pieces.push([TOP_Z, ROOF_Z]);
+    for (const [za, zb] of pieces) {
+      const a = new THREE.Vector3(0, cy(za), za), b = new THREE.Vector3(0, cy(zb), zb), d = b.clone().sub(a);
+      const down = d.clone().normalize().cross(new THREE.Vector3(1, 0, 0)).normalize(); // ceiling normal, pointing into the room
+      const l = new THREE.RectAreaLight(climbColor((za + zb) / 2), 3.5, W - 0.4, d.length());
+      l.position.copy(a).add(b).multiplyScalar(0.5).addScaledVector(down, 0.08);
+      l.up.copy(d).normalize(); l.lookAt(l.position.clone().add(down));
+      scene.add(l); ceilLights.push({ l, base: 3.5 });
+    }
   }
 
-  // light at the foot of the stairs, so stepping through the door isn't into a black hole
-  const foot = new THREE.PointLight(C(PAL.b), 8, 4, 2); foot.position.set(0, 2.2, Z0 + 0.1); scene.add(foot);
-  // cool blue fill from above: the contrast colour from the reference, so the pink reads as neon
-  for (let k = 0; k < 3; k++) {
-    const z = lerp(Z0 - 1, TOP_Z + 1, k / 2), l = new THREE.PointLight(C('#3d4dff'), 5, 7, 2);
-    l.position.set(0, cy(z) - 0.3, z); scene.add(l);
-  }
   // posters: a pair at each spot, one on each wall, facing each other, hung high above the balustrade
   const loader = new THREE.TextureLoader();
   POSTERS.forEach((pair, i) => {
@@ -473,7 +478,7 @@ export function buildWorld(): World {
     for (const p of pulse) p.mat.color.copy(p.base).multiplyScalar(lerp(1, k, p.k));
     for (let i = 0; i < N; i++) noses.setColorAt(i, tmp.copy(noseBase[i]).multiplyScalar(k));
     noses.instanceColor!.needsUpdate = true;
-    for (const s of stairLights) s.l.intensity = s.base * (0.55 + 0.45 * kick);
+    for (const c of ceilLights) c.l.intensity = c.base * lerp(1, k, 0.35); // same pulse as the glowing ceiling
     const flicker = Math.sin(t * 13) > 0.94 ? 0.35 : 1;
     signLight.intensity = 14 * k * flicker; signCore.visible = flicker > 0.5;
     leak.intensity = 0.5 * k;
