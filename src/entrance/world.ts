@@ -196,6 +196,10 @@ export function buildWorld(): World {
   const flyer = new THREE.Mesh(new THREE.PlaneGeometry(0.6, 0.85), new THREE.MeshStandardMaterial({ map: flyerTex, emissiveMap: flyerTex, emissive: C('#ffffff'), emissiveIntensity: 0.18, roughness: 0.85 }));
   flyer.position.set(-2.5, 1.6, 0.037); flyer.rotation.z = 0.025; scene.add(flyer);
 
+  // dark ground just under the road: hairline cracks between kerb and road (seen on iPhones) showed the orange sky below the horizon
+  const under = new THREE.Mesh(new THREE.PlaneGeometry(80, 40), new THREE.MeshBasicMaterial({ color: C('#020103') }));
+  under.rotation.x = -Math.PI / 2; under.position.set(0, -0.26, 20); scene.add(under);
+
   // the door: plain black leaf, hinged on the left, swings inward
   const doorMat = new THREE.MeshStandardMaterial({ color: C('#040205'), roughness: 0.55 });
   const streetDoor = new THREE.Group(), streetLeaf = new THREE.Mesh(new THREE.BoxGeometry(1.2, 2.3, 0.05), doorMat);
