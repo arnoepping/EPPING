@@ -206,21 +206,11 @@ export function buildWorld(): World {
   streetLeaf.position.set(0.6, 1.15, 0); streetDoor.add(streetLeaf);
   streetDoor.position.set(-0.6, 0, 0.02); // hinge at the front of the reveal
   scene.add(streetDoor);
-  // a slim brushed pull bar on the right and a quiet line of text at eye height
+  // a slim brushed pull bar on the right
   const pullMat = new THREE.MeshStandardMaterial({ color: C('#c4bfc8'), metalness: 0.7, roughness: 0.3 });
   const pull = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.42, 12), pullMat);
   pull.position.set(0.47, -0.1, 0.07); streetLeaf.add(pull);
   for (const dy of [-0.17, 0.17]) { const post = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.045, 8), pullMat); post.rotation.x = Math.PI / 2; post.position.set(0.47, -0.1 + dy, 0.045); streetLeaf.add(post); }
-  const dc = document.createElement('canvas'); dc.width = 1024; dc.height = 256;
-  const dx = dc.getContext('2d')!;
-  dx.fillStyle = 'rgba(238,228,240,0.9)'; dx.font = '500 64px Unbounded, system-ui, sans-serif'; dx.textAlign = 'center'; dx.textBaseline = 'middle';
-  if ('letterSpacing' in dx) (dx as CanvasRenderingContext2D & { letterSpacing: string }).letterSpacing = '10px';
-  const doorWords = () => { dx.clearRect(0, 0, 1024, 256); dx.fillText('TAP OR SCROLL', 512, 84); dx.fillText('TO ENTER', 512, 176); };
-  doorWords();
-  const doorTex = new THREE.CanvasTexture(dc); doorTex.colorSpace = THREE.SRGBColorSpace; doorTex.anisotropy = 8;
-  const doorText = new THREE.Mesh(new THREE.PlaneGeometry(1.04, 0.26), new THREE.MeshBasicMaterial({ map: doorTex, transparent: true, opacity: 0.5, depthWrite: false }));
-  doorText.position.set(0, 0.42, 0.027); streetLeaf.add(doorText);
-  document.fonts?.ready.then(() => { doorWords(); doorTex.needsUpdate = true; });
 
   // EPPING neon sign: orange and pink split layers behind a bright core, plus the light it throws on the bricks
   const wm = wordmarkGeometry(2.4);
