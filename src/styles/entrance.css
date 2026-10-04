@@ -46,6 +46,7 @@
 .fp-event b { font: 800 22px var(--display); }
 .fp-cols { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 28px; }
 .fp-body p { margin: 0 0 14px; opacity: .85; }
+.fp-cols-one { grid-template-columns: minmax(0, 1fr); }
 .fp-list { margin: 0; padding: 0; list-style: none; display: grid; gap: 10px; align-content: start; }
 .fp-list li { padding-left: 22px; position: relative; line-height: 1.4; }
 .fp-list li::before { content: ""; position: absolute; left: 0; top: .45em; width: 10px; height: 10px; border-radius: 50%; background: linear-gradient(135deg, var(--pink), var(--orange)); }

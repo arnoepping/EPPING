@@ -23,7 +23,8 @@ export const FLOORS: Floor[] = [
       'Club sound and light come with it, so for a few hours your venue feels like the place you’d normally go out to.',
     ],
     includes: ['Planning call and a shared playlist', 'One set, from first dance to final track', 'Club sound and lights, smoke on request'],
-    mix: { title: 'Marta & Donald’s wedding', length: 'Set', url: 'https://soundcloud.com/arno-epping/sets/marta-donalds-wedding', embed: 'https://api.soundcloud.com/playlists/2277399272' },
+    // for now the ADE House Mix everywhere; the wedding set (sets/marta-donalds-wedding, embed api.soundcloud.com/playlists/2277399272) has no public tracks yet
+    mix: { title: 'ADE House Mix', length: 'Mix', url: 'https://soundcloud.com/arno-epping/ade-house-mix' },
     cta: 'Check your date',
     mail: { subject: 'Rave Wedding booking', body: 'Hi Epping,\n\nWe are getting married on [date] and are interested in booking you as our DJ!\n\n' },
     whatsapp: 'Hi Epping, we are getting married on [date] and are interested in booking you as our DJ!',
@@ -43,15 +44,15 @@ export const FLOORS: Floor[] = [
     whatsapp: 'Hi Epping, I’m planning a [type of party] on [date] and am interested in booking you as my DJ!',
   },
   {
-    slug: 'presents', n: '03', name: 'Epping Presents', tagline: 'Our own nights',
+    slug: 'presents', n: '03', name: 'EPPING Presents', tagline: 'Join our next events',
     headline: 'Not a party. A ritual.',
     intro: 'Our own nights. Public, loud and a little unhinged. One room, one sound system, everybody welcome.',
     body: [
-      'A few times a year we take over a rooftop, a basement or a place nobody expected and throw the party we want to go to ourselves.',
-      'Locations are announced to the list first. Get on it and you hear about the next one before anyone else.',
+      'Check out below if there are any upcoming events.',
+      'A few times a year we take over a rooftop, basement, park or a place nobody expects and throw a party.',
     ],
     event: { date: 'Thu 22 October 2026', place: 'Hoofddorpplein, Amsterdam', note: 'Silent disco during ADE · 19:00 – 22:00' }, // remove after the night to hide the block
-    includes: ['Announcements via WhatsApp and Instagram', 'Early-bird tickets for the list', 'Guest DJs from the Amsterdam scene'],
+    includes: [], // no list on this page
     mix: { title: 'ADE House Mix', length: 'Mix', url: 'https://soundcloud.com/arno-epping/ade-house-mix' },
     cta: 'Get on the list',
     mail: { subject: 'Epping Presents: put me on the list', body: 'Hi Epping,\n\nPlease put me on the list for the next Epping Presents.\n\n' },

@@ -76,7 +76,7 @@ export interface World {
   streetDoor: THREE.Object3D; roofDoor: THREE.Object3D;
   setDoors(street: number, roof: number): void;
   update(t: number, kick: number, camera: THREE.Camera): void;
-  /** once the street is in: render what the shop glass reflects (one cube capture, not per frame) */
+  /** once the street is in: hands over the renderer for the stairwell's one-off reflection capture */
   reflect(renderer: THREE.WebGLRenderer): void;
   cameraAt(stage: number, local: number, t: number): { pos: THREE.Vector3; look: THREE.Vector3 };
 }
@@ -84,8 +84,8 @@ export interface World {
 // The street model carries geometry, UVs and baked lightmaps; textures are applied here by material name
 // (keeps the .glb small and avoids browsers that fail on embedded images).
 const LIGHTMAPS = ['brick', 'pavement', 'road', 'kerb', 'trim', 'tile', 'dark', 'bollard', 'bark', 'cafe_wall', 'cafe_panel', 'cafe_floor', 'cafe_wood', 'cafe_shade'];
-// glass that reflects the street (env map rendered once the street is in, see World.reflect)
-const GLASS: Record<string, { opacity: number; metal: number }> = { glass: { opacity: 1, metal: 0.85 }, shop_glass: { opacity: 1, metal: 1 }, cafe_glass: { opacity: 0.32, metal: 0.6 } };
+// glass: plain dark panes, no reflections (the user didn't like them); the café glass stays see-through
+const GLASS: Record<string, { opacity: number }> = { glass: { opacity: 1 }, shop_glass: { opacity: 1 }, cafe_glass: { opacity: 0.32 } };
 const TEXTURES: Record<string, { map: string; normal?: string; rough?: string; tint: string }> = {
   brick: { map: 'red_brick_03_diff_web.jpg', normal: 'red_brick_03_nor_web.jpg', rough: 'red_brick_03_rough_web.jpg', tint: '#ffb08a' }, // orange-red Amsterdam School brick
   pavement: { map: 'concrete_pavement_02_diff_web.jpg', normal: 'concrete_pavement_02_nor_web.jpg', tint: '#55525a' },
@@ -115,7 +115,7 @@ async function loadStreet(scene: THREE.Scene, glass: THREE.MeshStandardMaterial[
     m.envMapIntensity = 0;
     const g = GLASS[m.name];
     if (g) {
-      m.color.set('#a8a2b0'); m.roughness = 0.04; m.metalness = g.metal; m.envMapIntensity = 0.45; glass.push(m);
+      m.color.set('#060508'); m.roughness = 0.1; m.metalness = 0; glass.push(m);
       if (g.opacity < 1) { m.transparent = true; m.opacity = g.opacity; m.depthWrite = false; (o as THREE.Mesh).renderOrder = 2; }
     }
     m.needsUpdate = true;
@@ -149,23 +149,6 @@ export function buildWorld(): World {
   const glassMats: THREE.MeshStandardMaterial[] = [];
   const ready = loadStreet(scene, glassMats);
   function reflect(renderer: THREE.WebGLRenderer) {
-    const rt = new THREE.WebGLCubeRenderTarget(256, { type: THREE.HalfFloatType });
-    const cam = new THREE.CubeCamera(0.1, 400, rt); cam.position.set(0, 1.6, 4); scene.add(cam);
-    // the houses across the street (behind the camera, so only ever seen in the glass): dark facades, a few lit rooms, a street lamp
-    const oc = document.createElement('canvas'); oc.width = 1024; oc.height = 256;
-    { const g = oc.getContext('2d')!; g.fillStyle = '#0c0910'; g.fillRect(0, 0, 1024, 256);
-      for (let x = 0; x < 1024; x += 12) for (let y = 50; y < 240; y += 38) {
-        const r = Math.random(); g.fillStyle = r < 0.16 ? '#ffb46a' : r < 0.2 ? '#ff8a4c' : '#17131c'; g.fillRect(x + 3, y, 6, 18);
-      } }
-    const ot = new THREE.CanvasTexture(oc); ot.colorSpace = THREE.SRGBColorSpace;
-    const opposite = new THREE.Group();
-    const facade = new THREE.Mesh(new THREE.PlaneGeometry(90, 17), new THREE.MeshBasicMaterial({ map: ot, fog: false }));
-    facade.position.set(0, 5.5, 28); facade.rotation.y = Math.PI; opposite.add(facade);
-    const lamp = new THREE.Mesh(new THREE.SphereGeometry(0.35), new THREE.MeshBasicMaterial({ color: C('#ffc890'), fog: false }));
-    lamp.position.set(6, 5, 15); opposite.add(lamp);
-    scene.add(opposite);
-    sky.position.copy(cam.position); cam.update(renderer, scene); scene.remove(cam, opposite);
-    for (const m of glassMats) { m.envMap = rt.texture; m.needsUpdate = true; }
     rendererRef = renderer; if (stairsIn) captureStairs(renderer);
   }
 
