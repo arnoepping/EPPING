@@ -128,7 +128,7 @@ def window(x, z, w, h, lit):
 lit_plan = {(0, 1), (1, 0), (2, 2)}  # one lit room visible from the door
 for f in range(FLOORS):
     z = H0 + f * HF + 0.85
-    for i, (x, w) in enumerate([(-9.6, 2.6), (-4.4, 2.0), (4.0, 2.6)]):
+    for i, (x, w) in enumerate([(-9.6, 2.6), (-2.2, 2.0), (2.2, 2.6)]):
         window(x, z, w, 1.45, (f, i) in lit_plan)
 
 # ground floor: one dark shopfront each side (closed for the night, faint light inside)
@@ -176,8 +176,8 @@ def tree(tx, ty, height):
             f = bm.faces.new(vs)
             for l, (uu, vv) in zip(f.loops, ((0, 0), (1, 0), (1, 1), (0, 1))): l[uv].uv = (uu, vv)
     bm.to_mesh(me); bm.free(); me.materials.append(LEAF)
-tree(-4.6, -3.6, 7.2)
-tree(5.0, -3.6, 7.6)
+tree(-3.0, -3.6, 7.2)
+tree(3.4, -3.6, 7.6)
 
 # bikes: a proper road bike (drop bars, spoked wheels), parked against the facade, right of the door
 def bike(x, frame_mat, flip=False):
