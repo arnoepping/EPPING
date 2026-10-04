@@ -64,7 +64,7 @@ export function start(root: HTMLElement): void {
   // ---------- sound + HUD ----------
   const sound = new Sound('media/ade-house-mix.mp3', 18 * 60 + 30); // Epping – ADE House Mix, from 18:30
   const snd = $<HTMLButtonElement>('[data-sound]');
-  snd.addEventListener('click', async () => { const on = await sound.toggle(); if (on) track('sound-on'); snd.setAttribute('aria-pressed', String(on)); snd.textContent = on ? 'Sound on' : 'Sound off'; });
+  snd.addEventListener('click', async () => { const on = await sound.toggle(); if (on) track('sound-on'); snd.setAttribute('aria-pressed', String(on)); });
   const skip = $<HTMLButtonElement>('[data-skip]');
   skip.addEventListener('click', () => { track('skip'); p = AUTO_FROM; scrollTo(0, maxScroll()); });
   const hint = $('.ent-hint');
@@ -126,7 +126,7 @@ export function start(root: HTMLElement): void {
 
     hint.style.opacity = p < 0.02 ? '' : '0';
     skip.hidden = autoStart !== null;
-    const f = clamp((p - 0.86) / 0.08);
+    const f = clamp((p - 0.885) / 0.06); // roof: once the camera stands at the booth
     fin.style.opacity = String(f); fin.classList.toggle('on', f > 0.6);
     if (f > 0 && vid.paused && fp.hidden) { vid.preload = 'auto'; vid.play().catch(() => {}); }
     if (f === 0 && !vid.paused) vid.pause();

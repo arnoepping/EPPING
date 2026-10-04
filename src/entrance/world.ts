@@ -202,6 +202,21 @@ export function buildWorld(): World {
   streetLeaf.position.set(0.6, 1.15, 0); streetDoor.add(streetLeaf);
   streetDoor.position.set(-0.6, 0, 0.02); // hinge at the front of the reveal
   scene.add(streetDoor);
+  // a slim brushed pull bar on the right and a quiet line of text at eye height
+  const pullMat = new THREE.MeshStandardMaterial({ color: C('#c4bfc8'), metalness: 0.7, roughness: 0.3 });
+  const pull = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.42, 12), pullMat);
+  pull.position.set(0.47, -0.1, 0.07); streetLeaf.add(pull);
+  for (const dy of [-0.17, 0.17]) { const post = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.045, 8), pullMat); post.rotation.x = Math.PI / 2; post.position.set(0.47, -0.1 + dy, 0.045); streetLeaf.add(post); }
+  const dc = document.createElement('canvas'); dc.width = 1024; dc.height = 256;
+  const dx = dc.getContext('2d')!;
+  dx.fillStyle = 'rgba(238,228,240,0.9)'; dx.font = '500 64px Unbounded, system-ui, sans-serif'; dx.textAlign = 'center'; dx.textBaseline = 'middle';
+  if ('letterSpacing' in dx) (dx as CanvasRenderingContext2D & { letterSpacing: string }).letterSpacing = '10px';
+  const doorWords = () => { dx.clearRect(0, 0, 1024, 256); dx.fillText('TAP OR SCROLL', 512, 84); dx.fillText('TO ENTER', 512, 176); };
+  doorWords();
+  const doorTex = new THREE.CanvasTexture(dc); doorTex.colorSpace = THREE.SRGBColorSpace; doorTex.anisotropy = 8;
+  const doorText = new THREE.Mesh(new THREE.PlaneGeometry(1.04, 0.26), new THREE.MeshBasicMaterial({ map: doorTex, transparent: true, opacity: 0.5, depthWrite: false }));
+  doorText.position.set(0, 0.42, 0.027); streetLeaf.add(doorText);
+  document.fonts?.ready.then(() => { doorWords(); doorTex.needsUpdate = true; });
 
   // EPPING neon sign: orange and pink split layers behind a bright core, plus the light it throws on the bricks
   const wm = wordmarkGeometry(2.4);
@@ -541,10 +556,11 @@ export function buildWorld(): World {
         const k = ease((l - 0.88) / 0.12), z = lerp(TOP_Z + 0.6, ROOF_Z + 0.9, k);
         pos.set(0, TOP_Y + 1.6, z); look.set(0, lerp(stairY(TOP_Z) + 1.5, TOP_Y + 1.5, k), z - 2.4);
       }
-    } else { // out onto the roof, then a slow look around
-      const k = ease(clamp(l / 0.4)), z = lerp(ROOF_Z + 0.9, ROOF_Z - 2.0, k), drift = clamp((l - 0.4) / 0.6);
-      pos.set(drift * 0.4, TOP_Y + 1.6, z - drift * 0.6);
-      look.set(lerp(0, 2.5, ease(drift)) + Math.sin(t * 0.3) * 0.2, TOP_Y + lerp(1.6, 1.9, k), z - 10);
+    } else { // out onto the roof and straight on to the DJ booth; the finale clip takes over right in front of it
+      const stop = lerp(ROOF_Z - 3.0, ROOF_Z - 4.6, clamp((innerWidth / innerHeight - 0.45) / 1.1)); // phones stop further back
+      const k = ease(clamp(l / 0.6)), z = lerp(ROOF_Z + 0.9, stop, k);
+      pos.set(0, TOP_Y + 1.6 - k * 0.05, z);
+      look.set(Math.sin(t * 0.3) * 0.05, TOP_Y + lerp(1.6, 1.3, k), z - 4);
     }
     return { pos, look };
   }
