@@ -37,7 +37,7 @@ Website for Epping: DJ and party organizer. (`CLAUDE.md` is a symlink to this fi
   - Rave Wedding rethought 2026-10-04 (user dropped "ABBA to acid": not everyone likes it, music isn't necessarily acid). Angle: couple loves clubs/festivals; start where everyone dances (disco, ABBA, grandparents), natural build to their kind of night (house, techno, trance). British spelling.
     - Tagline: "From grandma's favourite to your favourite club"
     - Intro: "They say it's the most important day of your life, so the party should be the best one too. I start where everyone can dance, grandma included, and slowly build towards the club and festival nights you love."
-    - Body 1: "House, techno, trance: it doesn't matter what your night out sounds like. Before the wedding we go through it together, so the second half of the night sounds like your favourite night out." (repeats "night out"/"sounds like"; fix offered)
+    - Body 1: "House, techno, trance: whatever your sound is. Before the wedding we go through it together, so the second half of the night sounds like your favourite night out."
     - Body 2: "Club sound and light come with it, so for a few hours your venue feels like the place you'd normally go out to."
     - Still open: headline ("Your wedding. Let's rave." vs "Your wedding. Your kind of night."), includes facts (50–250 guests? smoke?), CTA, "Hi Epping" vs "Hi Arno". Then Private Events, Presents, entrance/meta.
   - Inconsistencies to fix: "private events" vs "private parties", "Our own nights" repeated, floor meta descriptions too long.
