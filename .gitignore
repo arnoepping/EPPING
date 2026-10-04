@@ -32,3 +32,4 @@ pnpm-debug.log*
 
 # Poly Haven originals (web/ copies are committed)
 blender/textures/*_1k.jpg
+.playwright-mcp/
