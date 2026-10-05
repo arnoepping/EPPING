@@ -5,6 +5,7 @@ import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js'
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { buildWorld } from './world.ts';
 import { Sound } from './sound.ts';
+import { openLightbox } from '../lib/lightbox.ts';
 import { track } from '../lib/track.ts';
 
 // Scroll covers [0, AUTO_FROM]: the street and the stairs. Stepping onto the roof locks the page and the rest plays by itself.
@@ -72,12 +73,16 @@ export function start(root: HTMLElement): void {
   // ---------- finale + floor pages ----------
   const fin = $('.finale'), vid = fin.querySelector('video')!, fp = $<HTMLElement>('.floor-page');
   $('[data-again]').addEventListener('click', () => { track('replay'); autoStart = null; lock(false); p = 0; scrollTo(0, 0); });
+  const SITE = new URL('.', location.href).href; // the entrance only runs on the site root
   function openFloor(slug: string, push = true) {
     const tpl = root.querySelector<HTMLTemplateElement>(`template[data-floor-tpl="${slug}"]`);
     if (!tpl) return;
     track('floor-open', { floor: slug });
     fp.innerHTML = tpl.innerHTML; fp.hidden = false; fp.scrollTop = 0;
     root.classList.add('reading'); vid.pause();
+    // gallery paths are relative to the site root; resolve them against it, not the current /<slug>/ URL (floor → floor links)
+    fp.querySelectorAll('img').forEach((i) => (i.src = new URL(i.getAttribute('src')!, SITE).href));
+    fp.querySelectorAll<HTMLElement>('[data-gallery]').forEach((g) => (g.dataset.base = SITE));
     if (push) history.pushState({ floor: slug }, '', `/${slug}/`);
     fp.querySelector<HTMLElement>('h1')?.focus({ preventScroll: true });
   }
@@ -90,6 +95,8 @@ export function start(root: HTMLElement): void {
     const t = e.target as Element, fl = t.closest<HTMLElement>('[data-floor]'), back = t.closest('[data-back]'), cp = t.closest<HTMLElement>('[data-copy]');
     if (fl) { e.preventDefault(); openFloor(fl.dataset.floor!); }
     if (back) { e.preventDefault(); closeFloor(); }
+    const lb = t.closest<HTMLElement>('[data-lb]');
+    if (lb) openLightbox(lb, () => { if (sound.on) snd.click(); }); // a clip with sound: stop the mix first
     if (cp) { track('contact', { type: 'copy-email', floor: cp.dataset.floorSlug ?? '' }); navigator.clipboard.writeText(cp.dataset.copy!).then(() => (cp.textContent = 'Copied'), () => {}); }
   });
   addEventListener('popstate', () => closeFloor(false));

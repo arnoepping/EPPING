@@ -1,10 +1,13 @@
 ---
 // One service page: used inside the entrance overlay and as the /<slug>/ route.
 import { CONTACT, FLOORS, type Floor } from '../content/floors.ts';
+import Gallery from './Gallery.astro';
 import { mailtoHref, whatsappHref, soundcloudEmbed } from '../lib/links.ts';
 interface Props { f: Floor; standalone?: boolean }
 const { f, standalone = false } = Astro.props;
 const others = FLOORS.filter((o) => o.slug !== f.slug);
+// Standalone routes live at /<slug>/, so media paths need the leading slash there; the overlay on / keeps them relative (preview build).
+const at = (p: string) => (standalone ? `/${p}` : p);
 ---
 <div class="fp-in">
   {standalone ? <a class="fp-back" href="/">← Back to the street</a> : <a class="fp-back" href="/" data-back>← Back to the roof</a>}
@@ -16,7 +19,6 @@ const others = FLOORS.filter((o) => o.slug !== f.slug);
     {f.includes.length > 0 && <ul class="fp-list">{f.includes.map((x) => <li>{x}</li>)}</ul>}
   </div>
   {f.event && <div class="fp-event"><span>Next night</span><b>{f.event.date}</b><span>{f.event.place} · {f.event.note}</span></div>}
-  <iframe class:list={['fp-sc', { 'fp-sc-set': f.mix.embed }]} title={`${f.mix.title} on SoundCloud`} loading="lazy" allow="autoplay; encrypted-media" src={soundcloudEmbed(f.mix.embed ?? f.mix.url)}></iframe>
   <div class="fp-contact">
     <h2>{f.cta}</h2>
     <div class="fp-btns">
@@ -26,5 +28,7 @@ const others = FLOORS.filter((o) => o.slug !== f.slug);
     <p class="fp-addr"><span>{CONTACT.email}</span><button type="button" data-copy={CONTACT.email} data-floor-slug={f.slug}>Copy</button> · <span>{CONTACT.whatsappLabel}</span></p>
     <p class="fp-social"><a href={CONTACT.instagram} data-umami-event="contact" data-umami-event-type="instagram" data-umami-event-floor={f.slug} target="_blank" rel="noopener">Instagram {CONTACT.instagramLabel} ↗</a><a href={CONTACT.soundcloud} data-umami-event="contact" data-umami-event-type="soundcloud" data-umami-event-floor={f.slug} target="_blank" rel="noopener">All mixes on SoundCloud ↗</a></p>
   </div>
+  <iframe class:list={['fp-sc', { 'fp-sc-set': f.mix.embed }]} title={`${f.mix.title} on SoundCloud`} loading="lazy" allow="autoplay; encrypted-media" src={soundcloudEmbed(f.mix.embed ?? f.mix.url)}></iframe>
+  {f.gallery && <Gallery g={f.gallery} at={at} />}
   <nav class="fp-others" aria-label="Other floors">{others.map((o) => <a href={`/${o.slug}/`} data-floor={standalone ? undefined : o.slug}>{o.name} →</a>)}</nav>
 </div>

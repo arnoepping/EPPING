@@ -1,8 +1,12 @@
 // Floor pages: copy and links. Edit freely; the same content feeds the overlay on / and the /<slug>/ routes.
 export type Slug = 'rave-wedding' | 'private-events' | 'presents';
+/** video: poster is the thumbnail; photo: src is used for both. caption: alt text only, never shown */
+export interface GalleryItem { kind: 'video' | 'photo'; src: string; poster?: string; caption: string; length?: string }
 export interface Floor {
   slug: Slug; n: string; name: string; tagline: string; intro: string; body: string[]; includes: string[];
   event?: { date: string; place: string; note: string };
+  /** photos and clips under the mix, opened in a lightbox; paths relative to the site root, files in public/media/floors/ */
+  gallery?: { title: string; items: GalleryItem[] };
   /** url: public SoundCloud page; embed: optional player URL (SoundCloud's own api URL works best for sets) */
   mix: { title: string; length: string; url: string; embed?: string };
   cta: string; mail: { subject: string; body: string }; whatsapp: string;
@@ -22,6 +26,20 @@ export const FLOORS: Floor[] = [
       'Club sound and light come with it, so for a few hours your venue feels like the place you’d normally go out to.',
     ],
     includes: ['Planning call and a shared playlist', 'One set, from first dance to final track', 'Club sound and lights, smoke on request'],
+    gallery: {
+      title: 'Footage from the dancefloor',
+      items: [
+        { kind: 'video', src: 'media/floors/rave-wedding.mp4', poster: 'media/floors/rave-wedding.jpg', caption: 'Peak time', length: '0:17' },
+        { kind: 'video', src: 'media/floors/rave-wedding/clip-4097.mp4', poster: 'media/floors/rave-wedding/clip-4097.jpg', caption: 'The bride on the floor', length: '0:30' },
+        { kind: 'video', src: 'media/floors/rave-wedding/clip-4108.mp4', poster: 'media/floors/rave-wedding/clip-4108.jpg', caption: 'View from the booth', length: '0:29' },
+        { kind: 'video', src: 'media/floors/rave-wedding/clip-4096.mp4', poster: 'media/floors/rave-wedding/clip-4096.jpg', caption: 'Glow sticks out', length: '0:21' },
+        { kind: 'video', src: 'media/floors/rave-wedding/clip-4103.mp4', poster: 'media/floors/rave-wedding/clip-4103.jpg', caption: 'Group selfie', length: '0:11' },
+        { kind: 'video', src: 'media/floors/rave-wedding/clip-4100.mp4', poster: 'media/floors/rave-wedding/clip-4100.jpg', caption: 'Selfie break', length: '0:06' },
+        { kind: 'photo', src: 'media/floors/rave-wedding/photo-2.jpg', caption: 'Hands up' },
+        { kind: 'photo', src: 'media/floors/rave-wedding/photo-3.jpg', caption: 'Behind the decks' },
+        { kind: 'photo', src: 'media/floors/rave-wedding/photo-5.jpg', caption: 'Fans out' },
+      ],
+    },
     // for now the ADE House Mix everywhere; the wedding set (sets/marta-donalds-wedding, embed api.soundcloud.com/playlists/2277399272) has no public tracks yet
     mix: { title: 'ADE House Mix', length: 'Mix', url: 'https://soundcloud.com/arno-epping/ade-house-mix' },
     cta: 'Check your date',
@@ -36,6 +54,14 @@ export const FLOORS: Floor[] = [
       'Before the party we go through the music you love and the vibe you want, so the speakers, the lights and the set all match your night.',
     ],
     includes: ['Planning call and a shared playlist', 'One set, from first guest to final track', 'Sound and lights matched to your venue'],
+    gallery: {
+      title: 'Footage from the dancefloor',
+      items: [
+        { kind: 'video', src: 'media/floors/private-events/clip-3672.mp4', poster: 'media/floors/private-events/clip-3672.jpg', caption: 'Hoofddorpplein Festival, the crowd', length: '0:22' },
+        { kind: 'video', src: 'media/floors/private-events/clip-3669.mp4', poster: 'media/floors/private-events/clip-3669.jpg', caption: 'Hoofddorpplein Festival, behind the decks', length: '0:28' },
+        { kind: 'photo', src: 'media/floors/private-events/photo-1.jpg', caption: 'Young fans at the decks' },
+      ],
+    },
     mix: { title: 'ADE House Mix', length: 'Mix', url: 'https://soundcloud.com/arno-epping/ade-house-mix' },
     cta: 'Plan your party',
     mail: { subject: 'Private event booking', body: 'Hi Epping,\n\nI’m planning a [type of party] on [date] and am interested in booking you as my DJ!\n\n' },
@@ -50,6 +76,22 @@ export const FLOORS: Floor[] = [
     ],
     event: { date: 'Thu 22 October 2026', place: 'Hoofddorpplein, Amsterdam', note: 'Silent disco during ADE · 19:00 – 22:00' }, // remove after the night to hide the block
     includes: [], // no list on this page
+    gallery: {
+      title: 'Footage from the dancefloor',
+      items: [
+        { kind: 'video', src: 'media/floors/presents/street.mp4', poster: 'media/floors/presents/street.jpg', caption: 'From the street', length: '0:10' },
+        { kind: 'video', src: 'media/floors/presents/clip-6824.mp4', poster: 'media/floors/presents/clip-6824.jpg', caption: 'Dusk set', length: '0:25' },
+        { kind: 'video', src: 'media/floors/presents/clip-6827.mp4', poster: 'media/floors/presents/clip-6827.jpg', caption: 'One more', length: '0:17' },
+        { kind: 'video', src: 'media/floors/presents/clip-6830.mp4', poster: 'media/floors/presents/clip-6830.jpg', caption: 'Hands up', length: '0:19' },
+        { kind: 'video', src: 'media/floors/presents/clip-6821.mp4', poster: 'media/floors/presents/clip-6821.jpg', caption: 'Lights on', length: '0:33' },
+        { kind: 'video', src: 'media/floors/presents/booth.mp4', poster: 'media/floors/presents/booth.jpg', caption: 'Getting ready', length: '0:09' },
+        { kind: 'photo', src: 'media/floors/presents/photo-1.jpg', caption: 'Soundcheck' },
+        { kind: 'photo', src: 'media/floors/presents/photo-2.jpg', caption: 'First track' },
+        { kind: 'photo', src: 'media/floors/presents/photo-3.jpg', caption: 'Roof with a view' },
+        { kind: 'photo', src: 'media/floors/presents/photo-4.jpg', caption: 'Hello' },
+        { kind: 'photo', src: 'media/floors/presents/photo-5.jpg', caption: 'In the mix' },
+      ],
+    },
     mix: { title: 'ADE House Mix', length: 'Mix', url: 'https://soundcloud.com/arno-epping/ade-house-mix' },
     cta: 'Get on the list',
     mail: { subject: 'Epping Presents: put me on the list', body: 'Hi Epping,\n\nPlease put me on the list for the next Epping Presents.\n\n' },
