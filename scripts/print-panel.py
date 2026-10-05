@@ -1,14 +1,14 @@
 # Print file for the DJ booth panel: vector PDF in CMYK, straight from the logo outlines in public/brand/epping-logo.svg.
 # Run: python3 scripts/print-panel.py  -> media/print/ (git-ignored)
-# Panel 64 x 56 cm + 10 mm bleed on every side. Logo 58 cm wide with a ~4% split (reads from the dancefloor; the colour edges
-# are clipped per letter so the black gaps between letters stay as in the site logo), sitting above
+# Panel 64 x 56 cm + 10 mm bleed on every side. Logo 58 cm wide, exactly the site logo (3% split), sitting above
 # centre; @epping.music (left) and eppingmusic.com (right) under it in Unbounded 500, aligned to the logo's edges.
 import json, re, subprocess
 
 MM = 72 / 25.4
 W, H, BLEED = 640, 560, 10            # finished size and bleed, mm
 LOGO_W = 580                          # logo width, mm
-SPLIT = 1.3                           # split relative to the site logo (3% -> ~4%): thicker edges for distance
+SPLIT = 1.0                           # split relative to the site logo: 1.0 = exactly the logo (thicker cut the P's round, see CLIP)
+CLIP = SPLIT > 1                      # only a thicker split needs the per-letter clip (it flattens the P's round edge)
 KEEP = 1.6                            # black kept clear in every gap between letters (svg units, ~2 mm; same as the site logo)
 RAISE = 30                            # whole group sits this far above the panel centre, mm
 TEXT_H, GAP = 16, 62                  # text height; GAP only sets where the logo sits (group centring), mm
@@ -94,7 +94,7 @@ for i, (x1, x2, _) in enumerate(letters):
 for d0, fill, tx, ty in paths[:-1]:  # orange, pink: per letter, clipped to its cell
     for (x1, x2, ds), (lo, hi) in zip(letters, cells):
         (ax, ay), (bx_, by_) = logo_pt(lo, gy0 - 50), logo_pt(hi, gy1 + 50)
-        ops += ['q', f'{f(ax)} {f(by_)} {f(bx_ - ax)} {f(ay - by_)} re W n', '%s %s %s %s k' % CMYK[fill.upper()],
+        ops += ['q', f'{f(ax)} {f(by_)} {f(bx_ - ax)} {f(ay - by_)} re W n' if CLIP else '', '%s %s %s %s k' % CMYK[fill.upper()],
                 pdf_path(''.join(ds), float(tx or 0) * SPLIT, float(ty or 0) * SPLIT, logo_pt), 'f', 'Q']
 ops += ['%s %s %s %s k' % CMYK[paths[-1][1].upper()], pdf_path(paths[-1][0], 0, 0, logo_pt), 'f']  # cream letters on top
 base = top - (gy1 - gy0) * k - TEXT_GAP * MM               # pdf y of the text's top edge
@@ -119,6 +119,6 @@ for i, o in enumerate(objs, 1):
 x = len(out)
 out += b'xref\n0 %d\n0000000000 65535 f \n' % (len(objs) + 1) + b''.join(b'%010d 00000 n \n' % o for o in offs)
 out += b'trailer\n<< /Size %d /Root 1 0 R /Info 5 0 R >>\nstartxref\n%d\n%%%%EOF\n' % (len(objs) + 1, x)
-name = 'media/print/epping-djbooth-64x56-afloop10mm-cmyk-v4.pdf'
+name = 'media/print/epping-djbooth-64x56-afloop10mm-cmyk-v5.pdf'
 open(name, 'wb').write(out)
 print(name, f'{(W + 2 * BLEED)} x {(H + 2 * BLEED)} mm')
