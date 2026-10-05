@@ -1,6 +1,6 @@
 // Floor pages: copy and links. Edit freely; the same content feeds the overlay on / and the /<slug>/ routes.
 export type Slug = 'rave-wedding' | 'private-events' | 'presents';
-/** video: poster is the thumbnail; photo: src is used for both */
+/** video: poster is the thumbnail; photo: src is used for both. caption: alt text only, never shown */
 export interface GalleryItem { kind: 'video' | 'photo'; src: string; poster?: string; caption: string; length?: string }
 export interface Floor {
   slug: Slug; n: string; name: string; tagline: string; intro: string; body: string[]; includes: string[];
@@ -27,7 +27,7 @@ export const FLOORS: Floor[] = [
     ],
     includes: ['Planning call and a shared playlist', 'One set, from first dance to final track', 'Club sound and lights, smoke on request'],
     gallery: {
-      title: 'Marta & Donald’s wedding',
+      title: 'From the dancefloor',
       items: [
         { kind: 'video', src: 'media/floors/rave-wedding.mp4', poster: 'media/floors/rave-wedding.jpg', caption: 'Peak time', length: '0:17' },
         { kind: 'video', src: 'media/floors/rave-wedding/clip-4097.mp4', poster: 'media/floors/rave-wedding/clip-4097.jpg', caption: 'The bride on the floor', length: '0:30' },
@@ -35,10 +35,8 @@ export const FLOORS: Floor[] = [
         { kind: 'video', src: 'media/floors/rave-wedding/clip-4096.mp4', poster: 'media/floors/rave-wedding/clip-4096.jpg', caption: 'Glow sticks out', length: '0:21' },
         { kind: 'video', src: 'media/floors/rave-wedding/clip-4103.mp4', poster: 'media/floors/rave-wedding/clip-4103.jpg', caption: 'Group selfie', length: '0:11' },
         { kind: 'video', src: 'media/floors/rave-wedding/clip-4100.mp4', poster: 'media/floors/rave-wedding/clip-4100.jpg', caption: 'Selfie break', length: '0:06' },
-        { kind: 'photo', src: 'media/floors/rave-wedding/photo-1.jpg', caption: 'The bride, mid-drop' },
         { kind: 'photo', src: 'media/floors/rave-wedding/photo-2.jpg', caption: 'Hands up' },
         { kind: 'photo', src: 'media/floors/rave-wedding/photo-3.jpg', caption: 'Behind the decks' },
-        { kind: 'photo', src: 'media/floors/rave-wedding/photo-4.jpg', caption: 'Full floor' },
         { kind: 'photo', src: 'media/floors/rave-wedding/photo-5.jpg', caption: 'Fans out' },
       ],
     },
@@ -71,7 +69,7 @@ export const FLOORS: Floor[] = [
     event: { date: 'Thu 22 October 2026', place: 'Hoofddorpplein, Amsterdam', note: 'Silent disco during ADE · 19:00 – 22:00' }, // remove after the night to hide the block
     includes: [], // no list on this page
     gallery: {
-      title: 'Rooftop party, Hoofddorpplein',
+      title: 'From the dancefloor',
       items: [
         { kind: 'video', src: 'media/floors/presents/street.mp4', poster: 'media/floors/presents/street.jpg', caption: 'From the street', length: '0:10' },
         { kind: 'video', src: 'media/floors/presents/clip-6824.mp4', poster: 'media/floors/presents/clip-6824.jpg', caption: 'Dusk set', length: '0:25' },

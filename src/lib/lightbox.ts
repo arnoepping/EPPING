@@ -1,7 +1,7 @@
 // Full-screen viewer for floor-page galleries: arrows/swipe/keys, counter, videos play with sound while shown.
 // One <dialog> per page, built on first use. onSound fires when a clip starts with sound (the entrance stops its mix).
 import type { GalleryItem } from '../content/floors.ts';
-let dlg: HTMLDialogElement, stage: HTMLElement, count: HTMLElement, cap: HTMLElement;
+let dlg: HTMLDialogElement, stage: HTMLElement, count: HTMLElement;
 let items: GalleryItem[] = [], at = 0, onSound = () => {};
 const pad = (n: number) => String(n).padStart(2, '0');
 
@@ -10,9 +10,9 @@ function build() {
   dlg.className = 'lb';
   dlg.innerHTML = `<div class="lb-top"><span class="lb-n"></span><button type="button" class="lb-x" aria-label="Close">✕</button></div>
     <div class="lb-stage"></div>
-    <div class="lb-bot"><button type="button" class="lb-prev" aria-label="Previous">←</button><p class="lb-cap"></p><button type="button" class="lb-next" aria-label="Next">→</button></div>`;
+    <div class="lb-bot"><button type="button" class="lb-prev" aria-label="Previous">←</button><button type="button" class="lb-next" aria-label="Next">→</button></div>`;
   document.body.appendChild(dlg);
-  stage = dlg.querySelector('.lb-stage')!; count = dlg.querySelector('.lb-n')!; cap = dlg.querySelector('.lb-cap')!;
+  stage = dlg.querySelector('.lb-stage')!; count = dlg.querySelector('.lb-n')!;
   dlg.querySelector('.lb-x')!.addEventListener('click', () => dlg.close());
   dlg.querySelector('.lb-prev')!.addEventListener('click', () => go(-1));
   dlg.querySelector('.lb-next')!.addEventListener('click', () => go(1));
@@ -27,14 +27,13 @@ function build() {
 function show(dir = 0) {
   const it = items[at];
   stage.innerHTML = '';
-  const el = it.kind === 'video' ? Object.assign(document.createElement('video'), { src: it.src, poster: it.poster ?? '', controls: true, playsInline: true, autoplay: true, loop: true })
+  const el = it.kind === 'video' ? Object.assign(document.createElement('video'), { src: it.src, poster: it.poster ?? '', ariaLabel: it.caption, controls: true, playsInline: true, autoplay: true, loop: true })
     : Object.assign(document.createElement('img'), { src: it.src, alt: it.caption });
   el.className = 'lb-media';
   if (dir) el.dataset.dir = dir > 0 ? 'next' : 'prev';
   stage.appendChild(el);
   if (el instanceof HTMLVideoElement) { onSound(); el.play().catch(() => {}); }
   count.textContent = `${pad(at + 1)} / ${pad(items.length)}`;
-  cap.textContent = it.caption;
   // warm the next item so swiping feels instant
   const nx = items[(at + 1) % items.length]; new Image().src = nx.poster ?? nx.src;
 }
