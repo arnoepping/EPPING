@@ -13,7 +13,7 @@ Website for Epping: DJ and party organizer. (`CLAUDE.md` is a symlink to this fi
 - POC/MVP: speed over QA. No tests, test suites, TDD or review loops unless the user asks. Verify with `npm run build`.
 - Visual work (mockups, 3D, layout): check it yourself with Playwright screenshots before sharing (key moments, both palettes, phone + desktop). Keep it quick: still frames only, no test suites.
 - Update this file yourself at checkpoints (spec approved, task done, merge/push, key decision, wrap-up): refresh Status, drop stale items, commit. Don't ask first.
-- Push to `main` only when the user says so (a push deploys the site).
+- Push to `main` only when the user says so (a push deploys the site). Exception: commits that only touch `AGENTS.md`/`CLAUDE.md` or `docs/` can be pushed anytime (they redeploy but don't change the site). Never bundle site changes into such a push.
 - Auto-mode blocks Claude from public-facing GitHub changes (visibility, Pages settings). Give the user a `! <command>` to run instead.
 
 ## Stack / pipeline
