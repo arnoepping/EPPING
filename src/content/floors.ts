@@ -29,13 +29,15 @@ export const FLOORS: Floor[] = [
     gallery: {
       title: 'Marta & Donald’s wedding',
       items: [
-        { kind: 'video', src: 'media/floors/rave-wedding/reel.mp4', poster: 'media/floors/rave-wedding/reel.jpg', caption: 'The night in 20 seconds', length: '0:20' },
         { kind: 'video', src: 'media/floors/rave-wedding.mp4', poster: 'media/floors/rave-wedding.jpg', caption: 'Peak time', length: '0:17' },
+        { kind: 'video', src: 'media/floors/rave-wedding/clip-4097.mp4', poster: 'media/floors/rave-wedding/clip-4097.jpg', caption: 'The bride on the floor', length: '0:30' },
+        { kind: 'video', src: 'media/floors/rave-wedding/clip-4108.mp4', poster: 'media/floors/rave-wedding/clip-4108.jpg', caption: 'View from the booth', length: '0:29' },
+        { kind: 'video', src: 'media/floors/rave-wedding/clip-4096.mp4', poster: 'media/floors/rave-wedding/clip-4096.jpg', caption: 'Glow sticks out', length: '0:21' },
+        { kind: 'video', src: 'media/floors/rave-wedding/clip-4103.mp4', poster: 'media/floors/rave-wedding/clip-4103.jpg', caption: 'Group selfie', length: '0:11' },
+        { kind: 'video', src: 'media/floors/rave-wedding/clip-4100.mp4', poster: 'media/floors/rave-wedding/clip-4100.jpg', caption: 'Selfie break', length: '0:06' },
         { kind: 'photo', src: 'media/floors/rave-wedding/photo-1.jpg', caption: 'The bride, mid-drop' },
-        { kind: 'video', src: 'media/floors/rave-wedding/booth.mp4', poster: 'media/floors/rave-wedding/booth.jpg', caption: 'View from the booth', length: '0:11' },
         { kind: 'photo', src: 'media/floors/rave-wedding/photo-2.jpg', caption: 'Hands up' },
         { kind: 'photo', src: 'media/floors/rave-wedding/photo-3.jpg', caption: 'Behind the decks' },
-        { kind: 'video', src: 'media/floors/rave-wedding/bride.mp4', poster: 'media/floors/rave-wedding/bride.jpg', caption: 'Glow sticks out', length: '0:08' },
         { kind: 'photo', src: 'media/floors/rave-wedding/photo-4.jpg', caption: 'Full floor' },
         { kind: 'photo', src: 'media/floors/rave-wedding/photo-5.jpg', caption: 'Fans out' },
       ],
@@ -68,6 +70,22 @@ export const FLOORS: Floor[] = [
     ],
     event: { date: 'Thu 22 October 2026', place: 'Hoofddorpplein, Amsterdam', note: 'Silent disco during ADE · 19:00 – 22:00' }, // remove after the night to hide the block
     includes: [], // no list on this page
+    gallery: {
+      title: 'Rooftop party, Hoofddorpplein',
+      items: [
+        { kind: 'video', src: 'media/floors/presents/street.mp4', poster: 'media/floors/presents/street.jpg', caption: 'From the street', length: '0:10' },
+        { kind: 'video', src: 'media/floors/presents/clip-6824.mp4', poster: 'media/floors/presents/clip-6824.jpg', caption: 'Dusk set', length: '0:25' },
+        { kind: 'video', src: 'media/floors/presents/clip-6827.mp4', poster: 'media/floors/presents/clip-6827.jpg', caption: 'One more', length: '0:17' },
+        { kind: 'video', src: 'media/floors/presents/clip-6830.mp4', poster: 'media/floors/presents/clip-6830.jpg', caption: 'Hands up', length: '0:19' },
+        { kind: 'video', src: 'media/floors/presents/clip-6821.mp4', poster: 'media/floors/presents/clip-6821.jpg', caption: 'Lights on', length: '0:33' },
+        { kind: 'video', src: 'media/floors/presents/booth.mp4', poster: 'media/floors/presents/booth.jpg', caption: 'Getting ready', length: '0:09' },
+        { kind: 'photo', src: 'media/floors/presents/photo-1.jpg', caption: 'Soundcheck' },
+        { kind: 'photo', src: 'media/floors/presents/photo-2.jpg', caption: 'First track' },
+        { kind: 'photo', src: 'media/floors/presents/photo-3.jpg', caption: 'Roof with a view' },
+        { kind: 'photo', src: 'media/floors/presents/photo-4.jpg', caption: 'Hello' },
+        { kind: 'photo', src: 'media/floors/presents/photo-5.jpg', caption: 'In the mix' },
+      ],
+    },
     mix: { title: 'ADE House Mix', length: 'Mix', url: 'https://soundcloud.com/arno-epping/ade-house-mix' },
     cta: 'Get on the list',
     mail: { subject: 'Epping Presents: put me on the list', body: 'Hi Epping,\n\nPlease put me on the list for the next Epping Presents.\n\n' },
