@@ -1,0 +1,25 @@
+---
+// Thumbnails under the mix; a tap opens the lightbox (src/lib/lightbox.ts). Paths go through `at` (see FloorPage).
+import type { Floor } from '../content/floors.ts';
+interface Props { g: NonNullable<Floor['gallery']>; at: (p: string) => string }
+const { g, at } = Astro.props;
+const SHOW = 5; // tiles in the strip; the last one shows "+n" for the rest
+const rest = g.items.length - SHOW;
+---
+<section class="gal" data-gallery data-items={JSON.stringify(g.items.map((it) => ({ ...it, src: at(it.src), poster: it.poster && at(it.poster) })))}>
+  <div class="gal-head"><h2>{g.title}</h2><span>{g.items.length} clips &amp; photos</span></div>
+  <button type="button" class="gal-hero" data-lb="0" aria-label={`Play: ${g.items[0].caption}`}>
+    <img src={at(g.items[0].poster ?? g.items[0].src)} alt="" />
+    <span class="gal-play" aria-hidden="true"></span>
+    <span class="gal-hero-t"><b>{g.items[0].caption}</b><small>Tap to watch · {g.items.length} clips &amp; photos</small></span>
+  </button>
+  <ul class="gal-strip">
+    {g.items.slice(0, SHOW).map((it, i) => (
+      <li><button type="button" class="gal-tile" data-lb={i} aria-label={`${it.kind === 'video' ? 'Play' : 'View'}: ${it.caption}`}>
+        <img src={at(it.poster ?? it.src)} alt="" />
+        {it.kind === 'video' && <span class="gal-len">▶ {it.length}</span>}
+        {i === SHOW - 1 && rest > 0 && <span class="gal-more">+{rest}</span>}
+      </button></li>
+    ))}
+  </ul>
+</section>

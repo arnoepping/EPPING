@@ -1,6 +1,7 @@
 ---
 // One service page: used inside the entrance overlay and as the /<slug>/ route.
 import { CONTACT, FLOORS, type Floor } from '../content/floors.ts';
+import Gallery from './Gallery.astro';
 import { mailtoHref, whatsappHref, soundcloudEmbed } from '../lib/links.ts';
 interface Props { f: Floor; standalone?: boolean }
 const { f, standalone = false } = Astro.props;
@@ -18,14 +19,6 @@ const at = (p: string) => (standalone ? `/${p}` : p);
     {f.includes.length > 0 && <ul class="fp-list">{f.includes.map((x) => <li>{x}</li>)}</ul>}
   </div>
   {f.event && <div class="fp-event"><span>Next night</span><b>{f.event.date}</b><span>{f.event.place} · {f.event.note}</span></div>}
-  {f.media && (
-    <figure class="fp-media">
-      <video src={at(f.media.video)} poster={at(f.media.poster)} autoplay muted loop playsinline preload="metadata" aria-label={f.media.caption}></video>
-      <button type="button" class="fp-unmute" data-unmute aria-pressed="false">Play sound</button>
-      <figcaption>{f.media.caption}</figcaption>
-    </figure>
-  )}
-  <iframe class:list={['fp-sc', { 'fp-sc-set': f.mix.embed }]} title={`${f.mix.title} on SoundCloud`} loading="lazy" allow="autoplay; encrypted-media" src={soundcloudEmbed(f.mix.embed ?? f.mix.url)}></iframe>
   <div class="fp-contact">
     <h2>{f.cta}</h2>
     <div class="fp-btns">
@@ -35,5 +28,7 @@ const at = (p: string) => (standalone ? `/${p}` : p);
     <p class="fp-addr"><span>{CONTACT.email}</span><button type="button" data-copy={CONTACT.email} data-floor-slug={f.slug}>Copy</button> · <span>{CONTACT.whatsappLabel}</span></p>
     <p class="fp-social"><a href={CONTACT.instagram} data-umami-event="contact" data-umami-event-type="instagram" data-umami-event-floor={f.slug} target="_blank" rel="noopener">Instagram {CONTACT.instagramLabel} ↗</a><a href={CONTACT.soundcloud} data-umami-event="contact" data-umami-event-type="soundcloud" data-umami-event-floor={f.slug} target="_blank" rel="noopener">All mixes on SoundCloud ↗</a></p>
   </div>
+  <iframe class:list={['fp-sc', { 'fp-sc-set': f.mix.embed }]} title={`${f.mix.title} on SoundCloud`} loading="lazy" allow="autoplay; encrypted-media" src={soundcloudEmbed(f.mix.embed ?? f.mix.url)}></iframe>
+  {f.gallery && <Gallery g={f.gallery} at={at} />}
   <nav class="fp-others" aria-label="Other floors">{others.map((o) => <a href={`/${o.slug}/`} data-floor={standalone ? undefined : o.slug}>{o.name} →</a>)}</nav>
 </div>

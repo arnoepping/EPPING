@@ -1,10 +1,12 @@
 // Floor pages: copy and links. Edit freely; the same content feeds the overlay on / and the /<slug>/ routes.
 export type Slug = 'rave-wedding' | 'private-events' | 'presents';
+/** video: poster is the thumbnail; photo: src is used for both */
+export interface GalleryItem { kind: 'video' | 'photo'; src: string; poster?: string; caption: string; length?: string }
 export interface Floor {
   slug: Slug; n: string; name: string; tagline: string; intro: string; body: string[]; includes: string[];
   event?: { date: string; place: string; note: string };
-  /** looping clip on the floor page (muted until tapped); paths relative to the site root, files in public/media/floors/ */
-  media?: { video: string; poster: string; caption: string };
+  /** photos and clips under the mix, opened in a lightbox; paths relative to the site root, files in public/media/floors/ */
+  gallery?: { title: string; items: GalleryItem[] };
   /** url: public SoundCloud page; embed: optional player URL (SoundCloud's own api URL works best for sets) */
   mix: { title: string; length: string; url: string; embed?: string };
   cta: string; mail: { subject: string; body: string }; whatsapp: string;
@@ -24,7 +26,20 @@ export const FLOORS: Floor[] = [
       'Club sound and light come with it, so for a few hours your venue feels like the place you’d normally go out to.',
     ],
     includes: ['Planning call and a shared playlist', 'One set, from first dance to final track', 'Club sound and lights, smoke on request'],
-    media: { video: 'media/floors/rave-wedding.mp4', poster: 'media/floors/rave-wedding.jpg', caption: 'Marta & Donald’s wedding' },
+    gallery: {
+      title: 'Marta & Donald’s wedding',
+      items: [
+        { kind: 'video', src: 'media/floors/rave-wedding/reel.mp4', poster: 'media/floors/rave-wedding/reel.jpg', caption: 'The night in 20 seconds', length: '0:20' },
+        { kind: 'video', src: 'media/floors/rave-wedding.mp4', poster: 'media/floors/rave-wedding.jpg', caption: 'Peak time', length: '0:17' },
+        { kind: 'photo', src: 'media/floors/rave-wedding/photo-1.jpg', caption: 'The bride, mid-drop' },
+        { kind: 'video', src: 'media/floors/rave-wedding/booth.mp4', poster: 'media/floors/rave-wedding/booth.jpg', caption: 'View from the booth', length: '0:11' },
+        { kind: 'photo', src: 'media/floors/rave-wedding/photo-2.jpg', caption: 'Hands up' },
+        { kind: 'photo', src: 'media/floors/rave-wedding/photo-3.jpg', caption: 'Behind the decks' },
+        { kind: 'video', src: 'media/floors/rave-wedding/bride.mp4', poster: 'media/floors/rave-wedding/bride.jpg', caption: 'Glow sticks out', length: '0:08' },
+        { kind: 'photo', src: 'media/floors/rave-wedding/photo-4.jpg', caption: 'Full floor' },
+        { kind: 'photo', src: 'media/floors/rave-wedding/photo-5.jpg', caption: 'Fans out' },
+      ],
+    },
     // for now the ADE House Mix everywhere; the wedding set (sets/marta-donalds-wedding, embed api.soundcloud.com/playlists/2277399272) has no public tracks yet
     mix: { title: 'ADE House Mix', length: 'Mix', url: 'https://soundcloud.com/arno-epping/ade-house-mix' },
     cta: 'Check your date',

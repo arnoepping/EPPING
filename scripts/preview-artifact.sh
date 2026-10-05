@@ -30,6 +30,8 @@ open(p, 'w').write(h)
 PY2
 # font lab: a small switcher to compare type pairings (preview only, never on the site)
 cp scripts/fontlab.js "$OUT/fontlab.js" && printf '<script src="fontlab.js"></script>\n' >> "$OUT/index.html"
+# gallery lab: switcher for the gallery/lightbox styles (preview only)
+cp scripts/gallerylab.js "$OUT/gallerylab.js" && printf '<script src="gallerylab.js"></script>\n' >> "$OUT/index.html"
 # the preview host allows 16 MB per file: a 64 kbps copy of the mix
 ffmpeg -loglevel error -y -i public/media/ade-house-mix.mp3 -c:a libmp3lame -b:a 64k "$OUT/media/ade-house-mix.mp3"
 echo "preview ready in $OUT/"
