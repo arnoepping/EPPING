@@ -54,6 +54,14 @@ export const FLOORS: Floor[] = [
       'Before the party we go through the music you love and the vibe you want, so the speakers, the lights and the set all match your night.',
     ],
     includes: ['Planning call and a shared playlist', 'One set, from first guest to final track', 'Sound and lights matched to your venue'],
+    gallery: {
+      title: 'Footage from the dancefloor',
+      items: [
+        { kind: 'video', src: 'media/floors/private-events/clip-3672.mp4', poster: 'media/floors/private-events/clip-3672.jpg', caption: 'Hoofddorpplein Festival, the crowd', length: '0:22' },
+        { kind: 'video', src: 'media/floors/private-events/clip-3669.mp4', poster: 'media/floors/private-events/clip-3669.jpg', caption: 'Hoofddorpplein Festival, behind the decks', length: '0:28' },
+        { kind: 'photo', src: 'media/floors/private-events/photo-1.jpg', caption: 'Young fans at the decks' },
+      ],
+    },
     mix: { title: 'ADE House Mix', length: 'Mix', url: 'https://soundcloud.com/arno-epping/ade-house-mix' },
     cta: 'Plan your party',
     mail: { subject: 'Private event booking', body: 'Hi Epping,\n\nI’m planning a [type of party] on [date] and am interested in booking you as my DJ!\n\n' },
