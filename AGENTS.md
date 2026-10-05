@@ -8,6 +8,7 @@ Website for Epping: DJ and party organizer. (`CLAUDE.md` is a symlink to this fi
 
 ## Preferences
 - Replies: English, extremely concise; fragments are fine.
+- Challenge my requests when you see a better option or a risk: say so briefly with a recommendation, then do what I decide.
 - Use the Superpowers workflow: brainstorm → spec → plan → execute.
 - POC/MVP: speed over QA. No tests, test suites, TDD or review loops unless the user asks. Verify with `npm run build`.
 - Visual work (mockups, 3D, layout): check it yourself with Playwright screenshots before sharing (key moments, both palettes, phone + desktop). Keep it quick: still frames only, no test suites.
