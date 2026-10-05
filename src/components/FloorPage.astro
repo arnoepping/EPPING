@@ -21,7 +21,7 @@ const at = (p: string) => (standalone ? `/${p}` : p);
   {f.media && (
     <figure class="fp-media">
       <video src={at(f.media.video)} poster={at(f.media.poster)} autoplay muted loop playsinline preload="metadata" aria-label={f.media.caption}></video>
-      <button type="button" class="fp-unmute" data-unmute aria-pressed="false">Sound off</button>
+      <button type="button" class="fp-unmute" data-unmute aria-pressed="false">Play sound</button>
       <figcaption>{f.media.caption}</figcaption>
     </figure>
   )}
@@ -37,13 +37,3 @@ const at = (p: string) => (standalone ? `/${p}` : p);
   </div>
   <nav class="fp-others" aria-label="Other floors">{others.map((o) => <a href={`/${o.slug}/`} data-floor={standalone ? undefined : o.slug}>{o.name} →</a>)}</nav>
 </div>
-<script>
-  // Tap to unmute a floor clip (works in the entrance overlay and on the standalone routes).
-  document.addEventListener('click', (e) => {
-    const b = (e.target as Element).closest<HTMLButtonElement>('[data-unmute]');
-    const v = b?.parentElement?.querySelector('video');
-    if (!b || !v) return;
-    v.muted = !v.muted; if (!v.muted) { v.currentTime = 0; v.play().catch(() => {}); }
-    b.setAttribute('aria-pressed', String(!v.muted)); b.textContent = v.muted ? 'Sound off' : 'Sound on';
-  });
-</script>

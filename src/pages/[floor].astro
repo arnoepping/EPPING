@@ -10,7 +10,10 @@ const { f } = Astro.props as { f: Floor };
   <main class="fp-standalone"><FloorPage f={f} standalone /></main>
   <script>
     import { track } from '../lib/track.ts';
+    import { toggleClip } from '../lib/clip.ts';
     document.addEventListener('click', (e) => {
+      const um = (e.target as Element).closest<HTMLElement>('[data-unmute]');
+      if (um) toggleClip(um);
       const cp = (e.target as Element).closest<HTMLElement>('[data-copy]');
       if (!cp) return;
       track('contact', { type: 'copy-email', floor: cp.dataset.floorSlug ?? '' });

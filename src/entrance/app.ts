@@ -5,6 +5,7 @@ import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js'
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { buildWorld } from './world.ts';
 import { Sound } from './sound.ts';
+import { toggleClip } from '../lib/clip.ts';
 import { track } from '../lib/track.ts';
 
 // Scroll covers [0, AUTO_FROM]: the street and the stairs. Stepping onto the roof locks the page and the rest plays by itself.
@@ -78,6 +79,8 @@ export function start(root: HTMLElement): void {
     track('floor-open', { floor: slug });
     fp.innerHTML = tpl.innerHTML; fp.hidden = false; fp.scrollTop = 0;
     root.classList.add('reading'); vid.pause();
+    // pin clip URLs before pushState moves the base to /<slug>/, then start them (muted autoplay, also on iOS)
+    fp.querySelectorAll('video').forEach((v) => { v.src = v.src; if (v.poster) v.poster = v.poster; v.muted = true; v.play().catch(() => {}); });
     if (push) history.pushState({ floor: slug }, '', `/${slug}/`);
     fp.querySelector<HTMLElement>('h1')?.focus({ preventScroll: true });
   }
@@ -90,7 +93,8 @@ export function start(root: HTMLElement): void {
     const t = e.target as Element, fl = t.closest<HTMLElement>('[data-floor]'), back = t.closest('[data-back]'), cp = t.closest<HTMLElement>('[data-copy]');
     if (fl) { e.preventDefault(); openFloor(fl.dataset.floor!); }
     if (back) { e.preventDefault(); closeFloor(); }
-    if (t.closest('[data-unmute]') && sound.on) snd.click(); // a floor clip with sound: stop the mix first
+    const um = t.closest<HTMLElement>('[data-unmute]');
+    if (um) { if (sound.on) snd.click(); toggleClip(um); } // a floor clip with sound: stop the mix first
     if (cp) { track('contact', { type: 'copy-email', floor: cp.dataset.floorSlug ?? '' }); navigator.clipboard.writeText(cp.dataset.copy!).then(() => (cp.textContent = 'Copied'), () => {}); }
   });
   addEventListener('popstate', () => closeFloor(false));
