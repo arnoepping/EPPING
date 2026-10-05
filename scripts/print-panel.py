@@ -1,15 +1,17 @@
 # Print file for the DJ booth panel: vector PDF in CMYK, straight from the logo outlines in public/brand/epping-logo.svg.
 # Run: python3 scripts/print-panel.py  -> media/print/ (git-ignored)
-# Panel 64 x 56 cm + 10 mm bleed on every side. Logo 58 cm wide with a 6% split (reads from the dancefloor), sitting above
+# Panel 64 x 56 cm + 10 mm bleed on every side. Logo 58 cm wide with a ~4% split (reads from the dancefloor; the colour edges
+# are clipped per letter so the black gaps between letters stay as in the site logo), sitting above
 # centre; @epping.music (left) and eppingmusic.com (right) under it in Unbounded 500, aligned to the logo's edges.
 import json, re, subprocess
 
 MM = 72 / 25.4
 W, H, BLEED = 640, 560, 10            # finished size and bleed, mm
 LOGO_W = 580                          # logo width, mm
-SPLIT = 2.0                           # split relative to the site logo (3% -> 6%)
+SPLIT = 1.3                           # split relative to the site logo (3% -> ~4%): thicker edges for distance
+KEEP = 1.6                            # black kept clear in every gap between letters (svg units, ~2 mm; same as the site logo)
 RAISE = 30                            # whole group sits this far above the panel centre, mm
-TEXT_H, GAP = 22, 40                  # text height (cap/x-height box of the line) and gap under the logo, mm
+TEXT_H, GAP = 16, 62                  # text height and gap under the logo, mm
 # CMYK (0..1). Rich black for the big background; the logo colours as close as CMYK gets to Sunset rave.
 CMYK = {
     'bg': (0.6, 0.4, 0.4, 1.0),       # rich black
@@ -74,8 +76,26 @@ def pdf_path(d, tx, ty, pt):
 
 logo_pt = transform(k, k, lx0 - gx0 * k, top + gy0 * k)
 ops = ['%s %s %s %s k' % CMYK['bg'], f'0 0 {f(PW)} {f(PH)} re f']
-for d, fill, tx, ty in paths:  # back to front: orange, pink, cream (the edges never overlap outside the cream)
-    ops += ['%s %s %s %s k' % CMYK[fill.upper()], pdf_path(d, float(tx or 0) * SPLIT, float(ty or 0) * SPLIT, logo_pt), 'f']
+# split the outline into letters (subpaths grouped by x), so each letter's colour edges can be clipped to its own cell
+subs = re.findall(r'M[^M]*', paths[-1][0])
+def sub_x(d):
+    xs = [float(v) for v in re.findall(r'-?\d*\.?\d+', d)][0::2]; return min(xs), max(xs)
+letters = []  # [x1, x2, [subpaths]], left to right; counters fall inside their letter's x-range
+for d in sorted(subs, key=lambda d: sub_x(d)[0]):
+    x1, x2 = sub_x(d)
+    if letters and x1 < letters[-1][1]: letters[-1][1] = max(letters[-1][1], x2); letters[-1][2].append(d)
+    else: letters.append([x1, x2, [d]])
+cells = []
+for i, (x1, x2, _) in enumerate(letters):
+    lo = (letters[i - 1][1] + x1) / 2 + KEEP / 2 if i else gx0 - 50
+    hi = (x2 + letters[i + 1][0]) / 2 - KEEP / 2 if i < len(letters) - 1 else gx1 + 50
+    cells.append((lo, hi))
+for d0, fill, tx, ty in paths[:-1]:  # orange, pink: per letter, clipped to its cell
+    for (x1, x2, ds), (lo, hi) in zip(letters, cells):
+        (ax, ay), (bx_, by_) = logo_pt(lo, gy0 - 50), logo_pt(hi, gy1 + 50)
+        ops += ['q', f'{f(ax)} {f(by_)} {f(bx_ - ax)} {f(ay - by_)} re W n', '%s %s %s %s k' % CMYK[fill.upper()],
+                pdf_path(''.join(ds), float(tx or 0) * SPLIT, float(ty or 0) * SPLIT, logo_pt), 'f', 'Q']
+ops += ['%s %s %s %s k' % CMYK[paths[-1][1].upper()], pdf_path(paths[-1][0], 0, 0, logo_pt), 'f']  # cream letters on top
 base = top - (gy1 - gy0) * k - GAP * MM               # pdf y of the text's top edge
 for i, t in enumerate(texts):
     bx = t['box']; w = (bx['x2'] - bx['x1']) * kt
@@ -98,6 +118,6 @@ for i, o in enumerate(objs, 1):
 x = len(out)
 out += b'xref\n0 %d\n0000000000 65535 f \n' % (len(objs) + 1) + b''.join(b'%010d 00000 n \n' % o for o in offs)
 out += b'trailer\n<< /Size %d /Root 1 0 R /Info 5 0 R >>\nstartxref\n%d\n%%%%EOF\n' % (len(objs) + 1, x)
-name = 'media/print/epping-djbooth-64x56-afloop10mm-cmyk-v2.pdf'
+name = 'media/print/epping-djbooth-64x56-afloop10mm-cmyk-v3.pdf'
 open(name, 'wb').write(out)
 print(name, f'{(W + 2 * BLEED)} x {(H + 2 * BLEED)} mm')
