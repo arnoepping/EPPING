@@ -7,12 +7,11 @@ const SHOW = 5; // tiles in the strip; the last one shows "+n" for the rest
 const rest = g.items.length - SHOW;
 ---
 <section class="gal" data-gallery data-items={JSON.stringify(g.items.map((it) => ({ ...it, src: at(it.src), poster: it.poster && at(it.poster) })))}>
-  <div class="gal-head"><h2>{g.title}</h2><span>{g.items.length} clips &amp; photos</span></div>
+  <h2 class="gal-h">{g.title}</h2>
   <ul class="gal-strip">
     {g.items.slice(0, SHOW).map((it, i) => (
       <li><button type="button" class="gal-tile" data-lb={i} aria-label={`${it.kind === 'video' ? 'Play' : 'View'}: ${it.caption}`}>
         <img src={at(it.poster ?? it.src)} alt="" />
-        {it.kind === 'video' && <span class="gal-len">▶ {it.length}</span>}
         {i === SHOW - 1 && rest > 0 && <span class="gal-more">+{rest}</span>}
       </button></li>
     ))}

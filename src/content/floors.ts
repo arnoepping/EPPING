@@ -27,7 +27,7 @@ export const FLOORS: Floor[] = [
     ],
     includes: ['Planning call and a shared playlist', 'One set, from first dance to final track', 'Club sound and lights, smoke on request'],
     gallery: {
-      title: 'From the dancefloor',
+      title: 'Footage from the dancefloor',
       items: [
         { kind: 'video', src: 'media/floors/rave-wedding.mp4', poster: 'media/floors/rave-wedding.jpg', caption: 'Peak time', length: '0:17' },
         { kind: 'video', src: 'media/floors/rave-wedding/clip-4097.mp4', poster: 'media/floors/rave-wedding/clip-4097.jpg', caption: 'The bride on the floor', length: '0:30' },
@@ -69,7 +69,7 @@ export const FLOORS: Floor[] = [
     event: { date: 'Thu 22 October 2026', place: 'Hoofddorpplein, Amsterdam', note: 'Silent disco during ADE · 19:00 – 22:00' }, // remove after the night to hide the block
     includes: [], // no list on this page
     gallery: {
-      title: 'From the dancefloor',
+      title: 'Footage from the dancefloor',
       items: [
         { kind: 'video', src: 'media/floors/presents/street.mp4', poster: 'media/floors/presents/street.jpg', caption: 'From the street', length: '0:10' },
         { kind: 'video', src: 'media/floors/presents/clip-6824.mp4', poster: 'media/floors/presents/clip-6824.jpg', caption: 'Dusk set', length: '0:25' },

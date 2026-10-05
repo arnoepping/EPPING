@@ -51,9 +51,7 @@
 .fp-list li::before { content: ""; position: absolute; left: 0; top: .45em; width: 10px; height: 10px; border-radius: 50%; background: linear-gradient(135deg, var(--pink), var(--orange)); }
 /* gallery: strip of tiles */
 .gal { display: grid; gap: 12px; }
-.gal-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
-.gal-head h2 { margin: 0; font: 800 clamp(20px, 3.4vw, 28px)/1.1 var(--display); }
-.gal-head span { font: 500 12px var(--mono); letter-spacing: .1em; text-transform: uppercase; opacity: .6; white-space: nowrap; }
+.gal-h { margin: 0; font: 800 clamp(20px, 3.4vw, 28px)/1.1 var(--display); }
 .gal button { all: unset; cursor: pointer; position: relative; display: block; overflow: hidden; border-radius: 12px; background: #0e0e10; }
 .gal button:focus-visible { outline: 2px solid var(--pink); outline-offset: 3px; }
 .gal img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform .5s cubic-bezier(.2,.7,.2,1), filter .3s; }
@@ -62,7 +60,6 @@
 .gal .gal-tile { aspect-ratio: 3 / 4; width: 100%; }
 .gal-tile::after { content: ""; position: absolute; inset: 0; border-radius: inherit; box-shadow: inset 0 0 0 1.5px transparent; transition: box-shadow .2s; }
 .gal-tile:hover::after { box-shadow: inset 0 0 0 1.5px var(--pink); }
-.gal-len { position: absolute; left: 6px; bottom: 6px; font: 500 10px var(--mono); letter-spacing: .06em; color: var(--text); background: color-mix(in srgb, var(--bg) 70%, transparent); border-radius: 999px; padding: 4px 7px; backdrop-filter: blur(6px); }
 .gal-more { position: absolute; inset: 0; z-index: 1; display: grid; place-items: center; font: 800 26px var(--display); color: var(--text); background: color-mix(in srgb, var(--bg) 62%, transparent); }
 @media (max-width: 600px) {
   .gal-strip { grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: 38%; overflow-x: auto; scroll-snap-type: x mandatory; scroll-padding-inline: 20px; margin-inline: -20px; padding-inline: 20px; scrollbar-width: none; }
