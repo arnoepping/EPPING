@@ -3,6 +3,8 @@ export type Slug = 'rave-wedding' | 'private-events' | 'presents';
 export interface Floor {
   slug: Slug; n: string; name: string; tagline: string; intro: string; body: string[]; includes: string[];
   event?: { date: string; place: string; note: string };
+  /** looping clip on the floor page (muted until tapped); paths relative to the site root, files in public/media/floors/ */
+  media?: { video: string; poster: string; caption: string };
   /** url: public SoundCloud page; embed: optional player URL (SoundCloud's own api URL works best for sets) */
   mix: { title: string; length: string; url: string; embed?: string };
   cta: string; mail: { subject: string; body: string }; whatsapp: string;
@@ -22,6 +24,7 @@ export const FLOORS: Floor[] = [
       'Club sound and light come with it, so for a few hours your venue feels like the place you’d normally go out to.',
     ],
     includes: ['Planning call and a shared playlist', 'One set, from first dance to final track', 'Club sound and lights, smoke on request'],
+    media: { video: 'media/floors/rave-wedding.mp4', poster: 'media/floors/rave-wedding.jpg', caption: 'Marta & Donald’s wedding' },
     // for now the ADE House Mix everywhere; the wedding set (sets/marta-donalds-wedding, embed api.soundcloud.com/playlists/2277399272) has no public tracks yet
     mix: { title: 'ADE House Mix', length: 'Mix', url: 'https://soundcloud.com/arno-epping/ade-house-mix' },
     cta: 'Check your date',

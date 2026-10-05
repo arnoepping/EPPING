@@ -90,6 +90,7 @@ export function start(root: HTMLElement): void {
     const t = e.target as Element, fl = t.closest<HTMLElement>('[data-floor]'), back = t.closest('[data-back]'), cp = t.closest<HTMLElement>('[data-copy]');
     if (fl) { e.preventDefault(); openFloor(fl.dataset.floor!); }
     if (back) { e.preventDefault(); closeFloor(); }
+    if (t.closest('[data-unmute]') && sound.on) snd.click(); // a floor clip with sound: stop the mix first
     if (cp) { track('contact', { type: 'copy-email', floor: cp.dataset.floorSlug ?? '' }); navigator.clipboard.writeText(cp.dataset.copy!).then(() => (cp.textContent = 'Copied'), () => {}); }
   });
   addEventListener('popstate', () => closeFloor(false));
