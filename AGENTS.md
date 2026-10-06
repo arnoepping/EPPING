@@ -26,7 +26,7 @@ Website for Epping: DJ and party organizer. (`CLAUDE.md` is a symlink to this fi
 ## Location
 - Repo lives in `~/Vibe Code/EPPING` (outside iCloud) since 2026-10-06; lab in `~/Vibe Code/epping-lab`. The old `~/Documents/GitHub/` copies are iCloud-synced: iCloud evicted files there and builds hung. Don't work there.
 - `media EPPING website/` (git-ignored, the user's media) is no longer backed up by iCloud: originals must live elsewhere too.
-- Pending: branch `loader` (local, not pushed): until the street model is in, the canvas shows only the 3D neon sign (camera layer `SIGN_LAYER`), so the street just appears around it. Waiting for the user's go to merge.
+- **Loader: LIVE since 2026-10-06** (`loader` merged): until the street model is in, the canvas shows only the 3D neon sign (camera layer `SIGN_LAYER` in world.ts/app.ts), so the street just appears around it. Static menu after 8 s if the street never arrives. Preview: `LOADER_DELAY=2500 sh scripts/preview-artifact.sh <out>` fakes a slow load (https://claude.ai/artifact/J34NNfKQqRzMg9NcMCevYD).
 
 ## Status (2026-10-03, evening)
 - **Domain:** https://eppingmusic.com is live on GitHub Pages with HTTPS enforced. DNS is on GitHub (A/AAAA records, plus `www` CNAME → `arnoepping.github.io`).
