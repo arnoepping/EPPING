@@ -84,15 +84,16 @@ export interface World {
 // The street model carries geometry, UVs and baked lightmaps; textures are applied here by material name
 // (keeps the .glb small and avoids browsers that fail on embedded images).
 const LIGHTMAPS = ['brick', 'pavement', 'road', 'kerb', 'trim', 'tile', 'dark', 'bollard', 'bark', 'cafe_wall', 'cafe_panel', 'cafe_floor', 'cafe_wood', 'cafe_shade'];
-// glass: plain dark panes, no reflections (the user didn't like them); the café glass stays see-through
-const GLASS: Record<string, { opacity: number }> = { glass: { opacity: 1 }, shop_glass: { opacity: 1 }, cafe_glass: { opacity: 0.32 } };
+// glass: plain dark panes, no reflections (the user didn't like them); the café glass stays see-through.
+// The lit upstairs window (window_lit) is dark too: it pulled the eye away from the sign.
+const GLASS: Record<string, { opacity: number }> = { glass: { opacity: 1 }, shop_glass: { opacity: 1 }, window_lit: { opacity: 1 }, cafe_glass: { opacity: 0.32 } };
 const TEXTURES: Record<string, { map: string; normal?: string; rough?: string; tint: string }> = {
   brick: { map: 'red_brick_03_diff_web.jpg', normal: 'red_brick_03_nor_web.jpg', rough: 'red_brick_03_rough_web.jpg', tint: '#ffb08a' }, // orange-red Amsterdam School brick
   pavement: { map: 'concrete_pavement_02_diff_web.jpg', normal: 'concrete_pavement_02_nor_web.jpg', tint: '#55525a' },
   road: { map: 'asphalt_02_diff_web.jpg', normal: 'asphalt_02_nor_web.jpg', tint: '#3a383e' },
 };
 // night levels for the emissive parts (Blender's strengths are tuned for the bake, not for bloom)
-const GLOW: Record<string, number> = { window_lit: 0.5, lamp: 4 };
+const GLOW: Record<string, number> = { lamp: 4 };
 
 async function loadStreet(scene: THREE.Scene, glass: THREE.MeshStandardMaterial[]): Promise<void> {
   const loader = new GLTFLoader().setDRACOLoader(new DRACOLoader().setDecoderPath('draco/'));
@@ -117,7 +118,7 @@ async function loadStreet(scene: THREE.Scene, glass: THREE.MeshStandardMaterial[
     m.envMapIntensity = 0;
     const g = GLASS[m.name];
     if (g) {
-      m.color.set('#060508'); m.roughness = 0.1; m.metalness = 0; glass.push(m);
+      m.color.set('#060508'); m.roughness = 0.1; m.metalness = 0; m.emissiveIntensity = 0; glass.push(m);
       if (g.opacity < 1) { m.transparent = true; m.opacity = g.opacity; m.depthWrite = false; (o as THREE.Mesh).renderOrder = 2; }
     }
     m.needsUpdate = true;
