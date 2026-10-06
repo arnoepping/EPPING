@@ -19,6 +19,8 @@ const ease = (t: number) => t * t * (3 - 2 * t);
 /** Height of the stair surface under z. */
 export const stairY = (z: number) => clamp((Z0 - z) / RUN, 0, N) * RISE;
 
+/** Camera layer with only the neon sign: the loader shows it alone until the street is in. */
+export const SIGN_LAYER = 1;
 const C = (hex: string) => new THREE.Color(hex);
 const V = (x: number, y: number) => new THREE.Vector2(x, y);
 const glowMat = (c: THREE.Color) => new THREE.MeshBasicMaterial({ color: c, toneMapped: false, side: THREE.DoubleSide });
@@ -96,8 +98,9 @@ const GLOW: Record<string, number> = { window_lit: 0.5, lamp: 4 };
 
 async function loadStreet(scene: THREE.Scene, glass: THREE.MeshStandardMaterial[]): Promise<void> {
   const loader = new GLTFLoader().setDRACOLoader(new DRACOLoader().setDecoderPath('draco/'));
-  // the private preview page can't serve .glb files, so it hands the model over inline (see scripts/preview-artifact.sh)
-  const inline = (window as Window & { __STREET_GLB__?: ArrayBuffer }).__STREET_GLB__;
+  // the private preview page can't serve .glb files, so it hands the model over inline (see scripts/preview-artifact.sh);
+  // a promise there lets the preview fake a slow load to show the loader
+  const inline = await (window as Window & { __STREET_GLB__?: ArrayBuffer | Promise<ArrayBuffer> }).__STREET_GLB__;
   const gltf = inline ? await loader.parseAsync(inline, '') : await loader.loadAsync('models/street.glb');
   const tl = new THREE.TextureLoader(), jobs: Promise<unknown>[] = [];
   const tex = (file: string, srgb: boolean) => { const t = tl.load(`models/textures/${file}`); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 8; t.flipY = false; if (srgb) t.colorSpace = THREE.SRGBColorSpace; return t; };
@@ -199,9 +202,9 @@ export function buildWorld(): World {
   const wm = wordmarkGeometry(2.4);
   const signY = 2.95;
   const layers: [string, number, number][] = [[PAL.a, -0.028, 0.04], [PAL.b, 0.028, 0.045]];
-  for (const [hex, dx, z] of layers) { const m = new THREE.Mesh(wm, glow(C(hex).multiplyScalar(1.3))); m.position.set(dx, signY, z); scene.add(m); }
+  for (const [hex, dx, z] of layers) { const m = new THREE.Mesh(wm, glow(C(hex).multiplyScalar(1.3))); m.position.set(dx, signY, z); m.layers.enable(SIGN_LAYER); scene.add(m); }
   const signCore = new THREE.Mesh(wm, glow(C(PAL.fg).lerp(C(PAL.b), 0.45).multiplyScalar(1.05)));
-  signCore.position.set(0, signY, 0.05); scene.add(signCore);
+  signCore.position.set(0, signY, 0.05); signCore.layers.enable(SIGN_LAYER); scene.add(signCore);
   const signLight = new THREE.PointLight(C(PAL.b), 14, 9, 2); signLight.position.set(0, signY, 0.8); scene.add(signLight);
   const leak = new THREE.PointLight(C(PAL.b), 0.5, 1.4, 2); leak.position.set(0, 0.03, 0.7); scene.add(leak); // light from under the door: only washes the pavement in front of it
 

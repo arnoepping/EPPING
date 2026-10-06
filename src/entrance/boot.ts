@@ -8,6 +8,6 @@ export function boot(): void {
   if (!root || matchMedia('(prefers-reduced-motion: reduce)').matches || !hasWebGL()) return;
   import('./app.ts').then((m) => m.start(root)).catch((err) => {
     console.error(err);
-    document.documentElement.classList.remove('ent-3d', 'ent-locked');
+    document.documentElement.classList.remove('ent-3d', 'ent-locked', 'ent-boot');
   });
 }
