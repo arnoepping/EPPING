@@ -123,6 +123,20 @@ async function loadStreet(scene: THREE.Scene, glass: THREE.MeshStandardMaterial[
     }
     m.needsUpdate = true;
   });
+  // only the left tree stays: the right one (x = 3.4 in blender/street.py) hid the café. Both trees share one mesh per material,
+  // so drop the triangles right of the door instead of re-baking the street.
+  gltf.scene.updateMatrixWorld(true);
+  gltf.scene.traverse((o) => {
+    const mesh = o as THREE.Mesh, m = mesh.material as THREE.Material | undefined;
+    if (!m || (m.name !== 'leaf' && m.name !== 'bark') || !mesh.geometry.index) return;
+    const g = mesh.geometry, pos = g.attributes.position, idx = g.index!, v = new THREE.Vector3(), keep: number[] = [];
+    for (let i = 0; i < idx.count; i += 3) {
+      let x = 0;
+      for (let k = 0; k < 3; k++) x += v.fromBufferAttribute(pos, idx.getX(i + k)).applyMatrix4(mesh.matrixWorld).x;
+      if (x / 3 < 0) keep.push(idx.getX(i), idx.getX(i + 1), idx.getX(i + 2));
+    }
+    g.setIndex(keep);
+  });
   await Promise.all(jobs);
   scene.add(gltf.scene);
 }
