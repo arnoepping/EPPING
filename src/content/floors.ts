@@ -29,6 +29,10 @@ export const FLOORS: Floor[] = [
     gallery: {
       title: 'Footage from the dancefloor',
       items: [
+        { kind: 'photo', src: 'media/floors/rave-wedding/wa-1.jpg', caption: 'Behind the decks' },
+        { kind: 'photo', src: 'media/floors/rave-wedding/wa-2.jpg', caption: 'First dance' },
+        { kind: 'photo', src: 'media/floors/rave-wedding/wa-3.jpg', caption: 'First dance, close up' },
+        { kind: 'photo', src: 'media/floors/rave-wedding/wa-4.jpg', caption: 'The lift' },
         { kind: 'video', src: 'media/floors/rave-wedding/clip-4097.mp4', poster: 'media/floors/rave-wedding/clip-4097.jpg', caption: 'The bride on the floor', length: '0:30' },
         { kind: 'video', src: 'media/floors/rave-wedding/clip-4096.mp4', poster: 'media/floors/rave-wedding/clip-4096.jpg', caption: 'Glow sticks out', length: '0:21' },
       ],
