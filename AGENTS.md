@@ -23,13 +23,18 @@ Website for Epping: DJ and party organizer. (`CLAUDE.md` is a symlink to this fi
 - `gh` CLI is installed and logged in as `arnoepping` with workflow scope. Repo `arnoepping/EPPING` is public.
 - Dev server: `astro dev --background` (manage it with `astro dev stop`, `astro dev status` and `astro dev logs`). Docs: https://docs.astro.build
 
+## Location
+- Repo lives in `~/Vibe Code/EPPING` (outside iCloud) since 2026-10-06; lab in `~/Vibe Code/epping-lab`. The old `~/Documents/GitHub/` copies are iCloud-synced: iCloud evicted files there and builds hung. Don't work there.
+- `media EPPING website/` (git-ignored, the user's media) is no longer backed up by iCloud: originals must live elsewhere too.
+- Pending: branch `loader` (pulsing logo while the street loads, instead of flashing the static menu), preview https://claude.ai/artifact/J34NNfKQqRzMg9NcMCevYD, waiting for the user's go to merge.
+
 ## Status (2026-10-03, evening)
 - **Domain:** https://eppingmusic.com is live on GitHub Pages with HTTPS enforced. DNS is on GitHub (A/AAAA records, plus `www` CNAME → `arnoepping.github.io`).
   - Squarespace website subscription cancelled (domain kept).
   - Never touch MX, SPF or `google._domainkey`: email runs on Google Workspace.
   - DNS snapshot from before the switch: `.superpowers/sdd/2026-10-02-deploy-pipeline/dns-before.txt` (git-ignored, local only).
 - **Logo: final.** Unbounded 800, G3 (no spur), RGB split. Use it everywhere. `npm run logo` outlines it (G3 data in `scripts/g3.json`) into `public/brand/`, the favicon and `src/components/wordmark.json` (used by `Wordmark.astro`). Replay-G idea dropped.
-- **Open: colour palette.** Down to Sunset rave vs Gold rush (Current dropped, though the site still uses it). Until decided, every website mockup comes in two versions: Sunset rave and Gold rush. Compare them in the lab: `~/Documents/GitHub/epping-lab` → arnoepping.github.io/epping-lab/ (Instagram tab: 6 posts + story per palette, PNG export).
+- **Open: colour palette.** Down to Sunset rave vs Gold rush (Current dropped, though the site still uses it). Until decided, every website mockup comes in two versions: Sunset rave and Gold rush. Compare them in the lab: `~/Vibe Code/epping-lab` → arnoepping.github.io/epping-lab/ (Instagram tab: 6 posts + story per palette, PNG export).
 - **Media:** the user's photos/videos go in `media/inbox/` (git-ignored; the repo is public). Rooftop-set photos + street-party/rooftop clips are in; no wedding footage yet. Web-sized copies, video stills and 720p reels live in `epping-lab/media/` (git-ignored, local only). The lab's Instagram tab uses them: run it locally with `python3 -m http.server` (port 8000) in epping-lab. ffmpeg is installed (Homebrew) for frames, clips and reels.
   - Private share page with the photo mockups (rendered JPGs + 15 s reels): https://claude.ai/artifact/8ZZGb7t1tTM7x5XV8xcgZp, source in `media/ig-page/` (git-ignored). Republish from that path after re-rendering.
 - **Brand:** spec approved (`docs/superpowers/specs/2026-10-02-brand-identity-design.md`): logo A (Unbounded 800, RGB split), black/pink/cyan palette. Built (commits 3373c00..8d50901, not pushed): logo SVGs in `public/brand/`, favicon, `tokens.css`/`ui.css`, `Base.astro`, `Wordmark.astro`, `/brand/` page. Regenerate logos with `npm run logo`.
@@ -45,7 +50,7 @@ Website for Epping: DJ and party organizer. (`CLAUDE.md` is a symlink to this fi
     - Includes: "Planning call and a shared playlist" / "One set, from first dance to final track" / "Club sound and lights, smoke on request" (guest count dropped).
     - CTA: "Check your date"
     - Prefilled (WhatsApp + email body): "Hi Epping, we are getting married on [date] and are interested in booking you as our DJ!" (user's own wording, "!" is fine in the visitor's message).
-    - **Rave Wedding done**, applied on branch `copy` (off `main`, worktree `../EPPING-copy`). Next: Private Events, then Presents, entrance/meta. `/brand/` page still mentions "ABBA to acid" (internal, low priority).
+    - **Rave Wedding done**, applied on branch `copy` (merged). Next: Private Events, then Presents, entrance/meta. `/brand/` page still mentions "ABBA to acid" (internal, low priority).
   - Private Events (done 2026-10-04): angle = any reason to party (house, rented place); level up with good sound, lights and music that moves the floor. Don't advertise "I set up/break down myself"; frame as one person for music, sound and lights (user is a one-man show: expectations go in the planning call, not on the site).
     - Tagline: "Club energy at any venue"
     - Body: "Want to level up your party? It comes down to three things: good sound, good lights and music that keeps the dancefloor moving. I take care of all three."
