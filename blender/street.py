@@ -145,8 +145,8 @@ def window(x, z, w, h):
         bx = x + side * 0.1 * w  # the middle row's bar, close to the centre post
         box('frame', TRIM, bx - 0.02, bx + 0.02, ds, -0.01, z + h / 3, z + 2 * h / 3)
     box('sill', TILE, x - w / 2 - 0.15, x + w / 2 + 0.15, -0.18, 0.0, z - t - 0.08, z - t)
-for f in range(FLOORS):  # mirrored pairs, each 0.5 m in towards the door from above the shop windows (the user, 2026-10-06)
-    for x in (-6.8, -2.95, 2.95, 6.8):
+for f in range(FLOORS):  # mirrored pairs; the first floor (the row you see from the street) 1 m closer to the door (the user, 2026-10-06)
+    for x in ((-5.8, -1.95, 1.95, 5.8) if f == 0 else (-6.8, -2.95, 2.95, 6.8)):
         window(x, H0 + f * HF + 0.8, 1.7, 1.55)
 
 # ground floor: Amsterdam School shopfronts. Brick plinth with a tiled cap, big panes in dark wooden frames,
@@ -201,10 +201,11 @@ def table(x, y):
         box('chair', CAFE_WOOD, bx - 0.02, bx + 0.02, y - 0.19, y + 0.19, 0.55, 1.0)
 for x, y in [(CX0 + 1.0, 1.3), (CX0 + 2.5, 1.55)]: table(x, y)
 LAMP_X, LAMP_Y, LAMP_Z = CX0 + 1.75, 1.6, 2.15
-CAFE_LIT = True  # False: closed and dark, no pendant light, the café glass blocks like the other panes (then also opacity 1 in world.ts)
+CAFE_LIT = True   # False: closed and dark, the café glass blocks like the other panes (then also opacity 1 in world.ts)
+CAFE_LAMP = False # the pendant: off (the user, 2026-10-06), the café keeps only its soft glow
 tube('cord', DARK, (LAMP_X, LAMP_Y, CZ), (LAMP_X, LAMP_Y, LAMP_Z + 0.2), 0.008, 4)
 cyl('shade', CAFE_SHADE, LAMP_X, LAMP_Y, LAMP_Z, LAMP_Z + 0.22, 0.24, 20, r_top=0.06)
-sphere('bulb', LAMP if CAFE_LIT else CAFE_SHADE, LAMP_X, LAMP_Y, LAMP_Z + 0.02, 0.06)
+sphere('bulb', LAMP if CAFE_LAMP else CAFE_SHADE, LAMP_X, LAMP_Y, LAMP_Z + 0.02, 0.06)
 for lx in (CX0 + 0.75, CX0 + 2.75):  # the other pendants: off
     tube('cord', DARK, (lx, 1.3, CZ), (lx, 1.3, LAMP_Z + 0.2), 0.008, 4)
     cyl('shade', CAFE_SHADE, lx, 1.3, LAMP_Z, LAMP_Z + 0.22, 0.24, 20, r_top=0.06)
@@ -288,8 +289,9 @@ def light(name, kind, loc, energy, color, size=0.3, rot=None):
     return ob
 light('neon_sign', 'AREA', (0, -0.6, 2.95), 130, (1.0, 0.17, 0.84), 2.4, rot=(math.radians(90), 0, 0))
 light('door_leak', 'POINT', (0, -0.3, 0.05), 15, (1.0, 0.17, 0.84), 0.2)
-if CAFE_LIT:
+if CAFE_LAMP:
     light('cafe_lamp', 'POINT', (LAMP_X, LAMP_Y, LAMP_Z - 0.05), 260, (1.0, 0.6, 0.3), 0.05)   # the one pendant still on
+if CAFE_LIT:
     light('cafe_fill', 'AREA', (LAMP_X, 2.5, CZ - 0.05), 70, (1.0, 0.55, 0.28), 4.0)          # its bounce off the ceiling / back-bar glow
 light('offscreen_lamp', 'POINT', (16, -6, 5), 220, (1.0, 0.7, 0.45), 0.3)   # far down the street, out of frame
 w = bpy.data.worlds.new('night'); scene.world = w; w.use_nodes = True

@@ -28,6 +28,14 @@ import { FLOORS, CONTACT } from '../content/floors.ts';
       <button class="again" type="button" data-again>↺ Back to the street</button>
     </div>
   </div>
+  <!-- teaser (TEASER in app.ts): through the street door it's black, with the sign. Remove at launch. -->
+  <div class="soon" aria-live="polite">
+    <div class="soon-glow"></div>
+    <img class="soon-sign" src="brand/epping-white.svg" alt="EPPING" width="470" height="86" />
+    <p class="soon-line">Doors open soon</p>
+    <a class="soon-ig" href={CONTACT.instagram}>Follow {CONTACT.instagramLabel}</a>
+    <button class="again soon-back" type="button" data-soon-back>↺ Back to the street</button>
+  </div>
   <section class="floor-page" hidden></section>
   {FLOORS.map((f) => <template data-floor-tpl={f.slug}><FloorPage f={f} /></template>)}
 

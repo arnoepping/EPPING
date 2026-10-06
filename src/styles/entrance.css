@@ -14,6 +14,20 @@
 .ent-poster img { width: 100%; height: 100%; object-fit: cover; }
 .ent-3d .ent .hud, .ent-3d .ent-hint { display: flex; }
 .ent-3d .ent .finale { display: grid; }
+/* teaser: the sign from outside, flickering on black (see TEASER in app.ts) */
+.ent .soon { display: none; position: fixed; inset: 0; z-index: 3; place-content: center; justify-items: center; gap: 18px; padding-inline: 16px; text-align: center;
+  background: #050208; opacity: 0; pointer-events: none; transition: opacity .9s ease; }
+.ent-3d.ent-teaser .ent .soon { display: grid; }
+.ent .soon.on { opacity: 1; pointer-events: auto; }
+.soon-glow { position: absolute; inset: 0; background: radial-gradient(ellipse 45% 35% at 50% 44%, color-mix(in srgb, var(--pink) 22%, transparent), transparent 70%); animation: soon-flick 4.2s infinite steps(1); }
+.soon-sign { position: relative; width: min(46vw, 560px); height: auto; filter: drop-shadow(0 0 10px color-mix(in srgb, var(--pink) 75%, transparent)) drop-shadow(0 0 36px color-mix(in srgb, var(--pink) 45%, transparent)); animation: soon-flick 4.2s infinite steps(1); }
+.soon-line, .soon-ig { position: relative; margin: 0; font: 500 12px var(--mono); letter-spacing: .16em; text-transform: uppercase; color: var(--muted); }
+.soon-ig { color: var(--text); text-decoration: none; border-bottom: 1px solid color-mix(in srgb, var(--text) 30%, transparent); padding-bottom: 2px; }
+.soon-ig:hover { border-color: var(--pink); }
+.ent .soon-back { position: absolute; left: 50%; white-space: nowrap; bottom: calc(env(safe-area-inset-bottom, 0px) + 24px); transform: translateX(-50%); }
+@media (max-width: 640px) { .soon-sign { width: 78vw; } }
+@keyframes soon-flick { 0%, 61%, 64%, 67%, 100% { opacity: 1; } 62%, 66% { opacity: .35; } }
+@media (prefers-reduced-motion: reduce) { .soon-glow, .soon-sign { animation: none; } }
 .ent-3d .ent-spacer { display: block; height: 600vh; }
 .ent-locked, .ent-locked body { overflow: hidden; }
 

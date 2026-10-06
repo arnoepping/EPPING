@@ -11,6 +11,9 @@ import { track } from '../lib/track.ts';
 // Scroll covers [0, AUTO_FROM]: the street and the stairs. Stepping onto the roof locks the page and the rest plays by itself.
 const STAGES = [0, 0.3, 0.72, 1], AUTO_FROM = STAGES[2], AUTO_DUR = 9;
 const STREET_DOOR = 0.38; // tapping the street door walks you to just inside it
+// Teaser ("coming soon"): just through the street door it fades to black with the sign; no stairs, roof or floors from here.
+// The floor pages stay reachable by their links. Set to false at launch (and remove .soon in Entrance.astro).
+const TEASER = true, SOON_AT = 0.345, SOON_MAX = 0.4;
 const clamp = (v: number, a = 0, b = 1) => Math.min(b, Math.max(a, v));
 const ease = (t: number) => t * t * (3 - 2 * t);
 
@@ -18,6 +21,7 @@ export function start(root: HTMLElement): void {
   const canvas = root.querySelector<HTMLCanvasElement>('.ent-canvas')!;
   const $ = <T extends HTMLElement>(sel: string) => root.querySelector<T>(sel)!;
   const html = document.documentElement;
+  html.classList.toggle('ent-teaser', TEASER);
 
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
   renderer.setPixelRatio(Math.min(devicePixelRatio, 1.75));
@@ -72,6 +76,8 @@ export function start(root: HTMLElement): void {
   const skip = $<HTMLButtonElement>('[data-skip]');
   skip.addEventListener('click', () => { track('skip'); p = AUTO_FROM; scrollTo(0, maxScroll()); });
   const hint = $('.ent-hint');
+  const soon = $('.soon'); let soonSeen = false;
+  $('[data-soon-back]').addEventListener('click', () => { anim = null; p = 0; scrollTo(0, 0); });
 
   // ---------- finale + floor pages ----------
   const fin = $('.finale'), vid = fin.querySelector('video')!, fp = $<HTMLElement>('.floor-page');
@@ -115,6 +121,7 @@ export function start(root: HTMLElement): void {
       scrollTo(0, anim.from + (anim.to - anim.from) * e2);
       if (k >= 1) anim = null;
     }
+    if (TEASER && maxScroll() > 0 && scrollY > (SOON_MAX / AUTO_FROM) * maxScroll()) scrollTo(0, (SOON_MAX / AUTO_FROM) * maxScroll()); // nothing beyond the door yet
     if (autoStart === null) {
       const target = (maxScroll() > 0 ? clamp(scrollY / maxScroll()) : 0) * AUTO_FROM;
       p = reduce ? target : p + (target - p) * 0.1;
@@ -135,7 +142,11 @@ export function start(root: HTMLElement): void {
     sound.update(stage, local);
 
     hint.style.opacity = p < 0.02 ? '' : '0';
-    skip.hidden = autoStart !== null;
+    skip.hidden = autoStart !== null || TEASER;
+    if (TEASER) {
+      const on = p > SOON_AT; soon.classList.toggle('on', on);
+      if (on && !soonSeen) { soonSeen = true; track('teaser-soon'); }
+    }
     const f = clamp((p - 0.885) / 0.06); // roof: once the camera stands at the booth
     fin.style.opacity = String(f); fin.classList.toggle('on', f > 0.6);
     if (f > 0 && vid.paused && fp.hidden) { vid.preload = 'auto'; vid.play().catch(() => {}); }
