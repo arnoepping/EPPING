@@ -35,7 +35,7 @@ BRICK = mat('brick', (0.42, 0.14, 0.07), 0.9, tile=1.6)
 PAVE = mat('pavement', (0.08, 0.08, 0.085), 0.8, tile=1.8)
 ROAD = mat('road', (0.035, 0.035, 0.04), 0.85, tile=3.0)
 KERB = mat('kerb', (0.12, 0.12, 0.12), 0.8)
-TRIM = mat('trim', (0.62, 0.58, 0.48), 0.5)                 # cream window frames
+TRIM = mat('trim', (0.72, 0.70, 0.64), 0.5)                 # off-white window frames (after the user's photo, inbox/IMG_4616.heic)
 TILE = mat('tile', (0.03, 0.03, 0.035), 0.45)               # dark glazed pantiles (bands + wavy top)
 DARK = mat('dark', (0.02, 0.018, 0.02), 0.45, 0.3)          # shopfront frames
 BOLLARD = mat('bollard', (0.18, 0.05, 0.035), 0.5)          # Amsterdammertjes
@@ -86,11 +86,11 @@ H0, HF, FLOORS = 4.0, 3.1, 3
 TOP = H0 + HF * FLOORS
 X0, X1, D = -13.0, 9.0, 0.4
 box('facade_l', BRICK, X0, -0.6, 0, D, 0, TOP)
-# right of the door the wall opens up for the café window (x 1.9..8.2, z 0.55..2.55; see the shopfronts)
+# right of the door the wall opens up for the café window (x 1.9..5.0, z 0.55..2.55; mirrors the left shop, see the shopfronts)
 box('facade_r', BRICK, 0.6, 1.9, 0, D, 0, TOP)
-box('facade_r', BRICK, 8.2, X1, 0, D, 0, TOP)
-box('facade_r', BRICK, 1.9, 8.2, 0, D, 0, 0.55)
-box('facade_r', BRICK, 1.9, 8.2, 0, D, 2.55, TOP)
+box('facade_r', BRICK, 5.0, X1, 0, D, 0, TOP)
+box('facade_r', BRICK, 1.9, 5.0, 0, D, 0, 0.55)
+box('facade_r', BRICK, 1.9, 5.0, 0, D, 2.55, TOP)
 box('facade_top', BRICK, -0.6, 0.6, 0, D, 2.3, TOP)
 # rounded corner, turning into the side street
 bpy.ops.mesh.primitive_cylinder_add(vertices=40, radius=2.6, depth=TOP, location=(X1, 2.6, TOP / 2))
@@ -126,28 +126,34 @@ for k in range(FLOORS):
     tile_row(lambda x, zb=zb: zb + 0.03)
 tile_row(lambda x: wave(x) + 0.04, -0.05)
 
-# windows: few, wide, many small panes, cream frames; most dark, a couple dimly lit
-def window(x, z, w, h, lit):
-    box('glass', LIT if lit else GLASS, x - w / 2, x + w / 2, -0.03, -0.01, z, z + h)
-    t, d = 0.07, -0.08
+# windows after the user's photo (inbox/IMG_4616.heic): two casements side by side in thick off-white frames; each casement
+# has a tall top pane, a middle row split by a bar near the centre post, and a bottom pane. All dark: the neon leads.
+def window(x, z, w, h):
+    box('glass', GLASS, x - w / 2, x + w / 2, -0.03, -0.01, z, z + h)
+    t, d, ds = 0.09, -0.09, -0.065   # outer frame width; frame and sash depth
     box('frame', TRIM, x - w / 2 - t, x + w / 2 + t, d, -0.01, z - t, z)
     box('frame', TRIM, x - w / 2 - t, x + w / 2 + t, d, -0.01, z + h, z + h + t)
     box('frame', TRIM, x - w / 2 - t, x - w / 2, d, -0.01, z, z + h)
     box('frame', TRIM, x + w / 2, x + w / 2 + t, d, -0.01, z, z + h)
-    for k in range(1, 3): box('frame', TRIM, x - w / 2 + k * w / 3 - 0.02, x - w / 2 + k * w / 3 + 0.02, d, -0.01, z, z + h)
-    for k in range(1, 5): box('frame', TRIM, x - w / 2, x + w / 2, d, -0.01, z + k * h / 5 - 0.015, z + k * h / 5 + 0.015)
-    box('sill', TILE, x - w / 2 - 0.12, x + w / 2 + 0.12, -0.18, 0.0, z - 0.14, z - 0.06)
-lit_plan = {(0, 1), (1, 0), (2, 2)}  # one lit room visible from the door
-for f in range(FLOORS):
-    z = H0 + f * HF + 0.85
-    for i, (x, w) in enumerate([(-9.6, 2.6), (-2.2, 2.0), (2.2, 2.6)]):
-        window(x, z, w, 1.45, (f, i) in lit_plan)
+    box('frame', TRIM, x - 0.05, x + 0.05, d, -0.01, z, z + h)  # where the two casements meet
+    for side in (-1, 1):
+        a, b = (x - w / 2, x - 0.05) if side < 0 else (x + 0.05, x + w / 2)
+        s_ = 0.045  # sash border
+        box('frame', TRIM, a, b, ds, -0.01, z, z + s_); box('frame', TRIM, a, b, ds, -0.01, z + h - s_, z + h)
+        box('frame', TRIM, a, a + s_, ds, -0.01, z, z + h); box('frame', TRIM, b - s_, b, ds, -0.01, z, z + h)
+        for k in (1, 2): box('frame', TRIM, a, b, ds, -0.01, z + k * h / 3 - 0.02, z + k * h / 3 + 0.02)
+        bx = x + side * 0.1 * w  # the middle row's bar, close to the centre post
+        box('frame', TRIM, bx - 0.02, bx + 0.02, ds, -0.01, z + h / 3, z + 2 * h / 3)
+    box('sill', TILE, x - w / 2 - 0.15, x + w / 2 + 0.15, -0.18, 0.0, z - t - 0.08, z - t)
+for f in range(FLOORS):  # mirrored pairs: above each shop window, and further out
+    for x in (-7.3, -3.45, 3.45, 7.3):
+        window(x, H0 + f * HF + 0.8, 1.7, 1.55)
 
 # ground floor: Amsterdam School shopfronts. Brick plinth with a tiled cap, big panes in dark wooden frames,
 # a band of small-paned transom lights in cream frames above (like the upper windows).
 # Left: a closed shop, dark reflective glass (flyer on it, three.js). Right: a closed café you can look into.
 G0, G1, T0, T1 = 0.55, 2.55, 2.68, 3.42   # main glass z, transom z
-SHOPS = [(-5.0, -1.9), (1.9, 8.2)]   # left one stops early: brick on the far left
+SHOPS = [(-5.0, -1.9), (1.9, 5.0)]   # mirrored around the door, brick beyond them
 for si, (sx0, sx1) in enumerate(SHOPS):
     box('shop_glass' if si == 0 else 'cafe_glass', SHOP if si == 0 else CAFE_GLASS, sx0, sx1, -0.03, 0.0, G0, G1)
     n = max(2, round((sx1 - sx0) / 2.1))
@@ -193,12 +199,13 @@ def table(x, y):
             for ly in (-0.17, 0.17): box('chair', CAFE_WOOD, cx + lx - 0.017, cx + lx + 0.017, y + ly - 0.017, y + ly + 0.017, 1.0, 1.44)
         bx = cx + s * 0.2
         box('chair', CAFE_WOOD, bx - 0.02, bx + 0.02, y - 0.19, y + 0.19, 0.55, 1.0)
-for x, y in [(CX0 + 1.3, 1.3), (CX0 + 3.1, 1.6), (CX0 + 4.9, 1.25)]: table(x, y)
-LAMP_X, LAMP_Y, LAMP_Z = CX0 + 3.1, 1.6, 2.15
+for x, y in [(CX0 + 1.0, 1.3), (CX0 + 2.5, 1.55)]: table(x, y)
+LAMP_X, LAMP_Y, LAMP_Z = CX0 + 1.75, 1.6, 2.15
+CAFE_LIT = False  # closed and dark for now (the user, 2026-10-06): no pendant light, the café glass blocks like the other panes
 tube('cord', DARK, (LAMP_X, LAMP_Y, CZ), (LAMP_X, LAMP_Y, LAMP_Z + 0.2), 0.008, 4)
 cyl('shade', CAFE_SHADE, LAMP_X, LAMP_Y, LAMP_Z, LAMP_Z + 0.22, 0.24, 20, r_top=0.06)
-sphere('bulb', LAMP, LAMP_X, LAMP_Y, LAMP_Z + 0.02, 0.06)
-for lx in (CX0 + 1.3, CX0 + 4.9):  # the other pendants: off
+sphere('bulb', LAMP if CAFE_LIT else CAFE_SHADE, LAMP_X, LAMP_Y, LAMP_Z + 0.02, 0.06)
+for lx in (CX0 + 0.75, CX0 + 2.75):  # the other pendants: off
     tube('cord', DARK, (lx, 1.3, CZ), (lx, 1.3, LAMP_Z + 0.2), 0.008, 4)
     cyl('shade', CAFE_SHADE, lx, 1.3, LAMP_Z, LAMP_Z + 0.22, 0.24, 20, r_top=0.06)
 
@@ -238,7 +245,7 @@ def tree(tx, ty, height):
             for l, (uu, vv) in zip(f.loops, ((0, 0), (1, 0), (1, 1), (0, 1))): l[uv].uv = (uu, vv)
     bm.to_mesh(me); bm.free(); me.materials.append(LEAF)
 tree(-3.0, -3.6, 7.2)
-tree(3.4, -3.6, 7.6)
+tree(3.0, -3.6, 7.6)  # mirrors the left tree
 
 # bikes: a proper road bike (drop bars, spoked wheels), parked against the facade, right of the door
 def bike(x, frame_mat, flip=False):
@@ -281,8 +288,9 @@ def light(name, kind, loc, energy, color, size=0.3, rot=None):
     return ob
 light('neon_sign', 'AREA', (0, -0.6, 2.95), 130, (1.0, 0.17, 0.84), 2.4, rot=(math.radians(90), 0, 0))
 light('door_leak', 'POINT', (0, -0.3, 0.05), 15, (1.0, 0.17, 0.84), 0.2)
-light('cafe_lamp', 'POINT', (LAMP_X, LAMP_Y, LAMP_Z - 0.05), 260, (1.0, 0.6, 0.3), 0.05)   # the one pendant still on
-light('cafe_fill', 'AREA', (LAMP_X, 2.5, CZ - 0.05), 70, (1.0, 0.55, 0.28), 4.0)          # its bounce off the ceiling / back-bar glow
+if CAFE_LIT:
+    light('cafe_lamp', 'POINT', (LAMP_X, LAMP_Y, LAMP_Z - 0.05), 260, (1.0, 0.6, 0.3), 0.05)   # the one pendant still on
+    light('cafe_fill', 'AREA', (LAMP_X, 2.5, CZ - 0.05), 70, (1.0, 0.55, 0.28), 4.0)          # its bounce off the ceiling / back-bar glow
 light('offscreen_lamp', 'POINT', (16, -6, 5), 220, (1.0, 0.7, 0.45), 0.3)   # far down the street, out of frame
 w = bpy.data.worlds.new('night'); scene.world = w; w.use_nodes = True
 bg = w.node_tree.nodes['Background']; bg.inputs['Color'].default_value = (0.03, 0.025, 0.06, 1); bg.inputs['Strength'].default_value = 0.35
@@ -318,8 +326,16 @@ def uv_world(ob, tile):
 BAKE = {'brick': 2048, 'pavement': 1024, 'road': 1024, 'kerb': 512, 'trim': 1024, 'tile': 1024, 'dark': 512, 'bollard': 256, 'bark': 512,
         'cafe_wall': 1024, 'cafe_panel': 512, 'cafe_floor': 512, 'cafe_wood': 1024, 'cafe_shade': 256}
 # the café window must not block the café's light (nor the street's) in the bake
-for prop in ('visible_shadow', 'visible_diffuse', 'visible_glossy', 'visible_transmission'): setattr(merged['cafe_glass'], prop, False)
+if CAFE_LIT:
+    for prop in ('visible_shadow', 'visible_diffuse', 'visible_glossy', 'visible_transmission'): setattr(merged['cafe_glass'], prop, False)
 scene.render.engine = 'CYCLES'; scene.cycles.samples = 8 if QUICK else 128; scene.cycles.device = 'CPU'
+try:  # the M1 GPU, as in blender/stairwell.py
+    prefs = bpy.context.preferences.addons['cycles'].preferences
+    prefs.compute_device_type = 'METAL'; prefs.refresh_devices()
+    for dv in prefs.devices: dv.use = True
+    scene.cycles.device = 'GPU'
+except Exception as e:
+    print('GPU unavailable, using CPU', e)
 scene.view_settings.view_transform = 'Standard'  # lightmaps must not be tone-mapped
 scene.render.image_settings.file_format = 'JPEG'; scene.render.image_settings.quality = 82
 for name, ob in merged.items():

@@ -84,9 +84,9 @@ export interface World {
 // The street model carries geometry, UVs and baked lightmaps; textures are applied here by material name
 // (keeps the .glb small and avoids browsers that fail on embedded images).
 const LIGHTMAPS = ['brick', 'pavement', 'road', 'kerb', 'trim', 'tile', 'dark', 'bollard', 'bark', 'cafe_wall', 'cafe_panel', 'cafe_floor', 'cafe_wood', 'cafe_shade'];
-// glass: plain dark panes, no reflections (the user didn't like them); the café glass stays see-through.
-// The lit upstairs window (window_lit) is dark too: it pulled the eye away from the sign.
-const GLASS: Record<string, { opacity: number }> = { glass: { opacity: 1 }, shop_glass: { opacity: 1 }, window_lit: { opacity: 1 }, cafe_glass: { opacity: 0.32 } };
+// glass: plain dark panes, no reflections (the user didn't like them). The café is closed and dark for now, so its glass
+// is a plain pane too (opacity 0.32 lets you look in again; then set CAFE_LIT in blender/street.py and re-bake).
+const GLASS: Record<string, { opacity: number }> = { glass: { opacity: 1 }, shop_glass: { opacity: 1 }, window_lit: { opacity: 1 }, cafe_glass: { opacity: 1 } };
 const TEXTURES: Record<string, { map: string; normal?: string; rough?: string; tint: string }> = {
   brick: { map: 'red_brick_03_diff_web.jpg', normal: 'red_brick_03_nor_web.jpg', rough: 'red_brick_03_rough_web.jpg', tint: '#ffb08a' }, // orange-red Amsterdam School brick
   pavement: { map: 'concrete_pavement_02_diff_web.jpg', normal: 'concrete_pavement_02_nor_web.jpg', tint: '#55525a' },
@@ -122,20 +122,6 @@ async function loadStreet(scene: THREE.Scene, glass: THREE.MeshStandardMaterial[
       if (g.opacity < 1) { m.transparent = true; m.opacity = g.opacity; m.depthWrite = false; (o as THREE.Mesh).renderOrder = 2; }
     }
     m.needsUpdate = true;
-  });
-  // only the left tree stays: the right one (x = 3.4 in blender/street.py) hid the café. Both trees share one mesh per material,
-  // so drop the triangles right of the door instead of re-baking the street.
-  gltf.scene.updateMatrixWorld(true);
-  gltf.scene.traverse((o) => {
-    const mesh = o as THREE.Mesh, m = mesh.material as THREE.Material | undefined;
-    if (!m || (m.name !== 'leaf' && m.name !== 'bark') || !mesh.geometry.index) return;
-    const g = mesh.geometry, pos = g.attributes.position, idx = g.index!, v = new THREE.Vector3(), keep: number[] = [];
-    for (let i = 0; i < idx.count; i += 3) {
-      let x = 0;
-      for (let k = 0; k < 3; k++) x += v.fromBufferAttribute(pos, idx.getX(i + k)).applyMatrix4(mesh.matrixWorld).x;
-      if (x / 3 < 0) keep.push(idx.getX(i), idx.getX(i + 1), idx.getX(i + 2));
-    }
-    g.setIndex(keep);
   });
   await Promise.all(jobs);
   scene.add(gltf.scene);
