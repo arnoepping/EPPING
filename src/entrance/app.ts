@@ -3,7 +3,7 @@ import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
-import { buildWorld, SIGN_LAYER } from './world.ts';
+import { buildWorld } from './world.ts';
 import { Sound } from './sound.ts';
 import { openLightbox } from '../lib/lightbox.ts';
 import { track } from '../lib/track.ts';
@@ -35,10 +35,9 @@ export function start(root: HTMLElement): void {
     bloom.resolution.set(w / 2, h / 2);
     camera.aspect = w / h; camera.fov = w < h ? 74 : 58; camera.updateProjectionMatrix();
   };
-  // until the street model is in, the camera sees only the neon sign (the loader); then the street appears around it
-  camera.layers.set(SIGN_LAYER);
+  // until the street is in, a still of the opening frame shows (.ent-poster); the canvas takes over once it has rendered the street
   let streetIn = false;
-  world.ready.then(() => { world.reflect(renderer); camera.layers.enableAll(); streetIn = true; html.classList.add('ent-3d'); resize(); }).catch((e) => { console.error('street model failed', e); html.classList.remove('ent-boot'); });
+  world.ready.then(() => { world.reflect(renderer); streetIn = true; resize(); requestAnimationFrame(() => requestAnimationFrame(() => html.classList.add('ent-3d'))); }).catch((e) => { console.error('street model failed', e); html.classList.remove('ent-boot'); });
   new ResizeObserver(resize).observe(canvas);
   resize();
 

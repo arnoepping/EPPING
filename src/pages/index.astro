@@ -4,12 +4,16 @@ import Entrance from '../components/Entrance.astro';
 import '../styles/entrance.css';
 ---
 <Base title="EPPING | Rave weddings, private events, our own nights" description="EPPING: DJ for rave weddings, private events and Epping Presents nights in Amsterdam.">
-  <!-- decide before first paint: 3D-capable devices get the loader instead of the static page (it comes back after 8 s if the street never arrives) -->
+  <!-- decide before first paint: 3D-capable devices get the street still instead of the static page (it comes back after 8 s if the street never arrives),
+       and start downloading the street model and its decoder now instead of after the 3D code -->
   <script slot="head" is:inline>
     (function () {
       var h = document.documentElement;
       try { if (matchMedia('(prefers-reduced-motion: reduce)').matches || !document.createElement('canvas').getContext('webgl2')) return; } catch (e) { return; }
       h.classList.add('ent-boot');
+      ['models/street.glb', 'draco/draco_wasm_wrapper.js', 'draco/draco_decoder.wasm'].forEach(function (u) {
+        var l = document.createElement('link'); l.rel = 'preload'; l.as = 'fetch'; l.crossOrigin = 'anonymous'; l.href = u; document.head.appendChild(l);
+      });
       setTimeout(function () { if (!h.classList.contains('ent-3d')) h.classList.remove('ent-boot'); }, 8000);
     })();
   </script>

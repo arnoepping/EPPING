@@ -5,8 +5,13 @@
 .ent-contact { margin: 0; color: var(--muted); }
 
 .ent-3d .ent-static, .ent-boot .ent-static { display: none; }
-/* loader: while html.ent-boot waits for the street, the canvas shows only the neon sign (see app.ts) */
+/* while html.ent-boot waits for the street, a still of the opening frame shows; the canvas renders invisibly behind it.
+   The stills are wider than any viewport of their orientation, so `cover` scales them by height, exactly like the camera's fov. */
 .ent-3d .ent-canvas, .ent-boot .ent-canvas { display: block; position: fixed; inset: 0; width: 100%; height: 100%; }
+.ent-boot:not(.ent-3d) .ent-canvas { opacity: 0; }
+.ent-poster { display: none; }
+.ent-boot:not(.ent-3d) .ent-poster { display: block; position: fixed; inset: 0; }
+.ent-poster img { width: 100%; height: 100%; object-fit: cover; }
 .ent-3d .ent .hud, .ent-3d .ent-hint { display: flex; }
 .ent-3d .ent .finale { display: grid; }
 .ent-3d .ent-spacer { display: block; height: 600vh; }

@@ -6,6 +6,11 @@ import { FLOORS, CONTACT } from '../content/floors.ts';
 ---
 <main class="ent">
   <canvas class="ent-canvas" aria-hidden="true"></canvas>
+  <!-- the opening frame of the street as a still, shown while the 3D street loads (re-render: see AGENTS.md) -->
+  <picture class="ent-poster" aria-hidden="true">
+    <source media="(orientation: portrait)" srcset="media/street-portrait.jpg" />
+    <img src="media/street-landscape.jpg" alt="" fetchpriority="high" />
+  </picture>
 
   <section class="ent-static">
     <Wordmark tag="h1" />
