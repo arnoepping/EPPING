@@ -145,8 +145,8 @@ def window(x, z, w, h):
         bx = x + side * 0.1 * w  # the middle row's bar, close to the centre post
         box('frame', TRIM, bx - 0.02, bx + 0.02, ds, -0.01, z + h / 3, z + 2 * h / 3)
     box('sill', TILE, x - w / 2 - 0.15, x + w / 2 + 0.15, -0.18, 0.0, z - t - 0.08, z - t)
-for f in range(FLOORS):  # mirrored pairs: above each shop window, and further out
-    for x in (-7.3, -3.45, 3.45, 7.3):
+for f in range(FLOORS):  # mirrored pairs, each 0.5 m in towards the door from above the shop windows (the user, 2026-10-06)
+    for x in (-6.8, -2.95, 2.95, 6.8):
         window(x, H0 + f * HF + 0.8, 1.7, 1.55)
 
 # ground floor: Amsterdam School shopfronts. Brick plinth with a tiled cap, big panes in dark wooden frames,
@@ -201,7 +201,7 @@ def table(x, y):
         box('chair', CAFE_WOOD, bx - 0.02, bx + 0.02, y - 0.19, y + 0.19, 0.55, 1.0)
 for x, y in [(CX0 + 1.0, 1.3), (CX0 + 2.5, 1.55)]: table(x, y)
 LAMP_X, LAMP_Y, LAMP_Z = CX0 + 1.75, 1.6, 2.15
-CAFE_LIT = False  # closed and dark for now (the user, 2026-10-06): no pendant light, the café glass blocks like the other panes
+CAFE_LIT = True  # False: closed and dark, no pendant light, the café glass blocks like the other panes (then also opacity 1 in world.ts)
 tube('cord', DARK, (LAMP_X, LAMP_Y, CZ), (LAMP_X, LAMP_Y, LAMP_Z + 0.2), 0.008, 4)
 cyl('shade', CAFE_SHADE, LAMP_X, LAMP_Y, LAMP_Z, LAMP_Z + 0.22, 0.24, 20, r_top=0.06)
 sphere('bulb', LAMP if CAFE_LIT else CAFE_SHADE, LAMP_X, LAMP_Y, LAMP_Z + 0.02, 0.06)

@@ -6,7 +6,6 @@ import { RectAreaLightUniformsLib } from 'three/addons/lights/RectAreaLightUnifo
 import wordmark from '../components/wordmark.json';
 import { POSTERS } from '../content/posters.ts';
 import { PAL } from './palette.ts';
-import { FLOORS } from '../content/floors.ts';
 import { puff } from './textures.ts';
 
 // One continuous world (metres, y up). The street is at z > 0, the facade at z = 0 with the door,
@@ -84,9 +83,9 @@ export interface World {
 // The street model carries geometry, UVs and baked lightmaps; textures are applied here by material name
 // (keeps the .glb small and avoids browsers that fail on embedded images).
 const LIGHTMAPS = ['brick', 'pavement', 'road', 'kerb', 'trim', 'tile', 'dark', 'bollard', 'bark', 'cafe_wall', 'cafe_panel', 'cafe_floor', 'cafe_wood', 'cafe_shade'];
-// glass: plain dark panes, no reflections (the user didn't like them). The café is closed and dark for now, so its glass
-// is a plain pane too (opacity 0.32 lets you look in again; then set CAFE_LIT in blender/street.py and re-bake).
-const GLASS: Record<string, { opacity: number }> = { glass: { opacity: 1 }, shop_glass: { opacity: 1 }, window_lit: { opacity: 1 }, cafe_glass: { opacity: 1 } };
+// glass: plain dark panes, no reflections (the user didn't like them); the café glass stays see-through
+// (for a closed, dark café: opacity 1 here and CAFE_LIT = False in blender/street.py, then re-bake)
+const GLASS: Record<string, { opacity: number }> = { glass: { opacity: 1 }, shop_glass: { opacity: 1 }, cafe_glass: { opacity: 0.32 } };
 const TEXTURES: Record<string, { map: string; normal?: string; rough?: string; tint: string }> = {
   brick: { map: 'red_brick_03_diff_web.jpg', normal: 'red_brick_03_nor_web.jpg', rough: 'red_brick_03_rough_web.jpg', tint: '#ffb08a' }, // orange-red Amsterdam School brick
   pavement: { map: 'concrete_pavement_02_diff_web.jpg', normal: 'concrete_pavement_02_nor_web.jpg', tint: '#55525a' },
@@ -154,33 +153,6 @@ export function buildWorld(): World {
   function reflect(renderer: THREE.WebGLRenderer) {
     rendererRef = renderer; if (stairsIn) captureStairs(renderer);
   }
-
-  // Epping Presents flyer taped inside the left shop window, next to the door
-  const presents = FLOORS.find((f) => f.slug === 'presents');
-  const fc = document.createElement('canvas'); fc.width = 512; fc.height = 724;
-  const flyerTex = new THREE.CanvasTexture(fc); flyerTex.colorSpace = THREE.SRGBColorSpace; flyerTex.anisotropy = 8;
-  const drawFlyer = () => {
-    const g = fc.getContext('2d')!, W = fc.width, H = fc.height;
-    const bg = g.createLinearGradient(0, 0, 0, H); bg.addColorStop(0, PAL.b); bg.addColorStop(1, PAL.a);
-    g.fillStyle = bg; g.fillRect(0, 0, W, H);
-    g.fillStyle = PAL.bg; g.fillRect(28, 28, W - 56, H - 56);
-    g.fillStyle = PAL.fg; g.textAlign = 'center';
-    g.font = '800 92px Unbounded, Arial Black, sans-serif'; g.fillText('EPPING', W / 2, 170);
-    g.font = '500 30px "JetBrains Mono", monospace'; g.fillStyle = PAL.b; g.fillText('P R E S E N T S', W / 2, 220);
-    const ev = presents?.event;
-    const [what, when] = ev ? ev.note.split(' · ') : ['Our own nights', ''];
-    g.fillStyle = PAL.fg; g.font = '800 52px Unbounded, Arial Black, sans-serif';
-    (ev ? what.replace(/ during .*/, '') : 'Get on the list').toUpperCase().split(' ').reduce<string[]>((ls, w) => { const l = ls.at(-1); if (l && (l + ' ' + w).length <= 9) ls[ls.length - 1] = l + ' ' + w; else ls.push(w); return ls; }, [])
-      .forEach((l, i) => g.fillText(l, W / 2, 350 + i * 62));
-    g.font = '500 28px "JetBrains Mono", monospace'; g.fillStyle = PAL.a;
-    if (ev) { g.fillText(ev.date.replace(/ \d{4}$/, '').toUpperCase(), W / 2, 540); g.fillText(when, W / 2, 582); g.fillStyle = PAL.fg; g.fillText(ev.place.split(',')[0].toUpperCase(), W / 2, 640); }
-    else { g.fillStyle = PAL.fg; g.fillText('@EPPING.MUSIC', W / 2, 600); }
-    flyerTex.needsUpdate = true;
-  };
-  drawFlyer();
-  document.fonts?.load('800 52px Unbounded').then(() => document.fonts.load('500 28px "JetBrains Mono"')).then(drawFlyer).catch(() => {});
-  const flyer = new THREE.Mesh(new THREE.PlaneGeometry(0.6, 0.85), new THREE.MeshStandardMaterial({ map: flyerTex, emissiveMap: flyerTex, emissive: C('#ffffff'), emissiveIntensity: 0.18, roughness: 0.85 }));
-  flyer.position.set(-2.5, 1.6, 0.037); flyer.rotation.z = 0.025; scene.add(flyer);
 
   // dark ground just under the road: hairline cracks between kerb and road (seen on iPhones) showed the orange sky below the horizon
   const under = new THREE.Mesh(new THREE.PlaneGeometry(80, 40), new THREE.MeshBasicMaterial({ color: C('#020103') }));
