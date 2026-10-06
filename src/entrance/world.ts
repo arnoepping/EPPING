@@ -98,8 +98,9 @@ const GLOW: Record<string, number> = { window_lit: 0.5, lamp: 4 };
 
 async function loadStreet(scene: THREE.Scene, glass: THREE.MeshStandardMaterial[]): Promise<void> {
   const loader = new GLTFLoader().setDRACOLoader(new DRACOLoader().setDecoderPath('draco/'));
-  // the private preview page can't serve .glb files, so it hands the model over inline (see scripts/preview-artifact.sh)
-  const inline = (window as Window & { __STREET_GLB__?: ArrayBuffer }).__STREET_GLB__;
+  // the private preview page can't serve .glb files, so it hands the model over inline (see scripts/preview-artifact.sh);
+  // a promise there lets the preview fake a slow load to show the loader
+  const inline = await (window as Window & { __STREET_GLB__?: ArrayBuffer | Promise<ArrayBuffer> }).__STREET_GLB__;
   const gltf = inline ? await loader.parseAsync(inline, '') : await loader.loadAsync('models/street.glb');
   const tl = new THREE.TextureLoader(), jobs: Promise<unknown>[] = [];
   const tex = (file: string, srgb: boolean) => { const t = tl.load(`models/textures/${file}`); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 8; t.flipY = false; if (srgb) t.colorSpace = THREE.SRGBColorSpace; return t; };

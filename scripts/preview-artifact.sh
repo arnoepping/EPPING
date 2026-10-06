@@ -19,6 +19,7 @@ PY
 python3 - <<'PY2'
 import base64
 import os
+import re
 p = os.environ['OUT'] + '/index.html'; h = open(p).read()
 for var, f in [('__STREET_GLB__', 'street.glb'), ('__STAIR_GLB__', 'stairwell.glb'), ('__ROOF_GLB__', 'roof.glb')]:
     path = os.environ['OUT'] + '/models/' + f
@@ -26,6 +27,9 @@ for var, f in [('__STREET_GLB__', 'street.glb'), ('__STAIR_GLB__', 'stairwell.gl
     b64 = base64.b64encode(open(path, 'rb').read()).decode()
     h = '<script>window.' + var + '=Uint8Array.from(atob("' + b64 + '"),c=>c.charCodeAt(0)).buffer;</script>\n' + h
     os.remove(path)
+# LOADER_DELAY=<ms>: hand the street over late, so the preview shows the loader (the inline model is otherwise instant)
+d = os.environ.get('LOADER_DELAY')
+if d: h = re.sub(r'window\.__STREET_GLB__=(.*?)\.buffer;', lambda m: 'window.__STREET_GLB__=new Promise(r=>setTimeout(r,' + d + ')).then(()=>' + m.group(1) + '.buffer);', h, count=1, flags=re.S)
 open(p, 'w').write(h)
 PY2
 # font lab: a small switcher to compare type pairings (preview only, never on the site)
