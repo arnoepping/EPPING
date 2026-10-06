@@ -3,7 +3,7 @@ import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
-import { buildWorld } from './world.ts';
+import { buildWorld, SIGN_LAYER } from './world.ts';
 import { Sound } from './sound.ts';
 import { openLightbox } from '../lib/lightbox.ts';
 import { track } from '../lib/track.ts';
@@ -35,8 +35,10 @@ export function start(root: HTMLElement): void {
     bloom.resolution.set(w / 2, h / 2);
     camera.aspect = w / h; camera.fov = w < h ? 74 : 58; camera.updateProjectionMatrix();
   };
-  // show the 3D stage only once the street model is in (until then the static page stays)
-  world.ready.then(() => { world.reflect(renderer); html.classList.add('ent-3d'); resize(); }).catch((e) => { console.error('street model failed', e); html.classList.remove('ent-boot'); });
+  // until the street model is in, the camera sees only the neon sign (the loader); then the street appears around it
+  camera.layers.set(SIGN_LAYER);
+  let streetIn = false;
+  world.ready.then(() => { world.reflect(renderer); camera.layers.enableAll(); streetIn = true; html.classList.add('ent-3d'); resize(); }).catch((e) => { console.error('street model failed', e); html.classList.remove('ent-boot'); });
   new ResizeObserver(resize).observe(canvas);
   resize();
 
@@ -52,7 +54,7 @@ export function start(root: HTMLElement): void {
 
   const ray = new THREE.Raycaster(), ndc = new THREE.Vector2();
   const doorUnder = (e: MouseEvent) => {
-    if (autoStart !== null) return null;
+    if (autoStart !== null || !streetIn) return null;
     ndc.set((e.clientX / innerWidth) * 2 - 1, -(e.clientY / innerHeight) * 2 + 1);
     ray.setFromCamera(ndc, camera);
     if (p < 0.33 && ray.intersectObject(world.streetDoor).length) return 0.36;
