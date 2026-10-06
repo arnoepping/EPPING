@@ -4,5 +4,14 @@ import Entrance from '../components/Entrance.astro';
 import '../styles/entrance.css';
 ---
 <Base title="EPPING | Rave weddings, private events, our own nights" description="EPPING: DJ for rave weddings, private events and Epping Presents nights in Amsterdam.">
+  <!-- decide before first paint: 3D-capable devices get the loader instead of the static page (it comes back after 8 s if the street never arrives) -->
+  <script slot="head" is:inline>
+    (function () {
+      var h = document.documentElement;
+      try { if (matchMedia('(prefers-reduced-motion: reduce)').matches || !document.createElement('canvas').getContext('webgl2')) return; } catch (e) { return; }
+      h.classList.add('ent-boot');
+      setTimeout(function () { if (!h.classList.contains('ent-3d')) h.classList.remove('ent-boot'); }, 8000);
+    })();
+  </script>
   <Entrance />
 </Base>

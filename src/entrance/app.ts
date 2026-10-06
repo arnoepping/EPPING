@@ -36,7 +36,7 @@ export function start(root: HTMLElement): void {
     camera.aspect = w / h; camera.fov = w < h ? 74 : 58; camera.updateProjectionMatrix();
   };
   // show the 3D stage only once the street model is in (until then the static page stays)
-  world.ready.then(() => { world.reflect(renderer); html.classList.add('ent-3d'); resize(); }).catch((e) => console.error('street model failed', e));
+  world.ready.then(() => { world.reflect(renderer); html.classList.add('ent-3d'); resize(); }).catch((e) => { console.error('street model failed', e); html.classList.remove('ent-boot'); });
   new ResizeObserver(resize).observe(canvas);
   resize();
 
