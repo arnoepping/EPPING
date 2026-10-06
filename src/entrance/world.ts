@@ -519,16 +519,16 @@ export function buildWorld(): World {
   // ---------- the camera's walk ----------
   const pos = new THREE.Vector3(), look = new THREE.Vector3();
   function cameraAt(stage: number, l: number, t: number) {
-    if (stage === 0) { // walk up to the door
-      const z = lerp(9, 1.5, ease(l)), walked = 9 - z;
+    if (stage === 0) { // walk up to the door: steady pace (no easing), so the walk flows into the doorway at the same speed
+      const z = lerp(9, 1.5, l), walked = 9 - z;
       pos.set(Math.sin(walked * 0.9) * 0.03, 1.65 + Math.abs(Math.sin(walked * 4.2)) * 0.025, z);
       look.set(0, lerp(2.1, 1.6, ease(l)), -2);
     } else if (stage === 1) {
-      if (l < 0.16) { // through the door
-        const k = ease(l / 0.16), z = lerp(1.5, -0.6, k);
+      if (l < 0.2) { // through the door, at the walk's pace (2.1 m over 0.084 of p ≈ 7.5 m over 0.3); only the look eases
+        const k = ease(l / 0.2), z = lerp(1.5, -0.6, l / 0.2);
         pos.set(0, 1.65, z); look.set(0, lerp(1.6, 2.9, k), lerp(-2, -3.4, k));
       } else if (l < 0.88) { // the climb
-        const k = ease((l - 0.16) / 0.72), z = lerp(-0.6, TOP_Z + 0.6, k), steps = (Z0 - z) / RUN;
+        const k = ease((l - 0.2) / 0.68), z = lerp(-0.6, TOP_Z + 0.6, k), steps = (Z0 - z) / RUN;
         pos.set(0, stairY(z) + 1.6 + Math.abs(Math.sin(steps * Math.PI)) * 0.03, z);
         look.set(0, stairY(z - 2.4) + 1.5, z - 2.4);
       } else { // up to the roof door

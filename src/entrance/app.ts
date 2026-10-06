@@ -10,6 +10,7 @@ import { track } from '../lib/track.ts';
 
 // Scroll covers [0, AUTO_FROM]: the street and the stairs. Stepping onto the roof locks the page and the rest plays by itself.
 const STAGES = [0, 0.3, 0.72, 1], AUTO_FROM = STAGES[2], AUTO_DUR = 9;
+const STREET_DOOR = 0.38; // tapping the street door walks you to just inside it
 const clamp = (v: number, a = 0, b = 1) => Math.min(b, Math.max(a, v));
 const ease = (t: number) => t * t * (3 - 2 * t);
 
@@ -46,7 +47,8 @@ export function start(root: HTMLElement): void {
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const maxScroll = () => document.documentElement.scrollHeight - innerHeight;
   const lock = (on: boolean) => { html.classList.toggle('ent-locked', on); };
-  const goTo = (toP: number) => { anim = { from: scrollY, to: clamp(toP / AUTO_FROM) * maxScroll(), t0: performance.now(), dur: 1000 + Math.abs(toP - p) * 6000 }; };
+  // door clicks glide there; the street door walk is slower (about 4.5 s from the start)
+  const goTo = (toP: number, slow = false) => { const d = Math.abs(toP - p); anim = { from: scrollY, to: clamp(toP / AUTO_FROM) * maxScroll(), t0: performance.now(), dur: slow ? 1500 + d * 8000 : 1000 + d * 6000 }; };
   const block = (e: Event) => { if (autoStart !== null && !(e.target as Element).closest?.('.floor-page')) e.preventDefault(); };
   addEventListener('wheel', block, { passive: false }); addEventListener('touchmove', block, { passive: false });
   for (const ev of ['wheel', 'touchstart', 'keydown']) addEventListener(ev, () => { anim = null; }, { passive: true });
@@ -56,11 +58,11 @@ export function start(root: HTMLElement): void {
     if (autoStart !== null || !streetIn) return null;
     ndc.set((e.clientX / innerWidth) * 2 - 1, -(e.clientY / innerHeight) * 2 + 1);
     ray.setFromCamera(ndc, camera);
-    if (p < 0.33 && ray.intersectObject(world.streetDoor).length) return 0.36;
+    if (p < 0.33 && ray.intersectObject(world.streetDoor).length) return STREET_DOOR;
     if (p > 0.3 && p < 0.66 && ray.intersectObject(world.roofDoor).length) return AUTO_FROM;
     return null;
   };
-  canvas.addEventListener('click', (e) => { const to = doorUnder(e); if (to !== null) { track('entrance-door', { door: to === AUTO_FROM ? 'top' : 'street' }); goTo(to); } });
+  canvas.addEventListener('click', (e) => { const to = doorUnder(e); if (to !== null) { track('entrance-door', { door: to === AUTO_FROM ? 'top' : 'street' }); goTo(to, to === STREET_DOOR); } });
   canvas.addEventListener('mousemove', (e) => { canvas.style.cursor = doorUnder(e) !== null ? 'pointer' : ''; });
 
   // ---------- sound + HUD ----------
@@ -109,7 +111,7 @@ export function start(root: HTMLElement): void {
   renderer.setAnimationLoop(() => {
     const t = clock.getElapsedTime(), ms = performance.now();
     if (anim) {
-      const k = clamp((ms - anim.t0) / anim.dur), e2 = k < 0.5 ? 2 * k * k : 1 - (-2 * k + 2) ** 2 / 2;
+      const k = clamp((ms - anim.t0) / anim.dur), e2 = (1 - Math.cos(Math.PI * k)) / 2; // sine in-out: gentler start and landing
       scrollTo(0, anim.from + (anim.to - anim.from) * e2);
       if (k >= 1) anim = null;
     }
@@ -124,7 +126,7 @@ export function start(root: HTMLElement): void {
 
     const kick = reduce ? 0 : sound.kick(t);
     // the street door swings open just before you reach it, so you walk past an open door
-    world.setDoors(stage === 0 ? ease(clamp((local - 0.8) / 0.2)) : 1, stage === 2 ? 1 : stage === 1 ? ease(clamp((local - 0.9) / 0.1)) : 0);
+    world.setDoors(stage === 0 ? ease(clamp((local - 0.65) / 0.35)) : 1, stage === 2 ? 1 : stage === 1 ? ease(clamp((local - 0.9) / 0.1)) : 0);
     const c = world.cameraAt(stage, local, t);
     camera.position.lerp(c.pos, reduce ? 1 : 0.35); look.lerp(c.look, reduce ? 1 : 0.35);
     if (camera.position.distanceTo(c.pos) > 3) { camera.position.copy(c.pos); look.copy(c.look); }
