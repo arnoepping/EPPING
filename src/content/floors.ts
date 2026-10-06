@@ -29,15 +29,8 @@ export const FLOORS: Floor[] = [
     gallery: {
       title: 'Footage from the dancefloor',
       items: [
-        { kind: 'video', src: 'media/floors/rave-wedding.mp4', poster: 'media/floors/rave-wedding.jpg', caption: 'Peak time', length: '0:17' },
         { kind: 'video', src: 'media/floors/rave-wedding/clip-4097.mp4', poster: 'media/floors/rave-wedding/clip-4097.jpg', caption: 'The bride on the floor', length: '0:30' },
-        { kind: 'video', src: 'media/floors/rave-wedding/clip-4108.mp4', poster: 'media/floors/rave-wedding/clip-4108.jpg', caption: 'View from the booth', length: '0:29' },
         { kind: 'video', src: 'media/floors/rave-wedding/clip-4096.mp4', poster: 'media/floors/rave-wedding/clip-4096.jpg', caption: 'Glow sticks out', length: '0:21' },
-        { kind: 'video', src: 'media/floors/rave-wedding/clip-4103.mp4', poster: 'media/floors/rave-wedding/clip-4103.jpg', caption: 'Group selfie', length: '0:11' },
-        { kind: 'video', src: 'media/floors/rave-wedding/clip-4100.mp4', poster: 'media/floors/rave-wedding/clip-4100.jpg', caption: 'Selfie break', length: '0:06' },
-        { kind: 'photo', src: 'media/floors/rave-wedding/photo-2.jpg', caption: 'Hands up' },
-        { kind: 'photo', src: 'media/floors/rave-wedding/photo-3.jpg', caption: 'Behind the decks' },
-        { kind: 'photo', src: 'media/floors/rave-wedding/photo-5.jpg', caption: 'Fans out' },
       ],
     },
     // for now the ADE House Mix everywhere; the wedding set (sets/marta-donalds-wedding, embed api.soundcloud.com/playlists/2277399272) has no public tracks yet
