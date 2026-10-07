@@ -6,7 +6,7 @@ OUT="${1:-media/preview-3d}"   # a second folder (e.g. media/preview-bake) gives
 export OUT
 npm run build
 rm -rf "$OUT" && mkdir -p "$OUT"
-cp -R dist/_astro "$OUT/assets" && cp -R dist/media dist/posters dist/models dist/draco dist/favicon.svg "$OUT/"
+cp -R dist/_astro "$OUT/assets" && cp -R dist/media dist/posters dist/models dist/draco dist/favicon.svg "$OUT/" && mkdir -p "$OUT/brand" && cp dist/brand/*.svg "$OUT/brand/"
 python3 - <<'PY'
 import os, re
 h = open('dist/index.html').read().replace('"/_astro/', '"assets/').replace('href="/favicon.svg"', 'href="favicon.svg"')
