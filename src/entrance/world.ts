@@ -159,6 +159,9 @@ export function buildWorld(): World {
   // dark ground just under the road: hairline cracks between kerb and road (seen on iPhones) showed the orange sky below the horizon
   const under = new THREE.Mesh(new THREE.PlaneGeometry(80, 40), new THREE.MeshBasicMaterial({ color: C('#020103') }));
   under.rotation.x = -Math.PI / 2; under.position.set(0, -0.26, 20); scene.add(under);
+  // a dark neighbouring block past the round corner on the right: on wide screens the pink sky (and a lit skyline window) showed there
+  const block = new THREE.Mesh(new THREE.BoxGeometry(30, 30, 40), new THREE.MeshBasicMaterial({ color: C('#050207') }));
+  block.position.set(11.6 + 15, 15 - 0.3, -2.0 - 20); scene.add(block); // street only: from the roof it would wall off the skyline
 
   // the door: plain black leaf, hinged on the left, swings inward
   const doorMat = new THREE.MeshStandardMaterial({ color: C('#040205'), roughness: 0.55 });
@@ -480,6 +483,7 @@ export function buildWorld(): World {
   const tmp = new THREE.Color();
   function update(t: number, kick: number, camera: THREE.Camera) {
     sky.position.copy(camera.position);
+    block.visible = camera.position.y < 5;
     const k = 0.6 + 0.4 * kick;
     for (const p of pulse) p.mat.color.copy(p.base).multiplyScalar(lerp(1, k, p.k));
     for (let i = 0; i < N; i++) noses.setColorAt(i, tmp.copy(noseBase[i]).multiplyScalar(k));
