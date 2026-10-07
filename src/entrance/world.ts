@@ -167,8 +167,11 @@ export function buildWorld(): World {
   streetDoor.position.set(-0.6, 0, 0.02); // hinge at the front of the reveal
   scene.add(streetDoor);
   // teaser: behind the open door there's nothing but black (sits just in front of the stairwell, which starts at z = -0.41)
-  const blackout = new THREE.Mesh(new THREE.PlaneGeometry(1.8, 3.0), new THREE.MeshBasicMaterial({ color: 0x000000, fog: false }));
-  blackout.position.set(0, 1.45, -0.405); blackout.visible = false; scene.add(blackout);
+  // (reaches well below the ground and has a black threshold floor: through the gap under it the orange sky showed as a line)
+  const black = new THREE.MeshBasicMaterial({ color: 0x000000, fog: false }), blackout = new THREE.Group();
+  const backing = new THREE.Mesh(new THREE.PlaneGeometry(1.8, 4.5), black); backing.position.set(0, 0.7, -0.405);
+  const sill = new THREE.Mesh(new THREE.PlaneGeometry(1.4, 0.45), black); sill.rotation.x = -Math.PI / 2; sill.position.set(0, 0.004, -0.2);
+  blackout.add(backing, sill); blackout.visible = false; scene.add(blackout);
   // a slim brushed pull bar on the right
   const pullMat = new THREE.MeshStandardMaterial({ color: C('#c4bfc8'), metalness: 0.7, roughness: 0.3 });
   const pull = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.42, 12), pullMat);
