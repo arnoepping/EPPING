@@ -11,9 +11,10 @@ import { track } from '../lib/track.ts';
 // Scroll covers [0, AUTO_FROM]: the street and the stairs. Stepping onto the roof locks the page and the rest plays by itself.
 const STAGES = [0, 0.3, 0.72, 1], AUTO_FROM = STAGES[2], AUTO_DUR = 9;
 const STREET_DOOR = 0.38; // tapping the street door walks you to just inside it
-// Teaser ("coming soon"): just through the street door it fades to black with the sign; no stairs, roof or floors from here.
+// Teaser ("coming soon"): the open street door shows only black (world.blackout); walking in fades to black with the sign,
+// fully black (SOON_FULL) before the camera reaches the doorway's black plane, and you can't go further (SOON_MAX).
 // The floor pages stay reachable by their links. Set to false at launch (and remove .soon in Entrance.astro).
-const TEASER = true, SOON_AT = 0.345, SOON_MAX = 0.4;
+const TEASER = true, SOON_AT = 0.33, SOON_FULL = 0.36, SOON_MAX = 0.37;
 const clamp = (v: number, a = 0, b = 1) => Math.min(b, Math.max(a, v));
 const ease = (t: number) => t * t * (3 - 2 * t);
 
@@ -27,6 +28,7 @@ export function start(root: HTMLElement): void {
   renderer.setPixelRatio(Math.min(devicePixelRatio, 1.75));
   renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.15;
   const world = buildWorld();
+  world.blackout.visible = TEASER;
   const camera = new THREE.PerspectiveCamera(60, 1, 0.05, 700);
   const composer = new EffectComposer(renderer);
   composer.addPass(new RenderPass(world.scene, camera));
@@ -66,7 +68,7 @@ export function start(root: HTMLElement): void {
     if (p > 0.3 && p < 0.66 && ray.intersectObject(world.roofDoor).length) return AUTO_FROM;
     return null;
   };
-  canvas.addEventListener('click', (e) => { const to = doorUnder(e); if (to !== null) { track('entrance-door', { door: to === AUTO_FROM ? 'top' : 'street' }); goTo(to, to === STREET_DOOR); } });
+  canvas.addEventListener('click', (e) => { const to = doorUnder(e); if (to !== null) { track('entrance-door', { door: to === AUTO_FROM ? 'top' : 'street' }); goTo(TEASER && to === STREET_DOOR ? SOON_MAX : to, to === STREET_DOOR); } });
   canvas.addEventListener('mousemove', (e) => { canvas.style.cursor = doorUnder(e) !== null ? 'pointer' : ''; });
 
   // ---------- sound + HUD ----------
@@ -144,7 +146,8 @@ export function start(root: HTMLElement): void {
     hint.style.opacity = p < 0.02 ? '' : '0';
     skip.hidden = autoStart !== null || TEASER;
     if (TEASER) {
-      const on = p > SOON_AT; soon.classList.toggle('on', on);
+      const o = clamp((p - SOON_AT) / (SOON_FULL - SOON_AT)), on = o > 0.5; // tied to the walk, so it's black before anything inside could show
+      soon.style.opacity = String(o); soon.classList.toggle('on', on);
       if (on && !soonSeen) { soonSeen = true; track('teaser-soon'); }
     }
     const f = clamp((p - 0.885) / 0.06); // roof: once the camera stands at the booth

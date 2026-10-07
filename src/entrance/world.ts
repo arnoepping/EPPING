@@ -73,6 +73,8 @@ export interface World {
   /** resolves once the baked street model is in the scene */
   ready: Promise<void>;
   streetDoor: THREE.Object3D; roofDoor: THREE.Object3D;
+  /** pitch-black plane just inside the street door, hiding the stairwell (teaser mode); hidden by default */
+  blackout: THREE.Object3D;
   setDoors(street: number, roof: number): void;
   update(t: number, kick: number, camera: THREE.Camera): void;
   /** once the street is in: hands over the renderer for the stairwell's one-off reflection capture */
@@ -164,6 +166,9 @@ export function buildWorld(): World {
   streetLeaf.position.set(0.6, 1.15, 0); streetDoor.add(streetLeaf);
   streetDoor.position.set(-0.6, 0, 0.02); // hinge at the front of the reveal
   scene.add(streetDoor);
+  // teaser: behind the open door there's nothing but black (sits just in front of the stairwell, which starts at z = -0.41)
+  const blackout = new THREE.Mesh(new THREE.PlaneGeometry(1.8, 3.0), new THREE.MeshBasicMaterial({ color: 0x000000, fog: false }));
+  blackout.position.set(0, 1.45, -0.405); blackout.visible = false; scene.add(blackout);
   // a slim brushed pull bar on the right
   const pullMat = new THREE.MeshStandardMaterial({ color: C('#c4bfc8'), metalness: 0.7, roughness: 0.3 });
   const pull = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.42, 12), pullMat);
@@ -517,5 +522,5 @@ export function buildWorld(): World {
     return { pos, look };
   }
 
-  return { scene, ready, streetDoor: streetLeaf, roofDoor: roofLeaf, setDoors, update, reflect, cameraAt };
+  return { scene, ready, streetDoor: streetLeaf, roofDoor: roofLeaf, blackout, setDoors, update, reflect, cameraAt };
 }
