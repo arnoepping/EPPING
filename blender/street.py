@@ -325,7 +325,7 @@ def uv_world(ob, tile):
             l[uv].uv = (u / tile, v / tile)
     bm.to_mesh(me); bm.free()
 
-BAKE = {'brick': 2048, 'pavement': 1024, 'road': 1024, 'kerb': 512, 'trim': 1024, 'tile': 1024, 'dark': 512, 'bollard': 256, 'bark': 512,
+BAKE = {'brick': 2048, 'pavement': 1024, 'road': 1024, 'kerb': 512, 'trim': 2048, 'tile': 1024, 'dark': 512, 'bollard': 256, 'bark': 512,
         'cafe_wall': 1024, 'cafe_panel': 512, 'cafe_floor': 512, 'cafe_wood': 1024, 'cafe_shade': 256}
 # the café window must not block the café's light (nor the street's) in the bake
 if CAFE_LIT:
@@ -349,6 +349,8 @@ for name, ob in merged.items():
     bpy.ops.object.select_all(action='DESELECT'); ob.select_set(True); bpy.context.view_layer.objects.active = ob
     bpy.ops.object.mode_set(mode='EDIT'); bpy.ops.mesh.select_all(action='SELECT')
     bpy.ops.uv.smart_project(angle_limit=math.radians(66), island_margin=0.004)
+    # repack square to the texel grid: islands packed at odd angles gave the thin window bars jagged, stair-stepped edges
+    bpy.ops.uv.pack_islands(rotate=True, rotate_method='CARDINAL', shape_method='AABB', margin_method='FRACTION', margin=0.002)
     bpy.ops.object.mode_set(mode='OBJECT')
     size = 128 if QUICK else BAKE[name]
     img = bpy.data.images.new(f'lm_{name}', size, size, float_buffer=True)
