@@ -38,8 +38,8 @@ Website for Epping: DJ and party organizer. (`CLAUDE.md` is a symlink to this fi
   - Tasks with dates are in Apple Reminders, list "EPPING SEO" ("Claude:" items = what to ask me). Coming-soon mode must keep the floor pages indexable.
   - Next: user's FAQ answers (price range, area, gear, max guests, requests, lead time), then build site basics on a branch.
 
-## Status (2026-10-06, night)
-- **Pick up here (2026-10-06):** the site is in teaser mode (street v2 + "coming soon" behind the door, see below). Open: post the teaser on Instagram (`~/Downloads/epping-teaser-post-street.jpg`), maybe the teaser video (only the sign flickers), bikes only on the right, launch date. At launch: `TEASER = false` in app.ts and remove `.soon`.
+## Status (2026-10-07, night)
+- **Pick up here (2026-10-07):** live = street v2 (crisper window frames, dark block past the right corner) + teaser (pure black behind the door, incl. threshold). Instagram teaser ready: Reel `~/Downloads/epping-teaser-reel.mp4` (9:16, mix snippet, beat-synced; also 4:5 `epping-teaser-video.mp4`). User posts it as a Reel from @epping.music with the personal account as Collab; caption `Doors open soon. Link in bio.` (caption links aren't clickable), bio link eppingmusic.com, story with link sticker + UTM. Open: launch date, bikes only on the right, more teasers (door opening, launch date). At launch: `TEASER = false` in app.ts and remove `.soon`.
 - **Domain:** https://eppingmusic.com is live on GitHub Pages with HTTPS enforced. DNS is on GitHub (A/AAAA records, plus `www` CNAME → `arnoepping.github.io`).
   - Squarespace website subscription cancelled (domain kept).
   - Never touch MX, SPF or `google._domainkey`: email runs on Google Workspace.
