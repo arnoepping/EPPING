@@ -9,7 +9,9 @@ export interface Floor {
   gallery?: { title: string; items: GalleryItem[] };
   /** url: public SoundCloud page; embed: optional player URL (SoundCloud's own api URL works best for sets) */
   mix: { title: string; length: string; url: string; embed?: string };
-  cta: string; mail: { subject: string; body: string }; whatsapp: string;
+  cta: string;
+  /** booking pages: prefilled WhatsApp + email; follow: one Instagram button instead (no list to sign up for) */
+  mail?: { subject: string; body: string }; whatsapp?: string; follow?: boolean;
 }
 
 export const CONTACT = {
@@ -65,12 +67,9 @@ export const FLOORS: Floor[] = [
     whatsapp: 'Hi Epping, I’m planning a [type of party] on [date] and am interested in booking you as my DJ!',
   },
   {
-    slug: 'presents', n: '03', name: 'EPPING Presents', tagline: 'Join our next events',
-    intro: 'Our own nights. Public, loud and a little unhinged. One room, one sound system, everybody welcome.',
-    body: [
-      'Check out below if there are any upcoming events.',
-      'A few times a year we take over a rooftop, basement, park or a place nobody expects and throw a party.',
-    ],
+    slug: 'presents', n: '03', name: 'EPPING Presents', tagline: 'Anywhere we can plug in',
+    intro: 'Our own nights, open to everyone. The music we love, played loud, wherever we can get away with it.',
+    body: ['A few times a year we take over a rooftop, a park or a square for one night. Follow along so you don’t hear about it the day after.'],
     event: { date: 'Thu 22 October 2026', place: 'Hoofddorpplein, Amsterdam', note: 'Silent disco during ADE · 19:00 – 22:00' }, // remove after the night to hide the block
     includes: [], // no list on this page
     gallery: {
@@ -90,9 +89,8 @@ export const FLOORS: Floor[] = [
       ],
     },
     mix: { title: 'ADE House Mix', length: 'Mix', url: 'https://soundcloud.com/arno-epping/ade-house-mix' },
-    cta: 'Get on the list',
-    mail: { subject: 'Epping Presents: put me on the list', body: 'Hi Epping,\n\nPlease put me on the list for the next Epping Presents.\n\n' },
-    whatsapp: 'Hi Epping! Put me on the list for the next Epping Presents.',
+    cta: 'Follow for the next one',
+    follow: true,
   },
 ];
 
