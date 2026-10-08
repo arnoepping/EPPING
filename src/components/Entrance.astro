@@ -14,8 +14,8 @@ import { FLOORS, CONTACT } from '../content/floors.ts';
 
   <section class="ent-static">
     <Wordmark tag="h1" />
-    <p class="ent-tag">Rave weddings. Private parties. Our own nights.</p>
-    <nav class="floors" aria-label="Floors">{FLOORS.map((f) => <a href={`/${f.slug}/`}>{f.name}</a>)}</nav>
+    <p class="ent-tag">Rave weddings. Private events. Our own parties.</p>
+    <nav class="floors" aria-label="Services">{FLOORS.map((f) => <a href={`/${f.slug}/`}>{f.name}</a>)}</nav>
     <p class="ent-contact"><a href={`mailto:${CONTACT.email}`}>{CONTACT.email}</a> · <a href={CONTACT.instagram}>{CONTACT.instagramLabel}</a></p>
   </section>
 
@@ -23,8 +23,8 @@ import { FLOORS, CONTACT } from '../content/floors.ts';
     <video src="media/roof-dusk.mp4" muted loop playsinline preload="none"></video>
     <div class="fin">
       <Wordmark tag="div" size="clamp(56px,13vw,150px)" />
-      <p>Rave weddings. Private parties. Our own nights.</p>
-      <nav class="floors" aria-label="Floors">{FLOORS.map((f) => <a href={`/${f.slug}/`} data-floor={f.slug}>{f.name}</a>)}</nav>
+      <p>Rave weddings. Private events. Our own parties.</p>
+      <nav class="floors" aria-label="Services">{FLOORS.map((f) => <a href={`/${f.slug}/`} data-floor={f.slug}>{f.name}</a>)}</nav>
       <button class="again" type="button" data-again>↺ Back to the street</button>
     </div>
   </div>

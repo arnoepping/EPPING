@@ -3,7 +3,10 @@ export type Slug = 'rave-wedding' | 'private-events' | 'presents';
 /** video: poster is the thumbnail; photo: src is used for both. caption: alt text only, never shown */
 export interface GalleryItem { kind: 'video' | 'photo'; src: string; poster?: string; caption: string; length?: string }
 export interface Floor {
-  slug: Slug; n: string; name: string; tagline: string; intro: string; body: string[]; includes: string[];
+  slug: Slug; n: string; name: string;
+  /** search: <title> and meta description (~60 / ~155 chars) */
+  title: string; description: string;
+  tagline: string; intro: string; body: string[]; includes: string[];
   event?: { date: string; place: string; note: string };
   /** photos and clips under the mix, opened in a lightbox; paths relative to the site root, files in public/media/floors/ */
   gallery?: { title: string; items: GalleryItem[] };
@@ -21,7 +24,10 @@ export const CONTACT = {
 
 export const FLOORS: Floor[] = [
   {
-    slug: 'rave-wedding', n: '01', name: 'Rave Wedding', tagline: 'From grandma’s favourite to your favourite club',
+    slug: 'rave-wedding', n: '01', name: 'Rave Wedding',
+    title: 'Rave wedding DJ in Amsterdam | EPPING',
+    description: 'House, techno and trance wedding DJ. I start where everyone dances and build to your favourite club night. Club sound and lights included.',
+    tagline: 'From grandma’s favourite to your favourite club',
     intro: 'They say it’s the most important day of your life, so the party should be the best one too. I start where everyone can dance, grandma included, and slowly build towards the club and festival nights you love.',
     body: [
       'Before the wedding, we go through the music you love together, so the second half of the night sounds like your favourite night out. Whether it’s house, techno, trance or something in between.',
@@ -46,7 +52,10 @@ export const FLOORS: Floor[] = [
     whatsapp: 'Hi Epping, we are getting married on [date] and are interested in booking you as our DJ!',
   },
   {
-    slug: 'private-events', n: '02', name: 'Private Events', tagline: 'Club energy at any venue',
+    slug: 'private-events', n: '02', name: 'Private Events',
+    title: 'Party DJ for private events in Amsterdam | EPPING',
+    description: 'DJ for birthdays, house parties and company events. Good sound, good lights and music that keeps the dancefloor moving.',
+    tagline: 'Club energy at any venue',
     intro: 'Birthdays, house parties, company events. Club sound and club lights, at any venue. You bring the people, I bring the peak.',
     body: [
       'Want to level up your party? It comes down to three things: good sound, good lights and music that keeps the dancefloor moving. I take care of all three.',
@@ -67,9 +76,12 @@ export const FLOORS: Floor[] = [
     whatsapp: 'Hi Epping, I’m planning a [type of party] on [date] and am interested in booking you as my DJ!',
   },
   {
-    slug: 'presents', n: '03', name: 'EPPING Presents', tagline: 'Anywhere we can plug in',
-    intro: 'Our own nights, open to everyone. The music we love, played loud, wherever we can get away with it.',
-    body: ['A few times a year we take over a rooftop, a park or a square for one night. Follow along so you don’t hear about it the day after.'],
+    slug: 'presents', n: '03', name: 'EPPING Presents',
+    title: 'EPPING Presents | Pop-up parties in Amsterdam',
+    description: 'Our own parties, open to everyone: rooftops, parks and squares around Amsterdam. Follow @epping.music for the next one.',
+    tagline: 'Anywhere we can plug in',
+    intro: 'Our own parties, open to everyone. The music we love, played loud, wherever we can get away with it.',
+    body: ['A few times a year we take over a rooftop, a park or a square for a day or a night. Follow along so you don’t hear about it the day after.'],
     event: { date: 'Thu 22 October 2026', place: 'Hoofddorpplein, Amsterdam', note: 'Silent disco during ADE · 19:00 – 22:00' }, // remove after the night to hide the block
     includes: [], // no list on this page
     gallery: {

@@ -18,7 +18,7 @@ const at = (p: string) => (standalone ? `/${p}` : p);
     <div class="fp-body">{f.body.map((b) => <p>{b}</p>)}</div>
     {f.includes.length > 0 && <ul class="fp-list">{f.includes.map((x) => <li>{x}</li>)}</ul>}
   </div>
-  {f.event && <div class="fp-event"><span>Next night</span><b>{f.event.date}</b><span>{f.event.place} · {f.event.note}</span></div>}
+  {f.event && <div class="fp-event"><span>Next party</span><b>{f.event.date}</b><span>{f.event.place} · {f.event.note}</span></div>}
   <div class="fp-contact">
     <h2>{f.cta}</h2>
     <div class="fp-btns">
@@ -32,5 +32,5 @@ const at = (p: string) => (standalone ? `/${p}` : p);
   </div>
   <iframe class:list={['fp-sc', { 'fp-sc-set': f.mix.embed }]} title={`${f.mix.title} on SoundCloud`} loading="lazy" allow="autoplay; encrypted-media" src={soundcloudEmbed(f.mix.embed ?? f.mix.url)}></iframe>
   {f.gallery && <Gallery g={f.gallery} at={at} />}
-  <nav class="fp-others" aria-label="Other floors">{others.map((o) => <a href={`/${o.slug}/`} data-floor={standalone ? undefined : o.slug}>{o.name} →</a>)}</nav>
+  <nav class="fp-others" aria-label="Other services">{others.map((o) => <a href={`/${o.slug}/`} data-floor={standalone ? undefined : o.slug}>{o.name} →</a>)}</nav>
 </div>
