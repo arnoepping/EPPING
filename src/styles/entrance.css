@@ -56,7 +56,12 @@
 .ent.reading .hud { background: linear-gradient(#000 70%, transparent); left: 0; justify-content: flex-end; }
 .fp-standalone { background: #000; min-height: 100svh; }
 .fp-in { max-width: 760px; margin: 0 auto; padding-inline: 20px; padding-block: calc(env(safe-area-inset-top, 0px) + 76px) 80px; display: grid; gap: 22px; }
-.fp-back { justify-self: start; font: 500 13px var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--text); text-decoration: none; border: 1px solid color-mix(in srgb, var(--text) 25%, transparent); border-radius: 999px; padding: 8px 14px; }
+.fp-top { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.fp-lang { display: flex; gap: 4px; font: 500 13px var(--mono); letter-spacing: .1em; }
+.fp-lang a { color: var(--text); opacity: .55; text-decoration: none; padding: 8px 6px; }
+.fp-lang a[aria-current] { opacity: 1; color: var(--orange); }
+.fp-lang a:hover, .fp-lang a:focus-visible { opacity: 1; }
+.fp-back { font: 500 13px var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--text); text-decoration: none; border: 1px solid color-mix(in srgb, var(--text) 25%, transparent); border-radius: 999px; padding: 8px 14px; }
 .fp-k { margin: 0; font: 500 12px var(--mono); letter-spacing: .18em; text-transform: uppercase; color: var(--orange); }
 .fp-h { margin: -8px 0 0; font: 800 clamp(40px, 9vw, 88px)/.95 var(--display); letter-spacing: -.02em; text-shadow: -.03em 0 var(--orange), .03em 0 var(--pink); text-wrap: balance; outline: none; }
 .fp-intro { margin: 0; font-size: clamp(17px, 2.2vw, 20px); line-height: 1.55; max-width: 60ch; }

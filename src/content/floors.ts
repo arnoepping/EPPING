@@ -72,8 +72,8 @@ export const FLOORS: Floor[] = [
     },
     mix: { title: 'ADE House Mix', length: 'Mix', url: 'https://soundcloud.com/arno-epping/ade-house-mix' },
     cta: 'Plan your party',
-    mail: { subject: 'Private event booking', body: 'Hi Epping,\n\nI’m planning a [type of party] on [date] and am interested in booking you as my DJ!\n\n' },
-    whatsapp: 'Hi Epping, I’m planning a [type of party] on [date] and am interested in booking you as my DJ!',
+    mail: { subject: 'Private event booking', body: 'Hi EPPING,\n\nI’m planning a [type of party] on [date] and am interested in booking you as my DJ!\n\n' },
+    whatsapp: 'Hi EPPING, I’m planning a [type of party] on [date] and am interested in booking you as my DJ!',
   },
   {
     slug: 'presents', n: '03', name: 'EPPING Presents',
@@ -108,3 +108,72 @@ export const FLOORS: Floor[] = [
 
 export const SLUGS: Slug[] = FLOORS.map((f) => f.slug);
 export const floorBySlug = (s: string): Floor | undefined => FLOORS.find((f) => f.slug === s);
+
+// ---------- Dutch (product pages only; the entrance stays English). Copy from the doc "EPPING Dutch product pages". ----------
+export type Lang = 'en' | 'nl';
+type NlFloor = Pick<Floor, 'title' | 'description' | 'tagline' | 'intro' | 'body' | 'includes' | 'cta'> &
+  Partial<Pick<Floor, 'mail' | 'whatsapp' | 'event'>> & { path: string; captions?: string[] };
+
+const NL: Record<Slug, NlFloor> = {
+  'rave-wedding': {
+    path: 'rave-bruiloft',
+    title: 'Rave bruiloft DJ in Amsterdam | EPPING',
+    description: 'House-, techno- en trance-DJ voor jullie bruiloft. Ik begin waar iedereen danst en bouw op naar jullie favoriete clubavond. Clubgeluid en -licht inbegrepen.',
+    tagline: 'Van ABBA met oma tot beuken met vrienden',
+    intro: 'Ze zeggen dat het de belangrijkste dag van jullie leven is, dus dan moet het feest ook het beste feest ooit worden. Ik begin met nummers voor iedereen, oma ook, en bouw langzaam op naar de club- en festivalnachten waar jullie van houden.',
+    body: [
+      'Voor de bruiloft gaan we samen door de muziek waar jullie van houden, zodat de tweede helft van de avond klinkt als jullie favoriete avond uit. Of het nu house, techno, trance of iets daartussenin is.',
+      'Clubgeluid en -licht komen mee, zodat jullie locatie een paar uur voelt als de plek waar jullie normaal uitgaan.',
+    ],
+    includes: ['Kennismakingsgesprek en een gedeelde playlist', 'Eén set, van openingsdans tot laatste plaat', 'Clubgeluid en -licht, rook op aanvraag'],
+    cta: 'Is jullie datum nog vrij?',
+    mail: { subject: 'Boeking Rave Wedding', body: 'Hoi Epping,\n\nWij gaan trouwen op [datum] en willen je graag boeken als onze DJ!\n\n' },
+    whatsapp: 'Hoi Epping, wij gaan trouwen op [datum] en willen je graag boeken als onze DJ!',
+    captions: ['Achter de draaitafels', 'Openingsdans', 'Openingsdans, dichtbij', 'De lift', 'Glowsticks in de lucht', 'De bruid op de dansvloer'],
+  },
+  'private-events': {
+    path: 'feest-dj',
+    title: 'Feest DJ in Amsterdam voor privéfeesten | EPPING',
+    description: 'DJ voor verjaardagen, huisfeesten en bedrijfsfeesten. Clubniveau geluid en licht, en muziek die de dansvloer vol houdt.',
+    tagline: 'De club komt naar jou',
+    intro: 'Verjaardagen, huisfeesten, bedrijfsfeesten. Clubgeluid en clublicht, op elke locatie. Jij zorgt voor het publiek, ik regel de energie.',
+    body: [
+      'Wil jij je feest naar een hoger niveau tillen? Het draait om drie dingen: goed geluid, goed licht en muziek die de dansvloer vult. Ik zorg voor alle drie.',
+      'Voor het feest begint bespreken we de muziek waar je van houdt en de vibe die je zoekt, zodat de speakers, het licht en de set precies bij jouw feest passen.',
+    ],
+    includes: ['Kennismakingsgesprek en een gedeelde playlist', 'Eén set, van eerste gast tot laatste plaat', 'Geluid en licht afgestemd op je locatie'],
+    cta: 'Plan je feest',
+    mail: { subject: 'Aanvraag voor mijn feest', body: 'Hoi EPPING,\n\nIk organiseer een [soort feest] op [datum] en wil je graag boeken als DJ!\n\n' },
+    whatsapp: 'Hoi EPPING, ik organiseer een [soort feest] op [datum] en wil je graag boeken als DJ!',
+    captions: ['Hoofddorpplein Festival, het publiek', 'Hoofddorpplein Festival, achter de draaitafels', 'Jonge fans bij de draaitafels'],
+  },
+  presents: {
+    path: 'epping-presents',
+    title: 'EPPING Presents | Pop-up feesten in Amsterdam',
+    description: 'Onze eigen feesten, open voor iedereen: daken, parken en pleinen in Amsterdam. Volg @epping.music voor het volgende feest.',
+    tagline: 'Overal waar de stekker in kan',
+    intro: 'Onze eigen feesten, open voor iedereen. De muziek waar we van houden, keihard, zolang we ermee wegkomen.',
+    body: ['Een paar keer per jaar nemen we een plek over, van dak tot plein. Volg ons, dan mis je de volgende niet.'],
+    includes: [],
+    cta: 'Volg ons voor het volgende feest',
+    event: { date: 'Do 22 oktober 2026', place: 'Hoofddorpplein, Amsterdam', note: 'Silent disco tijdens ADE · 19:00 – 22:00' }, // remove together with the English one
+    captions: ['Vanaf de straat', 'Set bij zonsondergang', 'Nog één', 'Handen in de lucht', 'Lichten aan', 'Klaarmaken', 'Soundcheck', 'Eerste plaat', 'Dak met uitzicht', 'Hallo', 'In de mix'],
+  },
+};
+
+export const UI = {
+  en: { back: '← Back to the street', backRoof: '← Back to the roof', next: 'Next party', email: 'Email', copy: 'Copy', copied: 'Copied', follow: 'Follow', mixes: 'All mixes on SoundCloud ↗', gallery: 'Footage from the dancefloor', others: 'Other services', play: 'Play', view: 'View' },
+  nl: { back: '← Terug naar de straat', backRoof: '← Terug naar het dak', next: 'Volgende feest', email: 'E-mail', copy: 'Kopieer', copied: 'Gekopieerd', follow: 'Volg', mixes: 'Alle mixes op SoundCloud ↗', gallery: 'Beelden van de dansvloer', others: 'Andere diensten', play: 'Afspelen', view: 'Bekijk' },
+} as const;
+
+/** a product page's URL in a language: /<slug>/ or /nl/<dutch slug>/ */
+export const floorPath = (f: Floor, lang: Lang) => (lang === 'nl' ? `/nl/${NL[f.slug].path}/` : `/${f.slug}/`);
+
+/** the floor with its copy in the given language (media, mix and links stay shared) */
+export function localize(f: Floor, lang: Lang): Floor {
+  if (lang === 'en') return f;
+  const { path: _p, captions, ...nl } = NL[f.slug];
+  const gallery = f.gallery && { title: UI.nl.gallery, items: f.gallery.items.map((it, i) => ({ ...it, caption: captions?.[i] ?? it.caption })) };
+  return { ...f, ...nl, event: f.event && nl.event, gallery };
+}
+

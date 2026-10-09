@@ -1,23 +1,7 @@
 ---
-import Base from '../layouts/Base.astro';
-import FloorPage from '../components/FloorPage.astro';
+import FloorRoute from '../components/FloorRoute.astro';
 import { FLOORS, type Floor } from '../content/floors.ts';
-import '../styles/entrance.css';
 export function getStaticPaths() { return FLOORS.map((f) => ({ params: { floor: f.slug }, props: { f } })); }
 const { f } = Astro.props as { f: Floor };
 ---
-<Base title={f.title} description={f.description}>
-  <main class="fp-standalone"><FloorPage f={f} standalone /></main>
-  <script>
-    import { track } from '../lib/track.ts';
-    import { openLightbox } from '../lib/lightbox.ts';
-    document.addEventListener('click', (e) => {
-      const lb = (e.target as Element).closest<HTMLElement>('[data-lb]');
-      if (lb) openLightbox(lb);
-      const cp = (e.target as Element).closest<HTMLElement>('[data-copy]');
-      if (!cp) return;
-      track('contact', { type: 'copy-email', floor: cp.dataset.floorSlug ?? '' });
-      navigator.clipboard.writeText(cp.dataset.copy!).then(() => (cp.textContent = 'Copied'), () => {});
-    });
-  </script>
-</Base>
+<FloorRoute f={f} lang="en" />

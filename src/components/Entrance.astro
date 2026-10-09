@@ -2,7 +2,7 @@
 // The rooftop entrance: street → stairs → roof → floor pages. Without WebGL (or with reduced motion) the static hero shows instead.
 import Wordmark from './Wordmark.astro';
 import FloorPage from './FloorPage.astro';
-import { FLOORS, CONTACT } from '../content/floors.ts';
+import { FLOORS, CONTACT, floorPath } from '../content/floors.ts';
 ---
 <main class="ent">
   <canvas class="ent-canvas" aria-hidden="true"></canvas>
@@ -15,7 +15,7 @@ import { FLOORS, CONTACT } from '../content/floors.ts';
   <section class="ent-static">
     <Wordmark tag="h1" />
     <p class="ent-tag">Rave weddings. Private events. Our own parties.</p>
-    <nav class="floors" aria-label="Services">{FLOORS.map((f) => <a href={`/${f.slug}/`}>{f.name}</a>)}</nav>
+    <nav class="floors" aria-label="Services">{FLOORS.map((f) => <a href={`/${f.slug}/`} data-nl={floorPath(f, 'nl')}>{f.name}</a>)}</nav>
     <p class="ent-contact"><a href={`mailto:${CONTACT.email}`}>{CONTACT.email}</a> · <a href={CONTACT.instagram}>{CONTACT.instagramLabel}</a></p>
   </section>
 
@@ -24,7 +24,7 @@ import { FLOORS, CONTACT } from '../content/floors.ts';
     <div class="fin">
       <Wordmark tag="div" size="clamp(56px,13vw,150px)" />
       <p>Rave weddings. Private events. Our own parties.</p>
-      <nav class="floors" aria-label="Services">{FLOORS.map((f) => <a href={`/${f.slug}/`} data-floor={f.slug}>{f.name}</a>)}</nav>
+      <nav class="floors" aria-label="Services">{FLOORS.map((f) => <a href={`/${f.slug}/`} data-nl={floorPath(f, 'nl')} data-floor={f.slug}>{f.name}</a>)}</nav>
       <button class="again" type="button" data-again>↺ Back to the street</button>
     </div>
   </div>
@@ -38,6 +38,7 @@ import { FLOORS, CONTACT } from '../content/floors.ts';
   </div>
   <section class="floor-page" hidden></section>
   {FLOORS.map((f) => <template data-floor-tpl={f.slug}><FloorPage f={f} /></template>)}
+  {FLOORS.map((f) => <template data-floor-tpl={`nl:${f.slug}`}><FloorPage f={f} lang="nl" /></template>)}
 
   <div class="hud top">
     <button type="button" data-sound aria-pressed="false">Play sound</button>
@@ -47,6 +48,10 @@ import { FLOORS, CONTACT } from '../content/floors.ts';
 </main>
 <div class="ent-spacer"></div>
 
+<script is:inline>
+  // visitors who picked NL on a product page get the Dutch pages from the menus too
+  try { if (localStorage.getItem('epping-lang') === 'nl') document.querySelectorAll('.floors a[data-nl]').forEach((a) => (a.href = a.dataset.nl)); } catch {}
+</script>
 <script>
   import { boot } from '../entrance/boot.ts';
   boot();

@@ -85,16 +85,19 @@ export function start(root: HTMLElement): void {
   const fin = $('.finale'), vid = fin.querySelector('video')!, fp = $<HTMLElement>('.floor-page');
   $('[data-again]').addEventListener('click', () => { track('replay'); autoStart = null; lock(false); p = 0; scrollTo(0, 0); });
   const SITE = new URL('.', location.href).href; // the entrance only runs on the site root
-  function openFloor(slug: string, push = true) {
-    const tpl = root.querySelector<HTMLTemplateElement>(`template[data-floor-tpl="${slug}"]`);
+  const prefLang = () => { try { return localStorage.getItem('epping-lang') === 'nl' ? 'nl' : 'en'; } catch { return 'en'; } };
+  function openFloor(slug: string, push = true, lang = prefLang()) {
+    const tpl = root.querySelector<HTMLTemplateElement>(`template[data-floor-tpl="${lang === 'nl' ? 'nl:' : ''}${slug}"]`);
     if (!tpl) return;
-    track('floor-open', { floor: slug });
+    track('floor-open', { floor: slug, lang });
     fp.innerHTML = tpl.innerHTML; fp.hidden = false; fp.scrollTop = 0;
     root.classList.add('reading'); vid.pause();
     // gallery paths are relative to the site root; resolve them against it, not the current /<slug>/ URL (floor → floor links)
     fp.querySelectorAll('img').forEach((i) => (i.src = new URL(i.getAttribute('src')!, SITE).href));
     fp.querySelectorAll<HTMLElement>('[data-gallery]').forEach((g) => (g.dataset.base = SITE));
-    if (push) history.pushState({ floor: slug }, '', `/${slug}/`);
+    // the page's own URL (/<slug>/ or /nl/<dutch slug>/), taken from its EN/NL switch
+    const url = fp.querySelector<HTMLAnchorElement>(`.fp-lang [data-lang="${lang}"]`)?.getAttribute('href') ?? `/${slug}/`;
+    if (push) history.pushState({ floor: slug }, '', url); else history.replaceState({ floor: slug }, '', url);
     fp.querySelector<HTMLElement>('h1')?.focus({ preventScroll: true });
   }
   function closeFloor(push = true) {
@@ -104,11 +107,13 @@ export function start(root: HTMLElement): void {
   }
   root.addEventListener('click', (e) => {
     const t = e.target as Element, fl = t.closest<HTMLElement>('[data-floor]'), back = t.closest('[data-back]'), cp = t.closest<HTMLElement>('[data-copy]');
-    if (fl) { e.preventDefault(); openFloor(fl.dataset.floor!); }
+    const sw = t.closest<HTMLElement>('[data-floor-lang]');
+    if (sw) { e.preventDefault(); try { localStorage.setItem('epping-lang', sw.dataset.lang!); } catch {} track('lang', { to: sw.dataset.lang! }); openFloor(sw.dataset.floorLang!, false, sw.dataset.lang); }
+    else if (fl) { e.preventDefault(); openFloor(fl.dataset.floor!); }
     if (back) { e.preventDefault(); closeFloor(); }
     const lb = t.closest<HTMLElement>('[data-lb]');
     if (lb) openLightbox(lb, () => { if (sound.on) snd.click(); }); // a clip with sound: stop the mix first
-    if (cp) { track('contact', { type: 'copy-email', floor: cp.dataset.floorSlug ?? '' }); navigator.clipboard.writeText(cp.dataset.copy!).then(() => (cp.textContent = 'Copied'), () => {}); }
+    if (cp) { track('contact', { type: 'copy-email', floor: cp.dataset.floorSlug ?? '' }); navigator.clipboard.writeText(cp.dataset.copy!).then(() => (cp.textContent = cp.dataset.copied ?? 'Copied'), () => {}); }
   });
   addEventListener('popstate', () => closeFloor(false));
   addEventListener('keydown', (e) => { if (e.key === 'Escape') closeFloor(); });

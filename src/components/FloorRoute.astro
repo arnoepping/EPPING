@@ -1,0 +1,29 @@
+---
+// A product page as its own route, in either language (src/pages/[floor].astro and src/pages/nl/[floor].astro).
+import Base from '../layouts/Base.astro';
+import FloorPage from './FloorPage.astro';
+import { floorPath, localize, type Floor, type Lang } from '../content/floors.ts';
+import '../styles/entrance.css';
+interface Props { f: Floor; lang: Lang }
+const { f, lang } = Astro.props;
+const l = localize(f, lang);
+---
+<Base title={l.title} description={l.description} lang={lang} alternates={{ en: floorPath(f, 'en'), nl: floorPath(f, 'nl') }}>
+  <main class="fp-standalone"><FloorPage f={f} lang={lang} standalone /></main>
+  <script is:inline define:vars={{ lang }}>try { localStorage.setItem('epping-lang', lang); } catch {}</script>
+  <script>
+    import { track } from '../lib/track.ts';
+    import { openLightbox } from '../lib/lightbox.ts';
+    document.addEventListener('click', (e) => {
+      const t = e.target as Element;
+      const sw = t.closest<HTMLElement>('[data-lang]');
+      if (sw) { try { localStorage.setItem('epping-lang', sw.dataset.lang!); } catch {} track('lang', { to: sw.dataset.lang! }); }
+      const lb = t.closest<HTMLElement>('[data-lb]');
+      if (lb) openLightbox(lb);
+      const cp = t.closest<HTMLElement>('[data-copy]');
+      if (!cp) return;
+      track('contact', { type: 'copy-email', floor: cp.dataset.floorSlug ?? '' });
+      navigator.clipboard.writeText(cp.dataset.copy!).then(() => (cp.textContent = cp.dataset.copied ?? 'Copied'), () => {});
+    });
+  </script>
+</Base>

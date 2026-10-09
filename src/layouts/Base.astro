@@ -2,11 +2,13 @@
 import '../styles/tokens.css';
 import '../styles/ui.css';
 import { UMAMI_ID } from '../lib/track.ts';
-interface Props { title: string; description?: string; noindex?: boolean; ogImage?: string }
-const { title, description = 'EPPING: rave weddings, private events and our own parties.', noindex = false, ogImage = '/og.jpg' } = Astro.props;
+/** alternates: the same page per language (paths), for hreflang; English doubles as x-default */
+interface Props { title: string; description?: string; noindex?: boolean; ogImage?: string; lang?: 'en' | 'nl'; alternates?: { en: string; nl: string } }
+const { title, description = 'EPPING: rave weddings, private events and our own parties.', noindex = false, ogImage = '/og.jpg', lang = 'en', alternates } = Astro.props;
+const abs = (p: string) => new URL(p, Astro.site).href;
 ---
 <!doctype html>
-<html lang="en">
+<html lang={lang}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
@@ -19,6 +21,11 @@ const { title, description = 'EPPING: rave weddings, private events and our own 
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta name="twitter:card" content="summary_large_image" />
+    {alternates && <link rel="canonical" href={abs(alternates[lang])} />}
+    {alternates && <link rel="alternate" hreflang="en" href={abs(alternates.en)} />}
+    {alternates && <link rel="alternate" hreflang="nl" href={abs(alternates.nl)} />}
+    {alternates && <link rel="alternate" hreflang="x-default" href={abs(alternates.en)} />}
+    {lang === 'nl' && <meta property="og:locale" content="nl_NL" />}
     <meta name="theme-color" content="#12061A" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />

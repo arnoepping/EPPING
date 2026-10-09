@@ -1,16 +1,22 @@
 ---
-// One service page: used inside the entrance overlay and as the /<slug>/ route.
-import { CONTACT, FLOORS, type Floor } from '../content/floors.ts';
+// One service page: used inside the entrance overlay and as the /<slug>/ and /nl/<slug>/ routes.
+import { CONTACT, FLOORS, UI, floorPath, localize, type Floor, type Lang } from '../content/floors.ts';
 import Gallery from './Gallery.astro';
 import { mailtoHref, whatsappHref, soundcloudEmbed } from '../lib/links.ts';
-interface Props { f: Floor; standalone?: boolean }
-const { f, standalone = false } = Astro.props;
+interface Props { f: Floor; standalone?: boolean; lang?: Lang }
+const { standalone = false, lang = 'en' } = Astro.props;
+const f = localize(Astro.props.f, lang), t = UI[lang];
 const others = FLOORS.filter((o) => o.slug !== f.slug);
 // Standalone routes live at /<slug>/, so media paths need the leading slash there; the overlay on / keeps them relative (preview build).
 const at = (p: string) => (standalone ? `/${p}` : p);
+// EN / NL switch: on a route it's a plain link; in the overlay data-lang swaps the template in place (app.ts)
+const langs: Lang[] = ['en', 'nl'];
 ---
-<div class="fp-in">
-  {standalone ? <a class="fp-back" href="/">← Back to the street</a> : <a class="fp-back" href="/" data-back>← Back to the roof</a>}
+<div class="fp-in" lang={lang}>
+  <div class="fp-top">
+    {standalone ? <a class="fp-back" href="/">{t.back}</a> : <a class="fp-back" href="/" data-back>{t.backRoof}</a>}
+    <nav class="fp-lang" aria-label="Language">{langs.map((l) => <a href={floorPath(f, l)} hreflang={l} data-lang={l} data-floor-lang={standalone ? undefined : f.slug} aria-current={l === lang ? 'true' : undefined}>{l.toUpperCase()}</a>)}</nav>
+  </div>
   <p class="fp-k">{f.tagline}</p>
   <h1 class="fp-h" tabindex="-1">{f.name}</h1>
   <p class="fp-intro">{f.intro}</p>
@@ -18,19 +24,19 @@ const at = (p: string) => (standalone ? `/${p}` : p);
     <div class="fp-body">{f.body.map((b) => <p>{b}</p>)}</div>
     {f.includes.length > 0 && <ul class="fp-list">{f.includes.map((x) => <li>{x}</li>)}</ul>}
   </div>
-  {f.event && <div class="fp-event"><span>Next party</span><b>{f.event.date}</b><span>{f.event.place} · {f.event.note}</span></div>}
+  {f.event && <div class="fp-event"><span>{t.next}</span><b>{f.event.date}</b><span>{f.event.place} · {f.event.note}</span></div>}
   <div class="fp-contact">
     <h2>{f.cta}</h2>
     <div class="fp-btns">
-      {f.follow ? <a class="btn-wa" data-umami-event="contact" data-umami-event-type="instagram" data-umami-event-floor={f.slug} href={CONTACT.instagram} target="_blank" rel="noopener">Follow {CONTACT.instagramLabel}</a> : <>
-      <a class="btn-wa" data-umami-event="contact" data-umami-event-type="whatsapp" data-umami-event-floor={f.slug} href={whatsappHref(CONTACT.whatsapp, f.whatsapp!)} target="_blank" rel="noopener">WhatsApp</a>
-      <a class="btn-mail" data-umami-event="contact" data-umami-event-type="email" data-umami-event-floor={f.slug} href={mailtoHref(CONTACT.email, f.mail!.subject, f.mail!.body)}>Email</a>
+      {f.follow ? <a class="btn-wa" data-umami-event="contact" data-umami-event-type="instagram" data-umami-event-floor={f.slug} data-umami-event-lang={lang} href={CONTACT.instagram} target="_blank" rel="noopener">{t.follow} {CONTACT.instagramLabel}</a> : <>
+      <a class="btn-wa" data-umami-event="contact" data-umami-event-type="whatsapp" data-umami-event-floor={f.slug} data-umami-event-lang={lang} href={whatsappHref(CONTACT.whatsapp, f.whatsapp!)} target="_blank" rel="noopener">WhatsApp</a>
+      <a class="btn-mail" data-umami-event="contact" data-umami-event-type="email" data-umami-event-floor={f.slug} data-umami-event-lang={lang} href={mailtoHref(CONTACT.email, f.mail!.subject, f.mail!.body)}>{t.email}</a>
       </>}
     </div>
-    <p class="fp-addr"><span>{CONTACT.email}</span><button type="button" data-copy={CONTACT.email} data-floor-slug={f.slug}>Copy</button> · <span>{CONTACT.whatsappLabel}</span></p>
-    <p class="fp-social">{!f.follow && <a href={CONTACT.instagram} data-umami-event="contact" data-umami-event-type="instagram" data-umami-event-floor={f.slug} target="_blank" rel="noopener">Instagram {CONTACT.instagramLabel} ↗</a>}<a href={CONTACT.soundcloud} data-umami-event="contact" data-umami-event-type="soundcloud" data-umami-event-floor={f.slug} target="_blank" rel="noopener">All mixes on SoundCloud ↗</a></p>
+    <p class="fp-addr"><span>{CONTACT.email}</span><button type="button" data-copy={CONTACT.email} data-floor-slug={f.slug} data-copied={t.copied}>{t.copy}</button> · <span>{CONTACT.whatsappLabel}</span></p>
+    <p class="fp-social">{!f.follow && <a href={CONTACT.instagram} data-umami-event="contact" data-umami-event-type="instagram" data-umami-event-floor={f.slug} target="_blank" rel="noopener">Instagram {CONTACT.instagramLabel} ↗</a>}<a href={CONTACT.soundcloud} data-umami-event="contact" data-umami-event-type="soundcloud" data-umami-event-floor={f.slug} target="_blank" rel="noopener">{t.mixes}</a></p>
   </div>
   <iframe class:list={['fp-sc', { 'fp-sc-set': f.mix.embed }]} title={`${f.mix.title} on SoundCloud`} loading="lazy" allow="autoplay; encrypted-media" src={soundcloudEmbed(f.mix.embed ?? f.mix.url)}></iframe>
-  {f.gallery && <Gallery g={f.gallery} at={at} />}
-  <nav class="fp-others" aria-label="Other services">{others.map((o) => <a href={`/${o.slug}/`} data-floor={standalone ? undefined : o.slug}>{o.name} →</a>)}</nav>
+  {f.gallery && <Gallery g={f.gallery} at={at} lang={lang} />}
+  <nav class="fp-others" aria-label={t.others}>{others.map((o) => <a href={floorPath(o, lang)} data-floor={standalone ? undefined : o.slug}>{o.name} →</a>)}</nav>
 </div>

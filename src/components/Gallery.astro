@@ -1,8 +1,8 @@
 ---
 // Thumbnails under the mix; a tap opens the lightbox (src/lib/lightbox.ts). Paths go through `at` (see FloorPage).
-import type { Floor } from '../content/floors.ts';
-interface Props { g: NonNullable<Floor['gallery']>; at: (p: string) => string }
-const { g, at } = Astro.props;
+import { UI, type Floor, type Lang } from '../content/floors.ts';
+interface Props { g: NonNullable<Floor['gallery']>; at: (p: string) => string; lang?: Lang }
+const { g, at, lang = 'en' } = Astro.props;
 const SHOW = 5; // tiles in the strip; the last one shows "+n" for the rest
 const rest = g.items.length - SHOW;
 ---
@@ -10,7 +10,7 @@ const rest = g.items.length - SHOW;
   <h2 class="gal-h">{g.title}</h2>
   <ul class="gal-strip">
     {g.items.slice(0, SHOW).map((it, i) => (
-      <li><button type="button" class="gal-tile" data-lb={i} aria-label={`${it.kind === 'video' ? 'Play' : 'View'}: ${it.caption}`}>
+      <li><button type="button" class="gal-tile" data-lb={i} aria-label={`${it.kind === 'video' ? UI[lang].play : UI[lang].view}: ${it.caption}`}>
         <img src={at(it.poster ?? it.src)} alt="" />
         {i === SHOW - 1 && rest > 0 && <span class="gal-more">+{rest}</span>}
       </button></li>

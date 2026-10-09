@@ -1,0 +1,8 @@
+---
+import FloorRoute from '../../components/FloorRoute.astro';
+import { FLOORS, floorPath, type Floor } from '../../content/floors.ts';
+// /nl/<dutch slug>/ (floorPath gives /nl/rave-bruiloft/ etc.)
+export function getStaticPaths() { return FLOORS.map((f) => ({ params: { floor: floorPath(f, 'nl').split('/')[2] }, props: { f } })); }
+const { f } = Astro.props as { f: Floor };
+---
+<FloorRoute f={f} lang="nl" />
