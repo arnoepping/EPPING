@@ -24,7 +24,7 @@ const ld = { '@context': 'https://schema.org', '@type': 'Organization', name: 'E
       <p class="fp-k">{a.kicker}</p>
       <h1 class="fp-h">EPPING</h1>
       <img class="ab-photo" src="/media/floors/presents/photo-3.jpg" alt={lang === 'nl' ? 'EPPING achter de draaitafels op een dak in Amsterdam' : 'EPPING behind the decks on an Amsterdam rooftop'} width="1080" height="1620" />
-      <div class="fp-body ab-body">{a.long.map((p) => <p>{p}</p>)}</div>
+      <div class="fp-body">{a.long.map((p) => <p>{p}</p>)}</div>
       <div class="ab-book">
         <h2>{a.services}</h2>
         <nav class="floors ab-floors">{FLOORS.map((f) => <a href={floorPath(f, lang)}>{f.name}</a>)}</nav>
