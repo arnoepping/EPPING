@@ -7,8 +7,12 @@ import '../styles/entrance.css';
 interface Props { f: Floor; lang: Lang }
 const { f, lang } = Astro.props;
 const l = localize(f, lang);
+// FAQ for search engines and AI search (schema.org FAQPage), same text as on the page
+const faqLd = l.faq && { '@context': 'https://schema.org', '@type': 'FAQPage', inLanguage: lang,
+  mainEntity: l.faq.map((x) => ({ '@type': 'Question', name: x.q, acceptedAnswer: { '@type': 'Answer', text: x.a } })) };
 ---
 <Base title={l.title} description={l.description} lang={lang} alternates={{ en: floorPath(f, 'en'), nl: floorPath(f, 'nl') }}>
+  {faqLd && <script slot="head" type="application/ld+json" set:html={JSON.stringify(faqLd)} />}
   <main class="fp-standalone"><FloorPage f={f} lang={lang} standalone /></main>
   <script is:inline define:vars={{ lang }}>try { localStorage.setItem('epping-lang', lang); } catch {}</script>
   <script>

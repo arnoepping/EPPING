@@ -57,6 +57,18 @@
 .fp-standalone { background: #000; min-height: 100svh; }
 .fp-in { max-width: 760px; margin: 0 auto; padding-inline: 20px; padding-block: calc(env(safe-area-inset-top, 0px) + 76px) 80px; display: grid; gap: 22px; }
 .fp-top { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.fp-topr { display: flex; align-items: center; gap: 10px; }
+.fp-faqjump { font: 500 13px var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--text); opacity: .75; text-decoration: none; padding: 8px 4px; }
+.fp-faqjump:hover, .fp-faqjump:focus-visible { opacity: 1; color: var(--orange); }
+.fp-faq { display: grid; scroll-margin-top: 24px; }
+.fp-faq h2 { margin: 0 0 14px; font: 800 clamp(20px, 3.4vw, 28px)/1.1 var(--display); }
+.fp-faq details { border-top: 1px solid color-mix(in srgb, var(--text) 18%, transparent); }
+.fp-faq details:last-of-type { border-bottom: 1px solid color-mix(in srgb, var(--text) 18%, transparent); }
+.fp-faq summary { list-style: none; cursor: pointer; display: flex; justify-content: space-between; gap: 16px; padding: 16px 0; font: 600 17px/1.35 var(--body); }
+.fp-faq summary::-webkit-details-marker { display: none; }
+.fp-faq summary::after { content: "+"; color: var(--orange); font: 500 22px/1 var(--mono); }
+.fp-faq details[open] summary::after { content: "–"; }
+.fp-faq details p { margin: 0 0 18px; opacity: .8; max-width: 62ch; }
 .fp-lang { display: flex; gap: 4px; font: 500 13px var(--mono); letter-spacing: .1em; }
 .fp-lang a { color: var(--text); opacity: .55; text-decoration: none; padding: 8px 6px; }
 .fp-lang a[aria-current] { opacity: 1; color: var(--orange); }
@@ -125,3 +137,6 @@ html.lb-open { overflow: hidden; }
 .fp-others a { color: var(--text); opacity: .7; text-decoration: none; font: 500 14px var(--mono); letter-spacing: .06em; text-transform: uppercase; }
 .fp-others a:hover, .fp-others a:focus-visible, .fp-social a:hover { opacity: 1; color: var(--orange); }
 @media (max-width: 640px) { .fp-cols { grid-template-columns: 1fr; gap: 12px; } .fp-btns a { flex: 1; } }
+/* top row of a product page (back · FAQ · EN/NL) must stay on one line on phones; after the base rules so it wins */
+.fp-back, .fp-faqjump, .fp-lang a { white-space: nowrap; }
+@media (max-width: 480px) { .fp-top { gap: 8px; } .fp-topr { gap: 4px; } .fp-back, .fp-faqjump, .fp-lang a { font-size: 12px; letter-spacing: .05em; } .fp-back { padding: 8px 11px; } .fp-lang a { padding: 8px 4px; } }

@@ -107,6 +107,8 @@ export function start(root: HTMLElement): void {
   }
   root.addEventListener('click', (e) => {
     const t = e.target as Element, fl = t.closest<HTMLElement>('[data-floor]'), back = t.closest('[data-back]'), cp = t.closest<HTMLElement>('[data-copy]');
+    // in the overlay a #faq jump would change the URL (popstate closes the page), so scroll by hand
+    if (t.closest('[data-faq-jump]')) { e.preventDefault(); fp.querySelector('#faq')?.scrollIntoView({ behavior: 'smooth' }); }
     const sw = t.closest<HTMLElement>('[data-floor-lang]');
     if (sw) { e.preventDefault(); try { localStorage.setItem('epping-lang', sw.dataset.lang!); } catch {} track('lang', { to: sw.dataset.lang! }); openFloor(sw.dataset.floorLang!, false, sw.dataset.lang); }
     else if (fl) { e.preventDefault(); openFloor(fl.dataset.floor!); }

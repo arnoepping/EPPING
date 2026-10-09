@@ -15,7 +15,10 @@ const langs: Lang[] = ['en', 'nl'];
 <div class="fp-in" lang={lang}>
   <div class="fp-top">
     {standalone ? <a class="fp-back" href="/">{t.back}</a> : <a class="fp-back" href="/" data-back>{t.backRoof}</a>}
+    <div class="fp-topr">
+    {f.faq && <a class="fp-faqjump" href="#faq" data-faq-jump>{t.faqJump}</a>}
     <nav class="fp-lang" aria-label="Language">{langs.map((l) => <a href={floorPath(f, l)} hreflang={l} data-lang={l} data-floor-lang={standalone ? undefined : f.slug} aria-current={l === lang ? 'true' : undefined}>{l.toUpperCase()}</a>)}</nav>
+    </div>
   </div>
   <p class="fp-k">{f.tagline}</p>
   <h1 class="fp-h" tabindex="-1">{f.name}</h1>
@@ -38,5 +41,11 @@ const langs: Lang[] = ['en', 'nl'];
   </div>
   <iframe class:list={['fp-sc', { 'fp-sc-set': f.mix.embed }]} title={`${f.mix.title} on SoundCloud`} loading="lazy" allow="autoplay; encrypted-media" src={soundcloudEmbed(f.mix.embed ?? f.mix.url)}></iframe>
   {f.gallery && <Gallery g={f.gallery} at={at} lang={lang} />}
+  {f.faq && (
+    <section class="fp-faq" id="faq" aria-labelledby="faq-h">
+      <h2 id="faq-h">{t.faq}</h2>
+      {f.faq.map((x) => <details><summary>{x.q}</summary><p>{x.a}</p></details>)}
+    </section>
+  )}
   <nav class="fp-others" aria-label={t.others}>{others.map((o) => <a href={floorPath(o, lang)} data-floor={standalone ? undefined : o.slug}>{o.name} →</a>)}</nav>
 </div>
