@@ -49,4 +49,5 @@ const langs: Lang[] = ['en', 'nl'];
     </section>
   )}
   <nav class="fp-others" aria-label={t.others}>{others.map((o) => <a href={floorPath(o, lang)} data-floor={standalone ? undefined : o.slug}>{o.name} →</a>)}<a class="fp-about" href={ABOUT_PATH[lang]}>{ABOUT[lang].link} →</a></nav>
+  <p class="fp-legal">{CONTACT.legal}</p>
 </div>

@@ -30,6 +30,7 @@ const ld = { '@context': 'https://schema.org', '@type': 'Organization', name: 'E
         <nav class="floors ab-floors">{FLOORS.map((f) => <a href={floorPath(f, lang)}>{f.name}</a>)}</nav>
         <p class="fp-addr"><a href={`mailto:${CONTACT.email}`}>{CONTACT.email}</a> · <a href={CONTACT.instagram} target="_blank" rel="noopener">Instagram {CONTACT.instagramLabel} ↗</a></p>
       </div>
+      <p class="fp-legal">{CONTACT.legal}</p>
     </div>
   </main>
   <script is:inline define:vars={{ lang }}>

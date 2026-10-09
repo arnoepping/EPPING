@@ -147,3 +147,4 @@ html.lb-open { overflow: hidden; }
 .ab-floors { justify-content: flex-start; }
 .fp-about { color: var(--orange) !important; }
 .ent .hud a { text-decoration: none; display: inline-flex; align-items: center; }
+.fp-legal { margin: 8px 0 0; font: 400 11px var(--mono); letter-spacing: .06em; opacity: .4; }

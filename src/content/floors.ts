@@ -21,7 +21,9 @@ export interface Floor {
 
 export const CONTACT = {
   email: 'bookings@eppingmusic.com', whatsapp: '31640187865', whatsappLabel: '+31 6 4018 7865',
-  instagram: 'https://www.instagram.com/epping.music/', instagramLabel: '@epping.music', soundcloud: 'https://soundcloud.com/arno-epping',
+  instagram: 'https://www.instagram.com/epping.music/', instagramLabel: '@epping.music',
+  /** footer line on product pages and About (KvK number on the website) */
+  legal: 'Epping Music · KvK 98899759', soundcloud: 'https://soundcloud.com/arno-epping',
 };
 
 export const FLOORS: Floor[] = [
