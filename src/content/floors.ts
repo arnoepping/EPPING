@@ -62,7 +62,7 @@ export const FLOORS: Floor[] = [
       { q: 'What happens in the planning call?', a: 'We get to know each other, in person or online. I explain how I work and we go through your ideas, the vibe and the music you want to hear. That becomes a shared playlist with your must-plays. If you like, we visit the venue together.' },
       { q: 'Can you do announcements, like the first dance or the cake?', a: 'Yes, in Dutch or English.' },
       { q: 'Can we talk to couples you’ve played for?', a: 'Yes, references are available on request.' },
-      { q: 'Are you an English-speaking wedding DJ?', a: 'Yes. I speak English and Dutch, with you in the planning call and on the mic during the night. That makes it easy for international couples and mixed guest lists.' },
+      { q: 'Are you an English-speaking wedding DJ?', a: 'Yes. I speak English and Dutch.' },
     ],
     cta: 'Check your date',
     mail: { subject: 'Rave Wedding booking', body: 'Hi EPPING,\n\nWe are getting married on [date] and are interested in booking you as our DJ!\n\n' },
