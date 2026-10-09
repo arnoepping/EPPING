@@ -32,7 +32,7 @@
 .ent-locked, .ent-locked body { overflow: hidden; }
 
 .ent .hud { position: fixed; top: env(safe-area-inset-top, 0px); right: 0; z-index: 4; gap: 6px; padding: 14px 16px; }
-.ent .hud button, .ent .again { font: 500 12px var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--text); cursor: pointer;
+.ent .hud button, .ent .hud a, .ent .again { font: 500 12px var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--text); cursor: pointer;
   background: color-mix(in srgb, var(--bg) 65%, transparent); border: 1px solid color-mix(in srgb, var(--text) 25%, transparent); border-radius: 999px; padding: 8px 12px; backdrop-filter: blur(6px); }
 .ent .hud button[aria-pressed="true"] { background: var(--pink); border-color: var(--pink); color: var(--bg); }
 .ent .hud button[hidden] { display: none; }
@@ -147,3 +147,4 @@ html.lb-open { overflow: hidden; }
 .ab-book h2 { margin: 0; font: 800 clamp(22px, 4vw, 34px)/1.1 var(--display); }
 .ab-floors { justify-content: flex-start; }
 .fp-about { color: var(--orange) !important; }
+.ent .hud a { text-decoration: none; display: inline-flex; align-items: center; }

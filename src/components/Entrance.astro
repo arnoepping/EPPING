@@ -3,6 +3,7 @@
 import Wordmark from './Wordmark.astro';
 import FloorPage from './FloorPage.astro';
 import { FLOORS, CONTACT, floorPath } from '../content/floors.ts';
+import { ABOUT_PATH } from '../content/about.ts';
 ---
 <main class="ent">
   <canvas class="ent-canvas" aria-hidden="true"></canvas>
@@ -16,7 +17,7 @@ import { FLOORS, CONTACT, floorPath } from '../content/floors.ts';
     <Wordmark tag="h1" />
     <p class="ent-tag">Rave weddings. Private events. Our own parties.</p>
     <nav class="floors" aria-label="Services">{FLOORS.map((f) => <a href={`/${f.slug}/`} data-nl={floorPath(f, 'nl')}>{f.name}</a>)}</nav>
-    <p class="ent-contact"><a href={`mailto:${CONTACT.email}`}>{CONTACT.email}</a> · <a href={CONTACT.instagram}>{CONTACT.instagramLabel}</a></p>
+    <p class="ent-contact"><a href={`mailto:${CONTACT.email}`}>{CONTACT.email}</a> · <a href={CONTACT.instagram}>{CONTACT.instagramLabel}</a> · <a href={ABOUT_PATH.en} data-nl={ABOUT_PATH.nl}>About</a></p>
   </section>
 
   <div class="finale" aria-live="polite">
@@ -41,6 +42,7 @@ import { FLOORS, CONTACT, floorPath } from '../content/floors.ts';
   {FLOORS.map((f) => <template data-floor-tpl={`nl:${f.slug}`}><FloorPage f={f} lang="nl" /></template>)}
 
   <div class="hud top">
+    <a href={ABOUT_PATH.en} data-nl={ABOUT_PATH.nl} data-umami-event="about" data-umami-event-from="hud">About</a>
     <button type="button" data-sound aria-pressed="false">Play sound</button>
     <button type="button" data-skip>Skip ↓</button>
   </div>
@@ -50,7 +52,7 @@ import { FLOORS, CONTACT, floorPath } from '../content/floors.ts';
 
 <script is:inline>
   // visitors who picked NL on a product page get the Dutch pages from the menus too
-  try { if (localStorage.getItem('epping-lang') === 'nl') document.querySelectorAll('.floors a[data-nl]').forEach((a) => (a.href = a.dataset.nl)); } catch {}
+  try { if (localStorage.getItem('epping-lang') === 'nl') document.querySelectorAll('a[data-nl]').forEach((a) => (a.href = a.dataset.nl)); } catch {}
 </script>
 <script>
   import { boot } from '../entrance/boot.ts';
