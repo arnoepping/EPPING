@@ -48,8 +48,8 @@ export const FLOORS: Floor[] = [
     // for now the ADE House Mix everywhere; the wedding set (sets/marta-donalds-wedding, embed api.soundcloud.com/playlists/2277399272) has no public tracks yet
     mix: { title: 'ADE House Mix', length: 'Mix', url: 'https://soundcloud.com/arno-epping/ade-house-mix' },
     cta: 'Check your date',
-    mail: { subject: 'Rave Wedding booking', body: 'Hi Epping,\n\nWe are getting married on [date] and are interested in booking you as our DJ!\n\n' },
-    whatsapp: 'Hi Epping, we are getting married on [date] and are interested in booking you as our DJ!',
+    mail: { subject: 'Rave Wedding booking', body: 'Hi EPPING,\n\nWe are getting married on [date] and are interested in booking you as our DJ!\n\n' },
+    whatsapp: 'Hi EPPING, we are getting married on [date] and are interested in booking you as our DJ!',
   },
   {
     slug: 'private-events', n: '02', name: 'Private Events',
@@ -120,21 +120,21 @@ const NL: Record<Slug, NlFloor> = {
     title: 'Rave bruiloft DJ in Amsterdam | EPPING',
     description: 'House-, techno- en trance-DJ voor jullie bruiloft. Ik begin waar iedereen danst en bouw op naar jullie favoriete clubavond. Clubgeluid en -licht inbegrepen.',
     tagline: 'Van ABBA met oma tot beuken met vrienden',
-    intro: 'Ze zeggen dat het de belangrijkste dag van jullie leven is, dus dan moet het feest ook het beste feest ooit worden. Ik begin met nummers voor iedereen, oma ook, en bouw langzaam op naar de club- en festivalnachten waar jullie van houden.',
+    intro: 'Ze zeggen dat het de belangrijkste dag van jullie leven is, dus dan moet het feest ook het beste feest ooit worden. Ik begin met nummers voor iedereen, inclusief oma, en bouw langzaam op naar de club- en festivalnachten waar jullie van houden.',
     body: [
       'Voor de bruiloft gaan we samen door de muziek waar jullie van houden, zodat de tweede helft van de avond klinkt als jullie favoriete avond uit. Of het nu house, techno, trance of iets daartussenin is.',
       'Clubgeluid en -licht komen mee, zodat jullie locatie een paar uur voelt als de plek waar jullie normaal uitgaan.',
     ],
     includes: ['Kennismakingsgesprek en een gedeelde playlist', 'Eén set, van openingsdans tot laatste plaat', 'Clubgeluid en -licht, rook op aanvraag'],
     cta: 'Is jullie datum nog vrij?',
-    mail: { subject: 'Boeking Rave Wedding', body: 'Hoi Epping,\n\nWij gaan trouwen op [datum] en willen je graag boeken als onze DJ!\n\n' },
-    whatsapp: 'Hoi Epping, wij gaan trouwen op [datum] en willen je graag boeken als onze DJ!',
+    mail: { subject: 'Aanvraag voor onze bruiloft', body: 'Hoi EPPING,\n\nWij gaan trouwen op [datum] en willen je graag boeken als onze DJ!\n\n' },
+    whatsapp: 'Hoi EPPING, wij gaan trouwen op [datum] en willen je graag boeken als onze DJ!',
     captions: ['Achter de draaitafels', 'Openingsdans', 'Openingsdans, dichtbij', 'De lift', 'Glowsticks in de lucht', 'De bruid op de dansvloer'],
   },
   'private-events': {
     path: 'feest-dj',
     title: 'Feest DJ in Amsterdam voor privéfeesten | EPPING',
-    description: 'DJ voor verjaardagen, huisfeesten en bedrijfsfeesten. Clubniveau geluid en licht, en muziek die de dansvloer vol houdt.',
+    description: 'DJ voor verjaardagen, huisfeesten en bedrijfsfeesten. Geluid en licht op clubniveau, en muziek die de dansvloer vol houdt.',
     tagline: 'De club komt naar jou',
     intro: 'Verjaardagen, huisfeesten, bedrijfsfeesten. Clubgeluid en clublicht, op elke locatie. Jij zorgt voor het publiek, ik regel de energie.',
     body: [
