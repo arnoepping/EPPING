@@ -1,0 +1,39 @@
+---
+// The About page in either language (src/pages/about.astro, src/pages/nl/over.astro). Text lives in src/content/about.ts.
+import Base from '../layouts/Base.astro';
+import { ABOUT, ABOUT_PATH } from '../content/about.ts';
+import { CONTACT, FLOORS, UI, floorPath, type Lang } from '../content/floors.ts';
+import '../styles/entrance.css';
+interface Props { lang: Lang }
+const { lang } = Astro.props;
+const a = ABOUT[lang], t = UI[lang];
+const langs: Lang[] = ['en', 'nl'];
+// who's behind the site, for search engines and AI search (schema.org); KvK stays out of the page text
+const ld = { '@context': 'https://schema.org', '@type': 'Organization', name: 'EPPING', legalName: 'Epping Music', url: 'https://eppingmusic.com/',
+  logo: 'https://eppingmusic.com/brand/epping-logo.svg', description: a.short, email: CONTACT.email, telephone: '+31640187865',
+  areaServed: 'Amsterdam', sameAs: [CONTACT.instagram, CONTACT.soundcloud] };
+---
+<Base title={a.title} description={a.description} lang={lang} alternates={{ en: ABOUT_PATH.en, nl: ABOUT_PATH.nl }}>
+  <script slot="head" type="application/ld+json" set:html={JSON.stringify(ld)} />
+  <main class="fp-standalone">
+    <div class="fp-in" lang={lang}>
+      <div class="fp-top">
+        <a class="fp-back" href="/">{t.back}</a>
+        <nav class="fp-lang" aria-label="Language">{langs.map((l) => <a href={ABOUT_PATH[l]} hreflang={l} data-lang={l} aria-current={l === lang ? 'true' : undefined}>{l.toUpperCase()}</a>)}</nav>
+      </div>
+      <p class="fp-k">{a.kicker}</p>
+      <h1 class="fp-h">EPPING</h1>
+      <img class="ab-photo" src="/media/floors/presents/photo-3.jpg" alt={lang === 'nl' ? 'EPPING achter de draaitafels op een dak in Amsterdam' : 'EPPING behind the decks on an Amsterdam rooftop'} width="1080" height="1620" />
+      <div class="fp-body ab-body">{a.long.map((p) => <p>{p}</p>)}</div>
+      <div class="ab-book">
+        <h2>{a.services}</h2>
+        <nav class="floors ab-floors">{FLOORS.map((f) => <a href={floorPath(f, lang)}>{f.name}</a>)}</nav>
+        <p class="fp-addr"><a href={`mailto:${CONTACT.email}`}>{CONTACT.email}</a> · <a href={CONTACT.instagram} target="_blank" rel="noopener">Instagram {CONTACT.instagramLabel} ↗</a></p>
+      </div>
+    </div>
+  </main>
+  <script is:inline define:vars={{ lang }}>
+    try { localStorage.setItem('epping-lang', lang); } catch {}
+    document.addEventListener('click', (e) => { const sw = e.target.closest('[data-lang]'); if (sw) try { localStorage.setItem('epping-lang', sw.dataset.lang); } catch {} });
+  </script>
+</Base>

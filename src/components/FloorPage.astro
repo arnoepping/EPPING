@@ -3,6 +3,7 @@
 import { CONTACT, FLOORS, UI, floorPath, localize, type Floor, type Lang } from '../content/floors.ts';
 import Gallery from './Gallery.astro';
 import { mailtoHref, whatsappHref, soundcloudEmbed } from '../lib/links.ts';
+import { ABOUT, ABOUT_PATH } from '../content/about.ts';
 interface Props { f: Floor; standalone?: boolean; lang?: Lang }
 const { standalone = false, lang = 'en' } = Astro.props;
 const f = localize(Astro.props.f, lang), t = UI[lang];
@@ -47,5 +48,5 @@ const langs: Lang[] = ['en', 'nl'];
       {f.faq.map((x) => <details><summary>{x.q}</summary><p>{x.a}</p></details>)}
     </section>
   )}
-  <nav class="fp-others" aria-label={t.others}>{others.map((o) => <a href={floorPath(o, lang)} data-floor={standalone ? undefined : o.slug}>{o.name} →</a>)}</nav>
+  <nav class="fp-others" aria-label={t.others}>{others.map((o) => <a href={floorPath(o, lang)} data-floor={standalone ? undefined : o.slug}>{o.name} →</a>)}<a class="fp-about" href={ABOUT_PATH[lang]}>{ABOUT[lang].link} →</a></nav>
 </div>
