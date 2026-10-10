@@ -1,9 +1,11 @@
 ---
 import Base from '../layouts/Base.astro';
 import Entrance from '../components/Entrance.astro';
+import { business, graph, website } from '../lib/schema.ts';
 import '../styles/entrance.css';
 ---
 <Base title="EPPING | Rave wedding & party DJ in Amsterdam" description="House and techno DJ in Amsterdam for rave weddings, private events and our own pop-up parties. Club sound and lights included.">
+  <script slot="head" type="application/ld+json" set:html={graph(business(), website())} />
   <!-- decide before first paint: 3D-capable devices get the street still instead of the static page (it comes back after 8 s if the street never arrives),
        and start downloading the street model and its decoder now instead of after the 3D code -->
   <script slot="head" is:inline>

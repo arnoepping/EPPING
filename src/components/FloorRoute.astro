@@ -3,6 +3,7 @@
 import Base from '../layouts/Base.astro';
 import FloorPage from './FloorPage.astro';
 import { floorPath, localize, type Floor, type Lang } from '../content/floors.ts';
+import { business, graph, service } from '../lib/schema.ts';
 import '../styles/entrance.css';
 interface Props { f: Floor; lang: Lang }
 const { f, lang } = Astro.props;
@@ -12,6 +13,7 @@ const faqLd = l.faq && { '@context': 'https://schema.org', '@type': 'FAQPage', i
   mainEntity: l.faq.map((x) => ({ '@type': 'Question', name: x.q, acceptedAnswer: { '@type': 'Answer', text: x.a } })) };
 ---
 <Base title={l.title} description={l.description} lang={lang} alternates={{ en: floorPath(f, 'en'), nl: floorPath(f, 'nl') }}>
+  <script slot="head" type="application/ld+json" set:html={graph(business(), service(f, lang))} />
   {faqLd && <script slot="head" type="application/ld+json" set:html={JSON.stringify(faqLd)} />}
   <main class="fp-standalone"><FloorPage f={f} lang={lang} standalone /></main>
   <script is:inline define:vars={{ lang }}>try { localStorage.setItem('epping-lang', lang); } catch {}</script>

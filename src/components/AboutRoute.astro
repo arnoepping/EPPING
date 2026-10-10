@@ -3,18 +3,17 @@
 import Base from '../layouts/Base.astro';
 import { ABOUT, ABOUT_PATH } from '../content/about.ts';
 import { CONTACT, FLOORS, UI, floorPath, type Lang } from '../content/floors.ts';
+import { business, graph } from '../lib/schema.ts';
 import '../styles/entrance.css';
 interface Props { lang: Lang }
 const { lang } = Astro.props;
 const a = ABOUT[lang], t = UI[lang];
 const langs: Lang[] = ['en', 'nl'];
-// who's behind the site, for search engines and AI search (schema.org); KvK stays out of the page text
-const ld = { '@context': 'https://schema.org', '@type': 'Organization', name: 'EPPING', legalName: 'Epping Music', url: 'https://eppingmusic.com/',
-  logo: 'https://eppingmusic.com/brand/epping-logo.svg', description: a.short, email: CONTACT.email, telephone: '+31640187865',
-  areaServed: 'Amsterdam', sameAs: [CONTACT.instagram, CONTACT.soundcloud] };
+// who's behind the site, for search engines and AI search (schema.org, src/lib/schema.ts); KvK stays out of the page text
+const ld = graph(business(a.short));
 ---
 <Base title={a.title} description={a.description} lang={lang} alternates={{ en: ABOUT_PATH.en, nl: ABOUT_PATH.nl }}>
-  <script slot="head" type="application/ld+json" set:html={JSON.stringify(ld)} />
+  <script slot="head" type="application/ld+json" set:html={ld} />
   <main class="fp-standalone">
     <div class="fp-in" lang={lang}>
       <div class="fp-top">
