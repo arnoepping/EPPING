@@ -15,6 +15,7 @@ const abs = (p: string) => new URL(p, Astro.site).href;
     <title>{title}</title>
     <meta name="description" content={description} />
     {noindex && <meta name="robots" content="noindex" />}
+    <link rel="sitemap" href="/sitemap-index.xml" />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     <meta property="og:image" content={new URL(ogImage, Astro.site)} />
