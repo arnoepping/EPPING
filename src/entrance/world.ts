@@ -21,8 +21,6 @@ export const stairY = (z: number) => clamp((Z0 - z) / RUN, 0, N) * RISE;
 const C = (hex: string) => new THREE.Color(hex);
 const V = (x: number, y: number) => new THREE.Vector2(x, y);
 const glowMat = (c: THREE.Color) => new THREE.MeshBasicMaterial({ color: c, toneMapped: false, side: THREE.DoubleSide });
-/** Neon colour along the climb: pink at the bottom, orange at the top. */
-const climbColor = (z: number) => C(PAL.b).lerp(C(PAL.a), clamp((Z0 - z) / (Z0 - ROOF_Z)));
 
 function quad(p: THREE.Vector3[], colors?: THREE.Color[]): THREE.BufferGeometry {
   const g = new THREE.BufferGeometry();
@@ -189,7 +187,7 @@ export function buildWorld(): World {
   const signCore = new THREE.Mesh(wm, glow(C(PAL.fg).lerp(C(PAL.b), 0.45).multiplyScalar(1.05)));
   signCore.position.set(0, signY, 0.05); scene.add(signCore);
   const signLight = new THREE.PointLight(C(PAL.b), 14, 9, 2); signLight.position.set(0, signY, 0.8); scene.add(signLight);
-  const leak = new THREE.PointLight(C(PAL.b), 0.5, 1.4, 2); leak.position.set(0, 0.03, 0.7); scene.add(leak); // light from under the door: only washes the pavement in front of it
+  const leak = new THREE.PointLight(C(PAL.b), 0.5, 1.0, 2); leak.position.set(0, 0.03, 0.7); scene.add(leak); // light from under the door: only washes the pavement in front of it
 
   // velvet rope on two brass posts
   const brass = new THREE.MeshStandardMaterial({ color: C(PAL.a).lerp(C('#ffd28a'), 0.5), metalness: 0.85, roughness: 0.3 });
@@ -217,65 +215,26 @@ export function buildWorld(): World {
   const landing = new THREE.Mesh(new THREE.PlaneGeometry(W, -Z0 + 0.4), floorMat); landing.rotation.x = -Math.PI / 2; landing.position.set(0, 0.001, Z0 / 2 - 0.2); scene.add(landing); unbaked.push(landing);
   const top = new THREE.Mesh(new THREE.PlaneGeometry(W, TOP_Z - ROOF_Z + 0.02), floorMat); top.rotation.x = -Math.PI / 2; top.position.set(0, TOP_Y, (TOP_Z + ROOF_Z) / 2); scene.add(top); unbaked.push(top);
 
-  // steps, each with a neon strip on its nose
+  // steps (live-lit until the baked stairwell is in)
   const steps = new THREE.InstancedMesh(new THREE.BoxGeometry(W, RISE, RUN), floorMat, N);
-  const noses = new THREE.InstancedMesh(new THREE.BoxGeometry(W - 0.02, 0.018, 0.025), new THREE.MeshBasicMaterial({ toneMapped: false }), N);
-  const m4 = new THREE.Matrix4(), noseBase: THREE.Color[] = [];
-  for (let i = 0; i < N; i++) {
-    const zf = Z0 - i * RUN;
-    steps.setMatrixAt(i, m4.makeTranslation(0, i * RISE + RISE / 2, zf - RUN / 2));
-    noses.setMatrixAt(i, m4.makeTranslation(0, (i + 1) * RISE - 0.009, zf - 0.012));
-    noseBase.push(climbColor(zf).multiplyScalar(2));
-    noses.setColorAt(i, noseBase[i]);
-  }
-  scene.add(steps, noses); unbaked.push(steps);
+  const m4 = new THREE.Matrix4();
+  for (let i = 0; i < N; i++) steps.setMatrixAt(i, m4.makeTranslation(0, i * RISE + RISE / 2, Z0 - i * RUN - RUN / 2));
+  scene.add(steps); unbaked.push(steps);
 
-  // ceiling: a light ceiling (Sunset rave gradient, pink at the bottom of the stairs → orange at the top, pulsing a little
-  // with the beat) behind black panels in two rows; the light shows through the gaps between them. A black border frame
-  // runs along the walls and the ends, so the panels stop in a frame instead of running into the brick.
+  // Gallery lighting (blender/stairwell.py bakes it): a dark stairwell where every poster has its own warm spotlight,
+  // small warm step lights in both walls every third step, the orange roof-door frame and a small pink EPPING above it.
+  // Nothing here pulses with the beat except that pink sign.
   const cy = (z: number) => (z > Z0 ? 0 : z < TOP_Z ? TOP_Y : stairY(z)) + CEIL;
   const ceilPts = [IN, Z0, TOP_Z, ROOF_Z];
-  const lightMat = glow(C('#ffffff').multiplyScalar(1.1), 0.35); lightMat.vertexColors = true;
+  const ceilMat = new THREE.MeshStandardMaterial({ color: C('#16121a'), roughness: 0.9 });
   for (let k = 0; k < 3; k++) {
-    const za = ceilPts[k], zb = ceilPts[k + 1], ca = climbColor(za), cb = climbColor(zb);
-    scene.add(new THREE.Mesh(quad([new THREE.Vector3(-W / 2, cy(za), za), new THREE.Vector3(W / 2, cy(za), za), new THREE.Vector3(W / 2, cy(zb), zb), new THREE.Vector3(-W / 2, cy(zb), zb)], [ca, ca, cb, cb]), lightMat));
+    const za = ceilPts[k], zb = ceilPts[k + 1];
+    const ceil = new THREE.Mesh(quad([new THREE.Vector3(-W / 2, cy(za), za), new THREE.Vector3(-W / 2, cy(zb), zb), new THREE.Vector3(W / 2, cy(zb), zb), new THREE.Vector3(W / 2, cy(za), za)]), ceilMat);
+    scene.add(ceil); unbaked.push(ceil);
   }
-  {
-    const B = 0.16, G = 0.09, DEPTH = 0.035;                          // border width, light gap, panel depth (m)
-    const PW = (W - 2 * B - 3 * G) / 2;                              // panel width: two rows across
-    const panelMat = new THREE.MeshBasicMaterial({ color: C('#060408') }); // unlit: the blue fill below would otherwise light them up
-    // panel edges catch the light from the gaps (backlit panels), so every gap reads as a light line, even at a steep angle
-    const edgeMat = glow(C('#ffffff').multiplyScalar(0.75), 0.35);
-    type Box = { m: THREE.Matrix4; z: number };
-    const panelBoxes: Box[] = [], frameBoxes: Box[] = [];
-    const xAxis = new THREE.Vector3(1, 0, 0);
-    // a box lying flat against the ceiling of one section: centred at (x, along s), w across, l along
-    const put = (into: Box[], p0: THREE.Vector3, d: THREE.Vector3, x: number, s: number, w: number, l: number) => {
-      const up = xAxis.clone().cross(d), e3 = xAxis.clone().cross(up);
-      const c = p0.clone().addScaledVector(d, s).setX(x).addScaledVector(up, -DEPTH / 2 - 0.004);
-      into.push({ m: new THREE.Matrix4().makeBasis(xAxis, up, e3).setPosition(c).multiply(new THREE.Matrix4().makeScale(w, DEPTH, l)), z: c.z });
-    };
-    for (let k = 0; k < 3; k++) {
-      const p0 = new THREE.Vector3(0, cy(ceilPts[k]), ceilPts[k]), p1 = new THREE.Vector3(0, cy(ceilPts[k + 1]), ceilPts[k + 1]);
-      const d = p1.clone().sub(p0), L = d.length(); d.normalize();
-      for (const x of [-(W - B) / 2, (W - B) / 2]) put(frameBoxes, p0, d, x, L / 2, B, L);  // side frames, unbroken
-      if (k === 0) put(frameBoxes, p0, d, 0, B / 2, W - 2 * B, B);
-      if (k === 2) put(frameBoxes, p0, d, 0, L - B / 2, W - 2 * B, B);
-      const s0 = k === 0 ? B + G : G / 2, s1 = k === 2 ? B + G : G / 2;  // ends: frame + gap at the walls, half a gap at the bends
-      const n = Math.max(1, Math.round((L - s0 - s1 + G) / (PW + G))), len = (L - s0 - s1 - (n - 1) * G) / n;
-      for (let i = 0; i < n; i++) for (const x of [-(G + PW) / 2, (G + PW) / 2]) put(panelBoxes, p0, d, x, s0 + i * (len + G) + len / 2, PW, len);
-    }
-    // BoxGeometry faces: ±x, ±y (top, bottom), ±z; the bottom stays black, the sides glow
-    const panels = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1), [edgeMat, edgeMat, panelMat, panelMat, edgeMat, edgeMat], panelBoxes.length);
-    panelBoxes.forEach(({ m, z }, i) => { panels.setMatrixAt(i, m); panels.setColorAt(i, climbColor(z)); });
-    const frames = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1), panelMat, frameBoxes.length);
-    frameBoxes.forEach(({ m }, i) => frames.setMatrixAt(i, m));
-    scene.add(panels, frames); // stay in the baked version too: their glowing edges keep every light line visible
-  }
-  // balustrades like the reference photo: vertical pink neon tubes on every other step, a dark metal handrail on top
-  const railMat = new THREE.MeshStandardMaterial({ color: C('#16121c'), metalness: 0.8, roughness: 0.35 });
-  const tubeMat = glow(C(PAL.b).multiplyScalar(2.8));
-  const balusters = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.016, 0.016, 0.82, 8), tubeMat, N + 2);
+  // black steel balusters on every other step, a black steel handrail on top
+  const railMat = new THREE.MeshStandardMaterial({ color: C('#16141a'), metalness: 0.8, roughness: 0.35 });
+  const balusters = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.01, 0.01, 0.82, 8), railMat, N + 2);
   let bi0 = 0;
   for (let i = 0; i < N; i += 2) for (const side of [-1, 1]) {
     const z = Z0 - i * RUN - RUN / 2;
@@ -286,11 +245,15 @@ export function buildWorld(): World {
     const x = side * (W / 2 - 0.14), h = (z: number) => (z > Z0 ? 0 : z < TOP_Z ? TOP_Y : stairY(z)) + 0.9;
     scene.add(tube(new THREE.Vector3(x, h(Z0), Z0), new THREE.Vector3(x, h(TOP_Z), TOP_Z), 0.024, railMat));
   }
+  // step lights: small warm slots in both walls, every third step (same spots as in the bake)
+  const slotGeo = new THREE.BoxGeometry(0.01, 0.03, 0.12), slotMat = glowMat(C('#ffa860').multiplyScalar(0.95));
+  for (let i = 1; i < N; i += 3) for (const side of [-1, 1]) {
+    const slot = new THREE.Mesh(slotGeo, slotMat); slot.position.set(side * (W / 2 - 0.004), (i + 1) * RISE + 0.18, Z0 - i * RUN - RUN / 2); scene.add(slot);
+  }
 
-  // The stairwell is lit by what you can see glowing: the ceiling (soft area lights just under it, one per stretch, in the
-  // gradient, pulsing with the ceiling). The neon balusters and step edges only glow.
+  // live light until the bake is in: a dim warm glow along the ceiling
   RectAreaLightUniformsLib.init();
-  const ceilLights: { l: THREE.RectAreaLight; base: number }[] = [];
+  const ceilLights: THREE.RectAreaLight[] = [];
   {
     const pieces: [number, number][] = [[IN, Z0]];
     for (let k = 0; k < 4; k++) pieces.push([lerp(Z0, TOP_Z, k / 4), lerp(Z0, TOP_Z, (k + 1) / 4)]);
@@ -298,15 +261,15 @@ export function buildWorld(): World {
     for (const [za, zb] of pieces) {
       const a = new THREE.Vector3(0, cy(za), za), b = new THREE.Vector3(0, cy(zb), zb), d = b.clone().sub(a);
       const down = d.clone().normalize().cross(new THREE.Vector3(1, 0, 0)).normalize(); // ceiling normal, pointing into the room
-      const l = new THREE.RectAreaLight(climbColor((za + zb) / 2), 3.5, W - 0.4, d.length());
+      const l = new THREE.RectAreaLight(C('#ffb070'), 1.2, W - 0.4, d.length());
       l.position.copy(a).add(b).multiplyScalar(0.5).addScaledVector(down, 0.08);
       l.up.copy(d).normalize(); l.lookAt(l.position.clone().add(down));
-      scene.add(l); ceilLights.push({ l, base: 3.5 });
+      scene.add(l); ceilLights.push(l);
     }
   }
 
   // posters: a pair at each spot, one on each wall, facing each other, hung high above the balustrade
-  const loader = new THREE.TextureLoader();
+  const loader = new THREE.TextureLoader(), lensMat = glowMat(C('#ffd8b0').multiplyScalar(1.4));
   POSTERS.forEach((pair, i) => {
     const z = lerp(Z0 - 0.9, TOP_Z + 0.6, i / Math.max(1, POSTERS.length - 1));
     pair.forEach(({ src, aspect = 1 }, s) => {
@@ -319,6 +282,11 @@ export function buildWorld(): World {
         m.position.set(side * (W / 2 - off), stairY(z) + 1.95, z);
         scene.add(m);
       }
+      const h = stairY(z) + 1.95, at = new THREE.Vector3(side * (W / 2 - 0.6), h + 0.8, z);
+      const dir = new THREE.Vector3(side * W / 2, h - 0.08, z).sub(at).normalize();
+      scene.add(tube(new THREE.Vector3(side * W / 2, h + 0.8, z), at, 0.008, railMat));
+      scene.add(tube(at.clone().addScaledVector(dir, -0.04), at.clone().addScaledVector(dir, 0.08), 0.035, railMat));
+      scene.add(tube(at.clone().addScaledVector(dir, 0.08), at.clone().addScaledVector(dir, 0.083), 0.028, lensMat));
     });
   });
 
@@ -326,19 +294,21 @@ export function buildWorld(): World {
   const topShape = new THREE.Shape([V(-W / 2, TOP_Y), V(-0.55, TOP_Y), V(-0.55, TOP_Y + 2.2), V(0.55, TOP_Y + 2.2), V(0.55, TOP_Y), V(W / 2, TOP_Y), V(W / 2, TOP_Y + CEIL + 0.2), V(-W / 2, TOP_Y + CEIL + 0.2)]);
   const topWall = new THREE.Mesh(new THREE.ShapeGeometry(topShape), brickMat(1, 1)); // shape UVs are in metres
   topWall.position.z = ROOF_Z; scene.add(topWall); unbaked.push(topWall);
-  const frameMat = glow(C(PAL.a).multiplyScalar(2.6)); // orange: the colour the climb ends in
+  const frameMat = glowMat(C(PAL.a).multiplyScalar(2.6)); // orange: the colour the climb ends in
   const fz = ROOF_Z + 0.02;
   for (const [a, b] of [[[-0.57, 0], [-0.57, 2.22]], [[0.57, 0], [0.57, 2.22]], [[-0.57, 2.22], [0.57, 2.22]]] as const)
     scene.add(tube(new THREE.Vector3(a[0], TOP_Y + a[1], fz), new THREE.Vector3(b[0], TOP_Y + b[1], fz), 0.016, frameMat));
+  const roofSign = new THREE.Mesh(wordmarkGeometry(0.8), glow(C(PAL.b).multiplyScalar(1.25), 0.4)); // the only thing in here that moves with the beat
+  roofSign.position.set(0, TOP_Y + 2.52, ROOF_Z + 0.03); scene.add(roofSign);
   const roofDoor = new THREE.Group(), roofLeaf = new THREE.Mesh(new THREE.BoxGeometry(1.1, 2.2, 0.05), new THREE.MeshStandardMaterial({ color: C(PAL.bg).lerp(C(PAL.fg), 0.1), roughness: 0.5 }));
   roofLeaf.position.set(0.55, 1.1, 0); roofDoor.add(roofLeaf);
   roofDoor.position.set(-0.55, TOP_Y, ROOF_Z - 0.03); scene.add(roofDoor);
 
   // The baked stairwell (blender/stairwell.py): streams in while the visitor is still outside, then replaces the live-lit
-  // walls, steps, ceiling panels and roof door. Its light pulses with the beat through lightMapIntensity.
+  // walls, steps, ceiling and roof door. Its light stays still (no beat).
   const LM_GAIN = 16, ROOF_GAIN = 8; // overall brightness of the baked light (three.js divides light maps by π, and the textures are dark)
   const bakedMats: { m: THREE.MeshStandardMaterial; base: number; pulse: number }[] = [];
-  const reflective: THREE.MeshStandardMaterial[] = [];
+  const reflective: THREE.MeshStandardMaterial[] = [railMat]; // black steel reads by what it reflects
   let stairsIn = false, rendererRef: THREE.WebGLRenderer | null = null;
   const captureStairs = (renderer: THREE.WebGLRenderer) => { // what the polished steps and the door handle reflect
     const rt = new THREE.WebGLCubeRenderTarget(256, { type: THREE.HalfFloatType });
@@ -372,16 +342,15 @@ export function buildWorld(): World {
   async function loadStairwell() {
     const meshes = await loadBaked('stair', 'stairwell.glb', '__STAIR_GLB__', {
       walls: () => new THREE.MeshStandardMaterial({ map: tex('red_brick_03_diff_web.jpg', true), normalMap: tex('red_brick_03_nor_web.jpg', false), roughnessMap: tex('red_brick_03_rough_web.jpg', false), color: C('#a07a72'), roughness: 1 }),
-      floor: () => { const m = new THREE.MeshStandardMaterial({ map: tex('concrete_pavement_02_diff_web.jpg', true), color: C('#6a5f78'), roughness: 0.28, metalness: 0.1, envMapIntensity: 0.7 }); reflective.push(m); return m; },
-      ceiling: () => new THREE.MeshStandardMaterial({ color: C('#0b080d'), roughness: 0.8 }),
+      floor: () => { const m = new THREE.MeshStandardMaterial({ map: tex('concrete_pavement_02_diff_web.jpg', true), color: C('#4a4446'), roughness: 0.3, metalness: 0.1, envMapIntensity: 0.9 }); reflective.push(m); return m; },
+      ceiling: () => new THREE.MeshStandardMaterial({ color: C('#3a3036'), roughness: 0.9 }),
       roof_leaf: () => new THREE.MeshStandardMaterial({ color: C('#1a181c'), roughness: 0.85 }), // plain matte black
       roof_handle: () => { const m = new THREE.MeshStandardMaterial({ color: C('#d6d6dc'), roughness: 0.25, metalness: 0.9 }); reflective.push(m); return m; },
-    }, LM_GAIN, 0.5);
+    }, LM_GAIN, 0);
     for (const mesh of meshes) if (mesh.name.startsWith('roof_')) roofDoor.attach(mesh); // swings with the door
-    for (const mesh of meshes) if (mesh.name === 'ceiling') mesh.visible = false;      // the live panels (lit edges) read better
     (roofLeaf.material as THREE.Material).visible = false;                               // stays as the click target
     for (const o of unbaked) o.visible = false;
-    for (const c of ceilLights) c.l.visible = false;
+    for (const l of ceilLights) l.visible = false;
     stairsIn = true;
     if (rendererRef) captureStairs(rendererRef);
   }
@@ -480,18 +449,14 @@ export function buildWorld(): World {
   // ---------- behaviour ----------
   // the street door opens outward (toward you) so the stairwell stays clear; the roof door opens onto the roof
   const setDoors = (street: number, roof: number) => { streetDoor.rotation.y = -street * 1.85; roofDoor.rotation.y = roof * 1.85; };
-  const tmp = new THREE.Color();
   function update(t: number, kick: number, camera: THREE.Camera) {
     sky.position.copy(camera.position);
     block.visible = camera.position.y < 5;
     const k = 0.6 + 0.4 * kick;
     for (const p of pulse) p.mat.color.copy(p.base).multiplyScalar(lerp(1, k, p.k));
-    for (let i = 0; i < N; i++) noses.setColorAt(i, tmp.copy(noseBase[i]).multiplyScalar(k));
-    noses.instanceColor!.needsUpdate = true;
-    for (const c of ceilLights) c.l.intensity = c.base * lerp(1, k, 0.35); // same pulse as the glowing ceiling
     for (const b of bakedMats) b.m.lightMapIntensity = b.base * lerp(1, k, b.pulse); // the baked light pulses too
     const flicker = Math.sin(t * 13) > 0.94 ? 0.35 : 1;
-    signLight.intensity = 14 * k * flicker; signCore.visible = flicker > 0.5;
+    signLight.intensity = 14 * k * flicker * clamp((camera.position.z - 0.2) / 1.3); // fades out in the doorway: its highlight would sit on the polished steps signCore.visible = flicker > 0.5;
     leak.intensity = 0.5 * k;
     leds.forEach((l, i) => (l.visible = Math.sin(t * 8 + i * 1.7) > -0.2));
     for (const m of smoke) {

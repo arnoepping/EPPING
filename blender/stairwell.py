@@ -1,8 +1,9 @@
 # Builds the stairwell in Blender, bakes its light into lightmaps and exports public/models/stairwell.glb
 # + public/models/lightmaps/stair_*.jpg. Same measurements as src/entrance/world.ts.
-# The only light comes from what glows: the ceiling between the black panels (Sunset rave gradient), the neon step
-# edges, the neon balusters and the orange frame around the roof door. Those emitters are bake-only: three.js draws
-# (and pulses) its own versions; the .glb holds the lit surfaces (walls, steps, ceiling panels, roof door).
+# Gallery lighting: a dark stairwell where each poster has its own warm spotlight (spilling onto the bricks around
+# it), small warm step lights set into the walls every third step, the orange frame around the roof door and a small
+# pink EPPING above it. The emitters are bake-only: three.js draws its own versions; the .glb holds the lit surfaces
+# (walls, steps, ceiling, roof door).
 # Run: blender -b --factory-startup --python blender/stairwell.py   (add -- --quick for a fast test bake)
 #
 # Coordinates: all geometry is written in three.js coordinates (y up, the climb goes toward -z) and converted with
@@ -28,8 +29,6 @@ PINK, ORANGE = (1.0, 0.169, 0.839), (1.0, 0.302, 0.0)   # PAL.b, PAL.a (sRGB)
 
 def srgb2lin(c): return tuple(((v + 0.055) / 1.055) ** 2.4 if v > 0.04045 else v / 12.92 for v in c)
 def mix(a, b, t): return tuple(x + (y - x) * t for x, y in zip(a, b))
-def climb(z):  # pink at the bottom of the stairs, orange at the top (linear light)
-    return srgb2lin(mix(PINK, ORANGE, min(1, max(0, (Z0 - z) / (Z0 - ROOF_Z)))))
 def stair_y(z): return min(N, max(0, (Z0 - z) / RUN)) * RISE
 def floor_y(z): return 0 if z > Z0 else TOP_Y if z < TOP_Z else stair_y(z)
 def cy(z): return floor_y(z) + CEIL
@@ -53,15 +52,16 @@ def mat(name, rgb, rough=0.6, metal=0.0, emit=None, strength=0.0, attr_emit=Fals
     return m
 
 BRICK = mat('stair_brick', (0.30, 0.12, 0.08), 0.9)          # base colours only matter for bounce light
-FLOOR = mat('stair_floor', (0.06, 0.055, 0.075), 0.35)
-PANEL = mat('ceil_panel', (0.02, 0.018, 0.022), 0.8)
+FLOOR = mat('stair_floor', (0.05, 0.045, 0.045), 0.2)       # polished dark (three.js adds the reflections)
+PANEL = mat('ceil_panel', (0.05, 0.04, 0.04), 0.9)           # plain dark ceiling, lit only by bounce
 DOOR = mat('roof_door', (0.025, 0.024, 0.027), 0.8)          # plain matte black
 HANDLE = mat('roof_handle', (0.6, 0.6, 0.62), 0.25)           # baked matte (metal has no diffuse light); three.js makes it metal
-GLOW = mat('glow_ceiling', (0, 0, 0), 1, 0, strength=4.0, attr_emit=True)
-NEON = mat('glow_neon', (0, 0, 0), 1, 0, strength=6.0, attr_emit=True)
+WARM = (1.0, 0.62, 0.32)                                      # step lights (sRGB)
+STEPL = mat('glow_step', (0, 0, 0), 1, 0, emit=srgb2lin(WARM), strength=12.0)
+SIGN = mat('glow_sign', (0, 0, 0), 1, 0, emit=srgb2lin(PINK), strength=3.0)
 FRAME = mat('glow_frame', (0, 0, 0), 1, 0, emit=srgb2lin(ORANGE), strength=10.0)
 BAKED = ['stair_brick', 'stair_floor', 'ceil_panel', 'roof_door', 'roof_handle']   # exported + baked
-EMITTERS = ['glow_ceiling', 'glow_neon', 'glow_frame']                              # bake-only
+EMITTERS = ['glow_step', 'glow_sign', 'glow_frame']                              # bake-only
 
 # ---------------------------------------------------------------- mesh building (faces collected per object)
 meshes = {}
@@ -118,43 +118,32 @@ for i in range(N):
     zf, zb, y0, y1 = Z0 - i * RUN, Z0 - (i + 1) * RUN, i * RISE, (i + 1) * RISE
     face('floor', FLOOR, [(-W / 2, y0, zf), (W / 2, y0, zf), (W / 2, y1, zf), (-W / 2, y1, zf)])        # riser, faces +z
     face('floor', FLOOR, [(-W / 2, y1, zf), (W / 2, y1, zf), (W / 2, y1, zb), (-W / 2, y1, zb)][::-1])  # tread, faces up
-    # neon strip on the nose (bake-only light)
-    box('neon', NEON, (0, y1 - 0.009, zf - 0.012), (W - 0.02, 0.018, 0.025), color=climb(zf))
 face('floor', FLOOR, [(-W / 2, TOP_Y, TOP_Z), (W / 2, TOP_Y, TOP_Z), (W / 2, TOP_Y, ROOF_Z), (-W / 2, TOP_Y, ROOF_Z)][::-1])
 
-# ---------------------------------------------------------------- neon balusters (bake-only) every other step
-for i in range(0, N, 2):
-    z = Z0 - i * RUN - RUN / 2
+# ---------------------------------------------------------------- step lights in both walls, every third step (bake-only emitters + a small light each)
+STEP_LIGHTS = []
+for i in range(1, N, 3):
+    z, y = Z0 - i * RUN - RUN / 2, (i + 1) * RISE + 0.18
     for side in (-1, 1):
-        x, y = side * (W / 2 - 0.14), (i + 1) * RISE + 0.45
-        cylinder('neon', NEON, (x, y - 0.41, z), (x, y + 0.41, z), 0.016, srgb2lin(PINK))
+        box('steplight', STEPL, (side * (W / 2 - 0.004), y, z), (0.01, 0.03, 0.12))
+        STEP_LIGHTS.append((side * (W / 2 - 0.06), y - 0.01, z))
 
-# ---------------------------------------------------------------- ceiling: glowing gradient surface, black panels + frame in front
-B, G, DEPTH = 0.16, 0.09, 0.035
-PW = (W - 2 * B - 3 * G) / 2
-xa = Vector((1, 0, 0))
+# ---------------------------------------------------------------- ceiling: one plain dark surface following the stairs
 for k in range(3):
     za, zb = ZS[k], ZS[k + 1]
-    face('ceiling_glow', GLOW, [(-W / 2, cy(za), za), (-W / 2, cy(zb), zb), (W / 2, cy(zb), zb), (W / 2, cy(za), za)][::-1], None)
-bm, _, glow_layer = meshes['ceiling_glow']
-for v in bm.verts:
-    v[glow_layer] = (*climb(-v.co.y), 1)   # Blender y = -three z
+    face('ceiling', PANEL, [(-W / 2, cy(za), za), (-W / 2, cy(zb), zb), (W / 2, cy(zb), zb), (W / 2, cy(za), za)][::-1])
 
-for k in range(3):
-    za, zb = ZS[k], ZS[k + 1]
-    p0, p1 = Vector((0, cy(za), za)), Vector((0, cy(zb), zb))
-    d = p1 - p0; L = d.length; d.normalize()
-    up = xa.cross(d); e3 = xa.cross(up)
-    def put(x, s, w, l):
-        c = p0 + d * s - up * (DEPTH / 2 + 0.004); c.x = x
-        box('ceiling', PANEL, tuple(c), (w, DEPTH, l), (xa, up, e3))
-    for x in (-(W - B) / 2, (W - B) / 2): put(x, L / 2, B, L)          # frame along the walls
-    if k == 0: put(0, B / 2, W - 2 * B, B)
-    if k == 2: put(0, L - B / 2, W - 2 * B, B)
-    s0, s1 = (B + G if k == 0 else G / 2), (B + G if k == 2 else G / 2)
-    n = max(1, round((L - s0 - s1 + G) / (PW + G))); ln = (L - s0 - s1 - (n - 1) * G) / n
-    for i in range(n):
-        for x in (-(G + PW) / 2, (G + PW) / 2): put(x, s0 + i * (ln + G) + ln / 2, PW, ln)
+# ---------------------------------------------------------------- poster spots: one per poster (7 pairs, as POSTERS in world.ts)
+NPOST = 7
+def lerp(a, b, t): return a + (b - a) * t
+SPOTS = []
+for i in range(NPOST):
+    z = lerp(Z0 - 0.9, TOP_Z + 0.6, i / (NPOST - 1)); h = stair_y(z) + 1.95
+    for side in (-1, 1):
+        SPOTS.append(((side * (W / 2 - 0.6), h + 0.8, z), (side * W / 2, h - 0.08, z)))
+
+# pink EPPING sign above the roof door (three.js draws the letters; this is its glow on the bricks)
+box('sign', SIGN, (0, TOP_Y + 2.52, ROOF_Z + 0.03), (0.8, 0.16, 0.02))
 
 # ---------------------------------------------------------------- roof door: orange neon frame (bake-only), plain matte black door, lever on the right
 fz = ROOF_Z + 0.02
@@ -169,9 +158,19 @@ cylinder('handle', HANDLE, (hx + 0.005, hy + 0.04, hz + 0.06), (hx - 0.13, hy + 
 
 # ---------------------------------------------------------------- objects
 objs = {}
+def add_light(kind, name, pos, energy, color, size, aim=None, spot=None):
+    ld = bpy.data.lights.new(name, kind); ld.energy = energy; ld.color = srgb2lin(color); ld.shadow_soft_size = size
+    if spot: ld.spot_size, ld.spot_blend = spot
+    ob = bpy.data.objects.new(name, ld); ob.location = T(*pos); scene.collection.objects.link(ob)
+    if aim: ob.rotation_euler = (T(*aim) - T(*pos)).to_track_quat('-Z', 'Y').to_euler()
+for k, (pos, aim) in enumerate(SPOTS):
+    add_light('SPOT', f'spot{k}', pos, 40, (1.0, 0.85, 0.69), 0.05, aim, (math.radians(72), 1.0))
+for k, pos in enumerate(STEP_LIGHTS):
+    add_light('POINT', f'step{k}', pos, 1.2, WARM, 0.02)
+
 for name, (bm, m, _) in meshes.items():
     bm.normal_update()
-    if name in ('walls', 'floor'):  # room surfaces face the inside of the stairwell
+    if name in ('walls', 'floor', 'ceiling'):  # room surfaces face the inside of the stairwell
         for f in bm.faces:
             c = f.calc_center_median(); z3 = -c.y                    # back to three.js z
             inside = T(0, floor_y(z3) + 1.5, z3 + 0.5)
