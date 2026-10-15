@@ -221,8 +221,9 @@ export function buildWorld(): World {
   for (let i = 0; i < N; i++) steps.setMatrixAt(i, m4.makeTranslation(0, i * RISE + RISE / 2, Z0 - i * RUN - RUN / 2));
   scene.add(steps); unbaked.push(steps);
 
-  // Gallery lighting (blender/stairwell.py bakes it): a dark stairwell where every poster has its own warm spotlight,
-  // small warm step lights in both walls every third step, the orange roof-door frame and a small pink EPPING above it.
+  // Gallery lighting (blender/stairwell.py bakes it): a dark stairwell under dark wooden beams where every poster has its
+  // own warm spotlight (dark lenses), round hooded step lights in both walls every third step, the orange roof-door frame
+  // and a small pink EPPING above it.
   // Nothing here pulses with the beat except that pink sign.
   const cy = (z: number) => (z > Z0 ? 0 : z < TOP_Z ? TOP_Y : stairY(z)) + CEIL;
   const ceilPts = [IN, Z0, TOP_Z, ROOF_Z];
@@ -245,10 +246,20 @@ export function buildWorld(): World {
     const x = side * (W / 2 - 0.14), h = (z: number) => (z > Z0 ? 0 : z < TOP_Z ? TOP_Y : stairY(z)) + 0.9;
     scene.add(tube(new THREE.Vector3(x, h(Z0), Z0), new THREE.Vector3(x, h(TOP_Z), TOP_Z), 0.024, railMat));
   }
-  // step lights: small warm slots in both walls, every third step (same spots as in the bake)
-  const slotGeo = new THREE.BoxGeometry(0.01, 0.03, 0.12), slotMat = glowMat(C('#ffa860').multiplyScalar(0.95));
+  // step lights: a round black disc with a hood in both walls, every third step, glowing only underneath (same spots as in the bake)
+  const discGeo = new THREE.CylinderGeometry(0.05, 0.05, 0.016, 24), hoodGeo = new THREE.CylinderGeometry(0.05, 0.05, 0.035, 24, 1, true, 0, Math.PI);
+  const lensGeo = new THREE.CircleGeometry(0.036, 24, Math.PI, Math.PI), stepLens = glowMat(C('#ffb36b').multiplyScalar(1.1));
   for (let i = 1; i < N; i += 3) for (const side of [-1, 1]) {
-    const slot = new THREE.Mesh(slotGeo, slotMat); slot.position.set(side * (W / 2 - 0.004), (i + 1) * RISE + 0.18, Z0 - i * RUN - RUN / 2); scene.add(slot);
+    const x = side * W / 2, y = (i + 1) * RISE + 0.18, z = Z0 - i * RUN - RUN / 2;
+    const disc = new THREE.Mesh(discGeo, railMat); disc.position.set(x - side * 0.008, y, z); disc.rotation.z = Math.PI / 2;
+    const hood = new THREE.Mesh(hoodGeo, railMat); hood.position.set(x - side * 0.03, y + 0.002, z); hood.rotation.set(side > 0 ? 0 : Math.PI, 0, Math.PI / 2);
+    const lens = new THREE.Mesh(lensGeo, stepLens); lens.position.set(x - side * 0.017, y - 0.004, z); lens.rotation.y = -side * Math.PI / 2;
+    scene.add(disc, hood, lens);
+  }
+  // dark wooden beams across the ceiling (three.js only, not in the bake)
+  const beamGeo = new THREE.BoxGeometry(W, 0.13, 0.1), beamMat = new THREE.MeshStandardMaterial({ color: C('#2b1c14'), emissive: C('#1a0f0a'), roughness: 0.8 });
+  for (let z = IN - 0.3; z > ROOF_Z + 0.2; z -= 0.75) {
+    const beam = new THREE.Mesh(beamGeo, beamMat); beam.position.set(0, cy(z) - 0.065, z); scene.add(beam);
   }
 
   // live light until the bake is in: a dim warm glow along the ceiling
@@ -269,7 +280,7 @@ export function buildWorld(): World {
   }
 
   // posters: a pair at each spot, one on each wall, facing each other, hung high above the balustrade
-  const loader = new THREE.TextureLoader(), lensMat = glowMat(C('#ffd8b0').multiplyScalar(1.4));
+  const loader = new THREE.TextureLoader();
   POSTERS.forEach((pair, i) => {
     const z = lerp(Z0 - 0.9, TOP_Z + 0.6, i / Math.max(1, POSTERS.length - 1));
     pair.forEach(({ src, aspect = 1 }, s) => {
@@ -282,11 +293,10 @@ export function buildWorld(): World {
         m.position.set(side * (W / 2 - off), stairY(z) + 1.95, z);
         scene.add(m);
       }
-      const h = stairY(z) + 1.95, at = new THREE.Vector3(side * (W / 2 - 0.6), h + 0.8, z);
+      const h = stairY(z) + 1.95, at = new THREE.Vector3(side * (W / 2 - 0.35), h + 0.9, z); // short arm, dark lens: nothing white overhead
       const dir = new THREE.Vector3(side * W / 2, h - 0.08, z).sub(at).normalize();
-      scene.add(tube(new THREE.Vector3(side * W / 2, h + 0.8, z), at, 0.008, railMat));
-      scene.add(tube(at.clone().addScaledVector(dir, -0.04), at.clone().addScaledVector(dir, 0.08), 0.035, railMat));
-      scene.add(tube(at.clone().addScaledVector(dir, 0.08), at.clone().addScaledVector(dir, 0.083), 0.028, lensMat));
+      scene.add(tube(new THREE.Vector3(side * W / 2, h + 0.9, z), at, 0.007, railMat));
+      scene.add(tube(at.clone().addScaledVector(dir, -0.04), at.clone().addScaledVector(dir, 0.08), 0.032, railMat));
     });
   });
 

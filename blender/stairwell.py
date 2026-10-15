@@ -1,8 +1,8 @@
 # Builds the stairwell in Blender, bakes its light into lightmaps and exports public/models/stairwell.glb
 # + public/models/lightmaps/stair_*.jpg. Same measurements as src/entrance/world.ts.
 # Gallery lighting: a dark stairwell where each poster has its own warm spotlight (spilling onto the bricks around
-# it), small warm step lights set into the walls every third step, the orange frame around the roof door and a small
-# pink EPPING above it. The emitters are bake-only: three.js draws its own versions; the .glb holds the lit surfaces
+# it), small round hooded step lights in both walls every third step (light only goes down, onto the treads), the
+# orange frame around the roof door and a small pink EPPING above it. The dark wooden ceiling beams are three.js only. The emitters are bake-only: three.js draws its own versions; the .glb holds the lit surfaces
 # (walls, steps, ceiling, roof door).
 # Run: blender -b --factory-startup --python blender/stairwell.py   (add -- --quick for a fast test bake)
 #
@@ -57,11 +57,10 @@ PANEL = mat('ceil_panel', (0.05, 0.04, 0.04), 0.9)           # plain dark ceilin
 DOOR = mat('roof_door', (0.025, 0.024, 0.027), 0.8)          # plain matte black
 HANDLE = mat('roof_handle', (0.6, 0.6, 0.62), 0.25)           # baked matte (metal has no diffuse light); three.js makes it metal
 WARM = (1.0, 0.62, 0.32)                                      # step lights (sRGB)
-STEPL = mat('glow_step', (0, 0, 0), 1, 0, emit=srgb2lin(WARM), strength=12.0)
 SIGN = mat('glow_sign', (0, 0, 0), 1, 0, emit=srgb2lin(PINK), strength=3.0)
 FRAME = mat('glow_frame', (0, 0, 0), 1, 0, emit=srgb2lin(ORANGE), strength=10.0)
 BAKED = ['stair_brick', 'stair_floor', 'ceil_panel', 'roof_door', 'roof_handle']   # exported + baked
-EMITTERS = ['glow_step', 'glow_sign', 'glow_frame']                              # bake-only
+EMITTERS = ['glow_sign', 'glow_frame']                              # bake-only
 
 # ---------------------------------------------------------------- mesh building (faces collected per object)
 meshes = {}
@@ -120,13 +119,13 @@ for i in range(N):
     face('floor', FLOOR, [(-W / 2, y1, zf), (W / 2, y1, zf), (W / 2, y1, zb), (-W / 2, y1, zb)][::-1])  # tread, faces up
 face('floor', FLOOR, [(-W / 2, TOP_Y, TOP_Z), (W / 2, TOP_Y, TOP_Z), (W / 2, TOP_Y, ROOF_Z), (-W / 2, TOP_Y, ROOF_Z)][::-1])
 
-# ---------------------------------------------------------------- step lights in both walls, every third step (bake-only emitters + a small light each)
+# ---------------------------------------------------------------- hooded step lights in both walls, every third step (a spot each, aimed down onto the treads)
 STEP_LIGHTS = []
 for i in range(1, N, 3):
     z, y = Z0 - i * RUN - RUN / 2, (i + 1) * RISE + 0.18
     for side in (-1, 1):
-        box('steplight', STEPL, (side * (W / 2 - 0.004), y, z), (0.01, 0.03, 0.12))
-        STEP_LIGHTS.append((side * (W / 2 - 0.06), y - 0.01, z))
+        x = side * W / 2
+        STEP_LIGHTS.append(((x - side * 0.04, y - 0.01, z), (x - side * 0.45, y - 0.42, z)))
 
 # ---------------------------------------------------------------- ceiling: one plain dark surface following the stairs
 for k in range(3):
@@ -140,7 +139,7 @@ SPOTS = []
 for i in range(NPOST):
     z = lerp(Z0 - 0.9, TOP_Z + 0.6, i / (NPOST - 1)); h = stair_y(z) + 1.95
     for side in (-1, 1):
-        SPOTS.append(((side * (W / 2 - 0.6), h + 0.8, z), (side * W / 2, h - 0.08, z)))
+        SPOTS.append(((side * (W / 2 - 0.35), h + 0.9, z), (side * W / 2, h - 0.08, z)))   # the dark-lens fixtures in world.ts
 
 # pink EPPING sign above the roof door (three.js draws the letters; this is its glow on the bricks)
 box('sign', SIGN, (0, TOP_Y + 2.52, ROOF_Z + 0.03), (0.8, 0.16, 0.02))
@@ -165,8 +164,8 @@ def add_light(kind, name, pos, energy, color, size, aim=None, spot=None):
     if aim: ob.rotation_euler = (T(*aim) - T(*pos)).to_track_quat('-Z', 'Y').to_euler()
 for k, (pos, aim) in enumerate(SPOTS):
     add_light('SPOT', f'spot{k}', pos, 40, (1.0, 0.85, 0.69), 0.05, aim, (math.radians(72), 1.0))
-for k, pos in enumerate(STEP_LIGHTS):
-    add_light('POINT', f'step{k}', pos, 1.2, WARM, 0.02)
+for k, (pos, aim) in enumerate(STEP_LIGHTS):
+    add_light('SPOT', f'step{k}', pos, 8, WARM, 0.02, aim, (math.radians(115), 1.0))
 
 for name, (bm, m, _) in meshes.items():
     bm.normal_update()
