@@ -1,9 +1,9 @@
 # Print file for the business card (design A front + A2b back): vector PDF in CMYK, 2 pages (front, back).
-# Run: python3 scripts/print-card.py  -> media EPPING website/print/ (git-ignored)
+# Run: python3 scripts/print-card.py [--marks]  -> media EPPING website/print/ (git-ignored)
 # Card 85 x 55 mm + 3 mm bleed = 91 x 61 mm page, no crop marks. Everything is outlines (no fonts embedded).
 # Front: just the site logo, centred. Back: four rows of icon tile (pink outline) + contact line in Archivo 600.
 # Needs the Archivo 600 woff in media EPPING website/print/fonts/ (from @fontsource/archivo).
-import json, math, re, subprocess
+import json, math, re, subprocess, sys
 
 MM = 72 / 25.4
 W, H, BLEED = 85, 55, 3               # finished size and bleed, mm
@@ -115,11 +115,25 @@ for i, (icon, t) in enumerate(zip(ICONS, fnt['lines'])):
     back += [fill('#FFF4E8'), pdf_path(t['d'], 0, 0, mm_pt(PAD_X + TILE + TEXT_GAP, base, ts)), 'f']
 
 b = BLEED * MM
-pages = [('\n'.join(front)).encode(), ('\n'.join(back)).encode()]
+# --marks: same artwork on a larger page with crop marks (registration colour, 3 mm off the trim, outside the bleed)
+MARKS = '--marks' in sys.argv
+M = 10 * MM if MARKS else 0           # extra page margin around the bleed box
+marks = []
+if MARKS:
+    tx0, ty0, tx1, ty1 = M + b, M + b, M + PW - b, M + PH - b
+    marks = ['1 1 1 1 K', f'{f(0.25)} w']
+    o, l = b + 2 * MM, 5 * MM         # marks start 2 mm outside the bleed edge, 5 mm long
+    for x in (tx0, tx1):
+        for y, s in ((ty0, -1), (ty1, 1)):
+            marks.append(f'{f(x)} {f(y + s * o)} m {f(x)} {f(y + s * (o + l))} l S')
+    for y in (ty0, ty1):
+        for x, s in ((tx0, -1), (tx1, 1)):
+            marks.append(f'{f(x + s * o)} {f(y)} m {f(x + s * (o + l))} {f(y)} l S')
+pages = [('\n'.join([f'q 1 0 0 1 {f(M)} {f(M)} cm'] + p + ['Q'] + marks)).encode() for p in (front, back)]
 objs = [b'<< /Type /Catalog /Pages 2 0 R >>', b'<< /Type /Pages /Kids [3 0 R 5 0 R] /Count 2 >>']
 for i, content in enumerate(pages):
-    objs += [(f'<< /Type /Page /Parent 2 0 R /MediaBox [0 0 {f(PW)} {f(PH)}] /BleedBox [0 0 {f(PW)} {f(PH)}] '
-              f'/TrimBox [{f(b)} {f(b)} {f(PW - b)} {f(PH - b)}] /Contents {len(objs) + 2} 0 R /Resources << >> >>').encode(),
+    objs += [(f'<< /Type /Page /Parent 2 0 R /MediaBox [0 0 {f(PW + 2 * M)} {f(PH + 2 * M)}] /BleedBox [{f(M)} {f(M)} {f(M + PW)} {f(M + PH)}] '
+              f'/TrimBox [{f(M + b)} {f(M + b)} {f(M + PW - b)} {f(M + PH - b)}] /Contents {len(objs) + 2} 0 R /Resources << >> >>').encode(),
              b'<< /Length %d >>\nstream\n' % len(content) + content + b'\nendstream']
 objs.append(b'<< /Title (EPPING business card 85x55 mm, 3 mm bleed, CMYK) /Producer (scripts/print-card.py) >>')
 out = bytearray(b'%PDF-1.4\n%\xe2\xe3\xcf\xd3\n'); offs = []
@@ -128,6 +142,7 @@ for i, o in enumerate(objs, 1):
 x = len(out)
 out += b'xref\n0 %d\n0000000000 65535 f \n' % (len(objs) + 1) + b''.join(b'%010d 00000 n \n' % o for o in offs)
 out += b'trailer\n<< /Size %d /Root 1 0 R /Info %d 0 R >>\nstartxref\n%d\n%%%%EOF\n' % (len(objs) + 1, len(objs), x)
-name = 'media EPPING website/print/epping-visitekaartje-91x61-afloop3mm-cmyk.pdf'
+name = ('media EPPING website/print/epping-visitekaartje-85x55-afloop3mm-snijtekens-cmyk.pdf' if MARKS
+        else 'media EPPING website/print/epping-visitekaartje-91x61-afloop3mm-cmyk.pdf')
 open(name, 'wb').write(out)
-print(name, f'{W + 2 * BLEED} x {H + 2 * BLEED} mm, 2 pages')
+print(name, f'{(PW + 2 * M) / MM:.0f} x {(PH + 2 * M) / MM:.0f} mm page, 2 pages')
