@@ -14,7 +14,7 @@ const STREET_DOOR = 0.38; // tapping the street door walks you to just inside it
 // Teaser ("coming soon"): the open street door shows only black (world.blackout); walking in fades to black with the sign,
 // fully black (SOON_FULL) before the camera reaches the doorway's black plane, and you can't go further (SOON_MAX).
 // The floor pages stay reachable by their links. Set to false at launch (and remove .soon in Entrance.astro).
-const TEASER = true, SOON_AT = 0.33, SOON_FULL = 0.36, SOON_MAX = 0.37;
+const TEASER = false, SOON_AT = 0.33, SOON_FULL = 0.36, SOON_MAX = 0.37;
 const clamp = (v: number, a = 0, b = 1) => Math.min(b, Math.max(a, v));
 const ease = (t: number) => t * t * (3 - 2 * t);
 
