@@ -135,7 +135,7 @@ export const FLOORS: Floor[] = [
         { kind: 'photo', src: 'media/floors/presents/photo-5.jpg', caption: 'In the mix' },
       ],
     },
-    mix: { title: 'ADE House Mix', length: 'Mix', url: 'https://soundcloud.com/arno-epping/ade-house-mix' },
+    mix: { title: 'Hoofddorpplein Silent Disco', length: 'Mix', url: 'https://soundcloud.com/arno-epping/hoofddorpplein-silent-disco' },
     cta: 'Follow for the next one',
     follow: true,
   },
