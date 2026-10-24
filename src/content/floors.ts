@@ -7,7 +7,9 @@ export interface Floor {
   /** search: <title> and meta description (~60 / ~155 chars) */
   title: string; description: string;
   tagline: string; intro: string; body: string[]; includes: string[];
+  /** next party (none: "Coming soon"); past: earlier parties, newest first */
   event?: { date: string; place: string; note: string };
+  past?: { name: string; date: string; place: string }[];
   /** photos and clips under the mix, opened in a lightbox; paths relative to the site root, files in public/media/floors/ */
   gallery?: { title: string; items: GalleryItem[] };
   /** url: public SoundCloud page; embed: optional player URL (SoundCloud's own api URL works best for sets) */
@@ -112,7 +114,10 @@ export const FLOORS: Floor[] = [
     tagline: 'Anywhere we can plug in',
     intro: 'Our own parties, open to everyone. The music we love, played loud, wherever we can get away with it.',
     body: ['A few times a year we take over a rooftop, a park or a square for a day or a night. Follow along so you don’t hear about it the day after.'],
-    event: { date: 'Thu 22 October 2026', place: 'Hoofddorpplein, Amsterdam', note: 'Silent disco during ADE · 19:00 – 22:00' }, // remove after the night to hide the block
+    past: [
+      { name: 'ADE Silent Disco', date: 'Thu 22 October 2026', place: 'Hoofddorpplein, Amsterdam' },
+      { name: 'Hoofddorpplein Festival', date: 'Sat 5 September 2026', place: 'Hoofddorpplein, Amsterdam' },
+    ],
     includes: [], // no list on this page
     gallery: {
       title: 'Footage from the dancefloor',
@@ -142,7 +147,7 @@ export const floorBySlug = (s: string): Floor | undefined => FLOORS.find((f) => 
 // ---------- Dutch (product pages only; the entrance stays English). Copy from the doc "EPPING Dutch product pages". ----------
 export type Lang = 'en' | 'nl';
 type NlFloor = Pick<Floor, 'title' | 'description' | 'tagline' | 'intro' | 'body' | 'includes' | 'cta'> &
-  Partial<Pick<Floor, 'mail' | 'whatsapp' | 'event' | 'faq'>> & { path: string; captions?: string[] };
+  Partial<Pick<Floor, 'mail' | 'whatsapp' | 'event' | 'past' | 'faq'>> & { path: string; captions?: string[] };
 
 const NL: Record<Slug, NlFloor> = {
   'rave-wedding': {
@@ -212,14 +217,17 @@ const NL: Record<Slug, NlFloor> = {
     body: ['Een paar keer per jaar nemen we een plek over, van dak tot plein. Volg ons, dan mis je de volgende niet.'],
     includes: [],
     cta: 'Volg ons voor het volgende feest',
-    event: { date: 'Do 22 oktober 2026', place: 'Hoofddorpplein, Amsterdam', note: 'Silent disco tijdens ADE · 19:00 – 22:00' }, // remove together with the English one
+    past: [
+      { name: 'ADE Silent Disco', date: 'Do 22 oktober 2026', place: 'Hoofddorpplein, Amsterdam' },
+      { name: 'Hoofddorpplein Festival', date: 'Za 5 september 2026', place: 'Hoofddorpplein, Amsterdam' },
+    ],
     captions: ['Vanaf de straat', 'Set bij zonsondergang', 'Nog één', 'Handen in de lucht', 'Lichten aan', 'Klaarmaken', 'Soundcheck', 'Eerste plaat', 'Dak met uitzicht', 'Hallo', 'In de mix'],
   },
 };
 
 export const UI = {
-  en: { back: '← Back to the street', backRoof: '← Back to the roof', next: 'Next party', email: 'Email', copy: 'Copy', copied: 'Copied', follow: 'Follow', mixes: 'All mixes on SoundCloud ↗', gallery: 'Footage from the dancefloor', others: 'Other services', play: 'Play', view: 'View', faq: 'Questions', faqJump: 'FAQ ↓' },
-  nl: { back: '← Terug naar de straat', backRoof: '← Terug naar het dak', next: 'Volgende feest', email: 'E-mail', copy: 'Kopieer', copied: 'Gekopieerd', follow: 'Volg', mixes: 'Alle mixes op SoundCloud ↗', gallery: 'Beelden van de dansvloer', others: 'Andere diensten', play: 'Afspelen', view: 'Bekijk', faq: 'Vragen', faqJump: 'FAQ ↓' },
+  en: { back: '← Back to the street', backRoof: '← Back to the roof', next: 'Next party', soon: 'Coming soon', past: 'Past parties', email: 'Email', copy: 'Copy', copied: 'Copied', follow: 'Follow', mixes: 'All mixes on SoundCloud ↗', gallery: 'Footage from the dancefloor', others: 'Other services', play: 'Play', view: 'View', faq: 'Questions', faqJump: 'FAQ ↓' },
+  nl: { back: '← Terug naar de straat', backRoof: '← Terug naar het dak', next: 'Volgende feest', soon: 'Binnenkort', past: 'Eerdere feesten', email: 'E-mail', copy: 'Kopieer', copied: 'Gekopieerd', follow: 'Volg', mixes: 'Alle mixes op SoundCloud ↗', gallery: 'Beelden van de dansvloer', others: 'Andere diensten', play: 'Afspelen', view: 'Bekijk', faq: 'Vragen', faqJump: 'FAQ ↓' },
 } as const;
 
 /** a product page's URL in a language: /<slug>/ or /nl/<dutch slug>/ */
@@ -230,6 +238,6 @@ export function localize(f: Floor, lang: Lang): Floor {
   if (lang === 'en') return f;
   const { path: _p, captions, ...nl } = NL[f.slug];
   const gallery = f.gallery && { title: UI.nl.gallery, items: f.gallery.items.map((it, i) => ({ ...it, caption: captions?.[i] ?? it.caption })) };
-  return { ...f, ...nl, event: f.event && nl.event, gallery };
+  return { ...f, ...nl, event: f.event && nl.event, past: f.past && nl.past, gallery };
 }
 

@@ -28,7 +28,8 @@ const langs: Lang[] = ['en', 'nl'];
     <div class="fp-body">{f.body.map((b) => <p>{b}</p>)}</div>
     {f.includes.length > 0 && <ul class="fp-list">{f.includes.map((x) => <li>{x}</li>)}</ul>}
   </div>
-  {f.event && <div class="fp-event"><span>{t.next}</span><b>{f.event.date}</b><span>{f.event.place} · {f.event.note}</span></div>}
+  {(f.event || f.past) && <div class="fp-event"><span>{t.next}</span><b>{f.event ? f.event.date : t.soon}</b>{f.event && <span>{f.event.place} · {f.event.note}</span>}</div>}
+  {f.past && <div class="fp-past"><span>{t.past}</span><ul>{f.past.map((e) => <li><b>{e.name}</b><span>{e.date} · {e.place}</span></li>)}</ul></div>}
   <div class="fp-contact">
     <h2>{f.cta}</h2>
     <div class="fp-btns">

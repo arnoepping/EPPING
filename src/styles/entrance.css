@@ -80,6 +80,11 @@
 .fp-event { display: grid; gap: 4px; padding: 16px 18px; border-left: 3px solid var(--pink); background: color-mix(in srgb, var(--pink) 10%, #000); }
 .fp-event span { font-size: 13px; opacity: .75; }
 .fp-event b { font: 800 22px var(--display); }
+.fp-past > span { font-size: 13px; opacity: .75; }
+.fp-past ul { margin: 8px 0 0; padding: 0; list-style: none; display: grid; gap: 10px; }
+.fp-past li { display: grid; gap: 2px; padding-left: 18px; border-left: 1px solid var(--line); }
+.fp-past li b { font-weight: 600; }
+.fp-past li span { font-size: 13px; opacity: .7; }
 .fp-cols { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 28px; }
 .fp-body p { margin: 0 0 14px; opacity: .85; }
 .fp-cols-one { grid-template-columns: minmax(0, 1fr); }
